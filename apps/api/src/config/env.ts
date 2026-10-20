@@ -1,0 +1,66 @@
+import { AppEnv, ProviderMode } from '@skydra/shared';
+import { z } from 'zod';
+
+const EnvSchema = z.object({
+  APP_ENV: AppEnv,
+  PORT: z.coerce.number().int().positive().default(3000),
+  DATABASE_URL: z.url(),
+  SCREENING_PROVIDER: ProviderMode,
+  IDENTITY_PROVIDER: ProviderMode,
+  REGISTRY_PROVIDER: ProviderMode,
+});
+
+export type AppConfig = {
+  env: AppEnv;
+  port: number;
+  databaseUrl: string;
+  providers: {
+    screening: ProviderMode;
+    identity: ProviderMode;
+    registry: ProviderMode;
+  };
+};
+
+export class ConfigError extends Error {
+  override name = 'ConfigError';
+}
+
+/**
+ * Parses process environment into typed config and refuses unsafe combinations.
+ * A production instance must never start with simulated (MOCK) providers, otherwise a broker
+ * could rely on checks that were never performed.
+ */
+export function loadConfig(source: NodeJS.ProcessEnv): AppConfig {
+  const parsed = EnvSchema.safeParse(source);
+  if (!parsed.success) {
+    const issues = parsed.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
+    throw new ConfigError(`Invalid environment configuration:\n  ${issues.join('\n  ')}`);
+  }
+
+  const e = parsed.data;
+  const config: AppConfig = {
+    env: e.APP_ENV,
+    port: e.PORT,
+    databaseUrl: e.DATABASE_URL,
+    providers: {
+      screening: e.SCREENING_PROVIDER,
+      identity: e.IDENTITY_PROVIDER,
+      registry: e.REGISTRY_PROVIDER,
+    },
+  };
+
+  if (config.env === 'prod') {
+    const mocked = Object.entries(config.providers)
+      .filter(([, mode]) => mode === 'MOCK')
+      .map(([name]) => name);
+    if (mocked.length > 0) {
+      throw new ConfigError(`MOCK providers are not allowed in prod: ${mocked.join(', ')}`);
+    }
+  }
+
+  return config;
+}
+
+export function usesSimulatedProviders(config: AppConfig): boolean {
+  return Object.values(config.providers).includes('MOCK');
+}

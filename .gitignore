@@ -10,3 +10,6 @@ coverage/
 
 # Binary client materials stay outside git
 docs/*.mp4
+
+# Personal Claude Code settings
+.claude/settings.local.json

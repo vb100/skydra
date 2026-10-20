@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: skydra
       POSTGRES_DB: skydra
     ports:
-      - '5432:5432'
+      - '5433:5432' # 5433 on the host: avoids clashing with a locally installed PostgreSQL
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:

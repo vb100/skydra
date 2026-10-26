@@ -7,4 +7,5 @@ minimumReleaseAge: 4320
 
 onlyBuiltDependencies:
   - '@nestjs/core'
+  - argon2
   - esbuild

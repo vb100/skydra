@@ -27,6 +27,8 @@ pnpm db:seed:platform-admin --email admin@skydra.local --name "Vardas Pavardė"
 pnpm dev                        # API :3000, web :5173
 ```
 
+Paruošimo komanda išveda vienkartinę aktyvavimo nuorodą (`http://localhost:5173/activate#token=…`). Ją atidarius nustatomas slaptažodis ir 2FA (reikia autentifikavimo programėlės, pvz., Google Authenticator). Tada galima prisijungti, sukurti organizaciją ir gauti jos administratoriaus kvietimo nuorodą.
+
 Web aplikacija `/api` užklausas per Vite proxy nukreipia į API. Sveikatos patikra: `http://localhost:3000/api/health`.
 
 > **Jei lokali bazė sukurta anksčiau nei dabartinis `infra/docker/postgres-init/01-roles.sql`**, joje trūksta rolių `skydra_migrator` ir (arba) `skydra_app`. Bazę perkurkite: `docker compose -f infra/docker/compose.yaml down -v && pnpm db:up && pnpm db:migrate`. **Dėmesio:** `down -v` ištrina visus lokalios bazės duomenis.
@@ -47,6 +49,29 @@ Web aplikacija `/api` užklausas per Vite proxy nukreipia į API. Sveikatos pati
   - **Ką nustato DB:** laiką, eilės numerį, veikėją ir maišų grandinę. Aplikacija šių reikšmių pasirinkti negali.
   - **Ką draudžia DB:** `UPDATE`, `DELETE` ir `TRUNCATE` blokuoja trigeriai, net lentelės savininkui.
   - **Vientisumo patikra:** `verifyAuditChain()` aptinka pakeistus, iš vidurio ištrintus ir nuo grandinės galo pašalintus įrašus.
+
+## Prisijungimas ir sesijos
+
+- **Du faktoriai privalomi visiems:**
+  - slaptažodis (argon2id, bent 12 simbolių);
+  - TOTP kodas arba vienkartinis atsarginis kodas.
+- **Prisijungimo bandymai:**
+  - Po 5 nesėkmingų bandymų paskyra užrakinama 15 min. Skaičiuojami ir neteisingi 2FA kodai.
+  - Klaidos pranešimas vienodas, kad ir kas būtų neteisinga: el. paštas, slaptažodis ar paskyra užrakinta.
+- **Paslapčių saugojimas:**
+  - TOTP paslaptys šifruojamos AES-256-GCM raktu, išvestu iš `SECRET_ENCRYPTION_KEY`.
+  - Atsarginiai kodai saugomi kaip HMAC.
+  - Sesijų ir nuorodų žetonai saugomi tik kaip SHA-256.
+- **Sesija:**
+  - Saugoma `HttpOnly`, `SameSite=Lax` slapuke (ne lokaliai – `__Host-`, `Secure`).
+  - Po 2FA žetonas pakeičiamas nauju.
+  - Baigiasi po 30 min. neveiklumo ir ne vėliau kaip po 12 val.
+- **CSRF:** keičiančios užklausos privalo turėti antraštę `x-skydra-csrf: 1`, o `Origin` turi sutapti su `PUBLIC_APP_URL`.
+- **Kvietimai ir slaptažodžio atkūrimas:**
+  - Vienkartinės nuorodos su žetonu URL fragmente (`#token=`), todėl jis nepatenka į serverių žurnalus.
+  - Atkuriant nustatomas naujas slaptažodis ir nauja 2FA, o visos sesijos nutraukiamos.
+  - Organizacijos administratorius negali atkurti slaptažodžio naudotojui, kuris priklauso ir kitai organizacijai. Tai gali tik Platform Admin.
+- **El. laiškų MVP nėra:** nuorodas administratorius perduoda pats, saugiu kanalu.
 
 ## Patikros (tos pačios kaip CI)
 

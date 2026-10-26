@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { ConfigError, loadConfig, usesSimulatedProviders } from './env';
+import { ConfigError, LOCAL_DEVELOPMENT_KEY, loadConfig, usesSimulatedProviders } from './env';
 
 const base = {
   APP_ENV: 'local',
   DATABASE_URL: 'postgres://skydra:skydra@localhost:5432/skydra',
+  PUBLIC_APP_URL: 'http://localhost:5173',
+  SECRET_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
   SCREENING_PROVIDER: 'MOCK',
   IDENTITY_PROVIDER: 'MOCK',
   REGISTRY_PROVIDER: 'MANUAL',
@@ -38,5 +40,18 @@ describe('loadConfig', () => {
 
   it('rejects unknown values with a readable message', () => {
     expect(() => loadConfig({ ...base, APP_ENV: 'staging' })).toThrow(/APP_ENV/);
+  });
+
+  it('refuses the public local development key outside local', () => {
+    expect(() =>
+      loadConfig({ ...base, SECRET_ENCRYPTION_KEY: LOCAL_DEVELOPMENT_KEY }),
+    ).not.toThrow();
+    expect(() =>
+      loadConfig({ ...base, APP_ENV: 'demo', SECRET_ENCRYPTION_KEY: LOCAL_DEVELOPMENT_KEY }),
+    ).toThrow(/local development key/);
+  });
+
+  it('rejects a key that is not 32 bytes', () => {
+    expect(() => loadConfig({ ...base, SECRET_ENCRYPTION_KEY: 'c2hvcnQ=' })).toThrow(/32 bytes/);
   });
 });

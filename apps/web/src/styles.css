@@ -1,0 +1,156 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --text: #17202a;
+  --muted: #5b6673;
+  --border: #d5dbe1;
+  --accent: #1f5f8b;
+  --accent-text: #ffffff;
+  --danger: #b42318;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+  color: var(--text);
+  background: var(--bg);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12161b;
+    --surface: #1b2128;
+    --text: #e6e9ed;
+    --muted: #9aa5b1;
+    --border: #2e3741;
+    --accent: #6fb1e0;
+    --accent-text: #0b1620;
+    --danger: #f97066;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+}
+.page {
+  max-width: 32rem;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+.brand {
+  font-weight: 700;
+  color: var(--accent);
+  margin: 0 0 0.5rem;
+}
+h1 {
+  font-size: 1.5rem;
+  margin: 0 0 1.25rem;
+}
+h2 {
+  font-size: 1.15rem;
+  margin: 1.75rem 0 0.75rem;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+}
+input,
+select {
+  font: inherit;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  min-height: 44px;
+}
+input:focus,
+select:focus,
+button:focus-visible,
+a:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 1px;
+}
+button {
+  font: inherit;
+  min-height: 44px;
+  padding: 0.65rem 1rem;
+  border-radius: 8px;
+  border: 0;
+  background: var(--accent);
+  color: var(--accent-text);
+  cursor: pointer;
+  font-weight: 600;
+}
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+button.secondary {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+}
+button.link {
+  background: none;
+  color: var(--accent);
+  text-decoration: underline;
+  padding: 0;
+  min-height: auto;
+  font-weight: 400;
+}
+a {
+  color: var(--accent);
+}
+.error {
+  color: var(--danger);
+  margin: 0;
+}
+.muted {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.card {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+}
+.card.static {
+  cursor: default;
+}
+.codes {
+  font-family: ui-monospace, monospace;
+  columns: 2;
+  padding-left: 1.2rem;
+  line-height: 1.8;
+}
+code {
+  font-family: ui-monospace, monospace;
+}
+.wrap {
+  word-break: break-all;
+}

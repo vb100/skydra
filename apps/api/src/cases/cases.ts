@@ -87,6 +87,18 @@ export async function listCases(client: PoolClient): Promise<CaseSummary[]> {
   return rows;
 }
 
+/**
+ * Recomputes the derived compliance status of a case (app.refresh_case_compliance, migration
+ * 0007). Called after every change that can affect it.
+ */
+export async function refreshCompliance(client: PoolClient, caseId: string): Promise<string> {
+  const { rows } = await client.query<{ status: string }>(
+    'SELECT app.refresh_case_compliance($1) AS status',
+    [caseId],
+  );
+  return rows[0]!.status;
+}
+
 async function audited(client: PoolClient, id: string) {
   const { rows } = await client.query(AUDITED, [id]);
   if (!rows[0]) throw new NotFoundError('case not found');
@@ -222,6 +234,7 @@ export async function updateCase(
     entityId: id,
     ...changes(before, after),
   });
+  await refreshCompliance(client, id);
 }
 
 /** Only the fields that changed, so the audit trail stays readable. */
@@ -264,6 +277,7 @@ export async function activateAml(
     before: { aml_applicability: before.aml_applicability },
     after: { aml_applicability: 'MANUALLY_ACTIVATED', aml_activation_reason: reason },
   });
+  await refreshCompliance(client, id);
 }
 
 async function assertCaseVisible(client: PoolClient, caseId: string): Promise<void> {
@@ -321,6 +335,7 @@ export async function addCaseParty(
         cddScope: i.cddScope,
       },
     });
+    await refreshCompliance(client, id);
     return { casePartyId, partyId };
   } catch (error) {
     translateDbError(error, 'this party already has this role in the case');
@@ -374,6 +389,7 @@ export async function updateCaseParty(
     metadata: { casePartyId: ids[0] },
     ...changes(before[0], after[0]),
   });
+  await refreshCompliance(client, ids[1]!);
 }
 
 /** Removal keeps the link for the history; the party itself stays in the organization. */
@@ -396,6 +412,7 @@ export async function removeCaseParty(
     entityId: ids[1],
     before: { casePartyId: ids[0], partyId: rows[0].party_id, role: rows[0].role },
   });
+  await refreshCompliance(client, ids[1]!);
 }
 
 /** Active brokers and managers who can be responsible for a case. */

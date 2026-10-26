@@ -11,6 +11,8 @@ import { HealthController } from './health/health.controller';
 import { OrganizationGuard, PlatformAdminGuard, SessionGuard } from './http/session';
 import { OrganizationController } from './organization/organization.controller';
 import { PlatformController } from './platform/platform.controller';
+import { MockScreeningProvider } from './screening/mock-provider';
+import { SCREENING_PROVIDER, UnavailableScreeningProvider } from './screening/provider';
 
 @Module({})
 export class AppModule {
@@ -33,6 +35,14 @@ export class AppModule {
             pool: db,
             keys: deriveKeys(cfg.secretEncryptionKey),
           }),
+        },
+        {
+          // MOCK is refused in prod by loadConfig; Ondato and manual entry come later.
+          provide: SCREENING_PROVIDER,
+          useValue:
+            config.providers.screening === 'MOCK'
+              ? new MockScreeningProvider()
+              : new UnavailableScreeningProvider(config.providers.screening),
         },
         SessionGuard,
         PlatformAdminGuard,

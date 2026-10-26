@@ -52,3 +52,24 @@ export type CaseDetail = CaseSummary & {
   legalRegime: 'PPTFPI' | 'AMLR';
   parties: CaseParty[];
 };
+
+export type ScreeningMatch = {
+  id: string;
+  name: string;
+  score: string | null;
+  categories: string[];
+  details: Record<string, unknown>;
+  reviewStatus: 'OPEN' | 'FALSE_POSITIVE' | 'TRUE_POSITIVE';
+  reviewJustification: string | null;
+  reviewedAt: string | null;
+};
+
+export type ScreeningCheck = {
+  id: string;
+  casePartyId: string;
+  provider: string;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED';
+  matchCount: number | null;
+  requestedAt: string;
+  matches: ScreeningMatch[];
+};

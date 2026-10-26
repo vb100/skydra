@@ -14,6 +14,8 @@ import { can, type Principal } from '../access/policy';
 import { AUTH_DEPS } from '../auth/auth.module-tokens';
 import type { AuthDeps } from '../auth/auth.service';
 import { withTenant } from '../database/tenant';
+import { SCREENING_PROVIDER, type ScreeningProvider } from '../screening/provider';
+import { listScreenings, reviewMatch, runScreening } from '../screening/screening';
 import { CurrentPrincipal, OrganizationGuard, SessionGuard } from '../http/session';
 import {
   activateAml,
@@ -37,16 +39,19 @@ import { searchParties } from './parties';
 @Controller()
 @UseGuards(SessionGuard, OrganizationGuard)
 export class CasesController {
-  constructor(@Inject(AUTH_DEPS) private readonly deps: AuthDeps) {}
+  constructor(
+    @Inject(AUTH_DEPS) private readonly deps: AuthDeps,
+    @Inject(SCREENING_PROVIDER) private readonly screening: ScreeningProvider,
+  ) {}
 
-  private run<T>(principal: Principal, work: Parameters<typeof withTenant<T>>[2]): Promise<T> {
+  private context(principal: Principal) {
     if (!can(principal, 'case.view_own') && !can(principal, 'case.view_all'))
       throw new ForbiddenException({ error: 'forbidden' });
-    return withTenant(
-      this.deps.pool,
-      { organizationId: principal.organizationId, userId: principal.userId },
-      work,
-    );
+    return { organizationId: principal.organizationId, userId: principal.userId };
+  }
+
+  private run<T>(principal: Principal, work: Parameters<typeof withTenant<T>>[2]): Promise<T> {
+    return withTenant(this.deps.pool, this.context(principal), work);
   }
 
   private actor(principal: Principal): CaseActor {
@@ -128,6 +133,32 @@ export class CasesController {
     @Param('casePartyId') casePartyId: string,
   ) {
     await this.run(principal, (c) => removeCaseParty(c, id, casePartyId));
+  }
+
+  @Get('cases/:id/screenings')
+  screenings(@CurrentPrincipal() principal: Principal, @Param('id') id: string) {
+    return this.run(principal, (c) => listScreenings(c, id));
+  }
+
+  @Post('cases/:id/screenings')
+  screen(@CurrentPrincipal() principal: Principal, @Param('id') id: string, @Body() body: unknown) {
+    return runScreening(
+      this.deps.pool,
+      this.context(principal),
+      this.screening,
+      id,
+      (body ?? {}) as never,
+    );
+  }
+
+  @Post('cases/:id/screening-matches/:matchId/review')
+  review(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id') id: string,
+    @Param('matchId') matchId: string,
+    @Body() body: unknown,
+  ) {
+    return this.run(principal, (c) => reviewMatch(c, id, matchId, body as never));
   }
 
   @Get('parties')

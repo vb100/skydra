@@ -92,6 +92,24 @@ Web aplikacija `/api` užklausas per Vite proxy nukreipia į API. Sveikatos pati
   - Pašalinta iš bylos šalis lieka istorijoje.
   - Sudėtiniai išoriniai raktai neleidžia susieti kitos organizacijos bylos ir šalies.
 
+## Patikros: sankcijos, PEP, neigiama informacija
+
+- **Tiekėjai:**
+  - Visi tiekėjai jungiami per `ScreeningProvider` sąsają (`SCREENING_PROVIDER`).
+  - `MOCK` (lokaliai ir demo) imituoja rezultatus. Pavardė su „Sankcij“ grąžina sankcijas, „Politik“ – PEP, „Artimas“ – PEP artimą asmenį, „Skandal“ – neigiamą informaciją; kitais atvejais sutapimų nėra.
+  - Prod aplinkoje `MOCK` uždraustas. `ONDATO` ir `MANUAL` kol kas aiškiai atsisako veikti.
+- **Ką siunčiame tiekėjui:** vardą, gimimo datą ir šalis. Asmens kodo – niekada.
+- **Patikros eiga:**
+  - Tiekėjas kviečiamas ne DB transakcijos metu, o rezultatai išsaugomi vienoje transakcijoje kartu su auditu.
+  - Nepavykusi patikra irgi užfiksuojama (`FAILED`).
+- **Įrodymai:** užbaigtos patikros ir rasti sutapimai nebekeičiami ir netrinami.
+- **Sutapimų vertinimas:** brokeris kiekvieną sutapimą įvertina vieną kartą – „klaidingas“ arba „patvirtintas“ – ir privalo nurodyti pagrindimą (bent 10 simbolių).
+- **Bylos atitikties būseną** skaičiuoja tik `app.refresh_case_compliance`; programa jos tiesiogiai nustatyti negali.
+  - `BLOCKED` – patvirtintos sankcijos.
+  - `REVIEW_REQUIRED` – yra neįvertintas sutapimas arba patvirtintas PEP ar neigiama informacija.
+  - `COMPLETED` – visos šalys patikrintos be atvirų sutapimų, o ten, kur CDD atliekame patys, jis užbaigtas.
+  - Kitais atvejais būsena yra `IN_PROGRESS`, o `NOT_STARTED` – kai AML netaikoma arba bylai dar nepridėta šalių.
+
 ## Patikros (tos pačios kaip CI)
 
 ```bash

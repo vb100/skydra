@@ -353,6 +353,16 @@ describe('HTTP API: authentication, CSRF and guards', () => {
       });
       expect(activate.statusCode).toBe(422);
 
+      // Screening with the simulated provider; CDD is not finished yet.
+      const screened = await call('POST', `/api/cases/${id}/screenings`, { cookie: broker1 });
+      expect(screened.statusCode).toBe(201);
+      expect(screened.json().complianceStatus).toBe('IN_PROGRESS');
+      const checks = (await call('GET', `/api/cases/${id}/screenings`, { cookie: broker1 })).json();
+      expect(checks).toMatchObject([{ provider: 'MOCK', status: 'COMPLETED', matchCount: 0 }]);
+      expect(
+        (await call('POST', `/api/cases/${id}/screenings`, { cookie: broker2 })).statusCode,
+      ).toBe(404);
+
       // Another broker's case does not exist for broker 2.
       expect((await call('GET', `/api/cases/${id}`, { cookie: broker2 })).statusCode).toBe(404);
       expect((await call('GET', '/api/cases', { cookie: broker2 })).json()).toEqual([]);

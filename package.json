@@ -14,7 +14,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "db:up": "docker compose -f infra/docker/compose.yaml up -d --wait",
-    "db:down": "docker compose -f infra/docker/compose.yaml down"
+    "db:down": "docker compose -f infra/docker/compose.yaml down",
+    "test:int": "pnpm --filter @skydra/shared build && pnpm --filter @skydra/api test:int",
+    "db:migrate": "pnpm --filter @skydra/api db:migrate"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

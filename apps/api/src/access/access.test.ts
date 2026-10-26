@@ -77,6 +77,11 @@ describe('access policy', () => {
     expect(can(p, 'audit.view')).toBe(true);
   });
 
+  it('lets approvers and AML officers see the cases they act on', () => {
+    expect(can(principal(['BROKER'], ['APPROVER']), 'case.view_all')).toBe(true);
+    expect(can(principal(['BROKER'], ['AML_OFFICER']), 'case.view_all')).toBe(true);
+  });
+
   it('gives a solo broker the full workflow without case assignment', () => {
     const individual = effectiveEntitlements('INDIVIDUAL', [], { maxUsers: 1 }, {});
     const solo = principal(['ORG_ADMIN', 'BROKER'], ['AML_OFFICER', 'APPROVER'], individual);

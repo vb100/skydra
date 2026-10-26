@@ -38,9 +38,11 @@ export function HomePage({ me }: { me: Me }) {
         </section>
       )}
       <nav className="stack">
-        {active && (caseWorker(active.roles) || active.permissions.includes('CASE_VIEW_ALL')) && (
-          <Link to="/cases">{t('cases.link')}</Link>
-        )}
+        {active &&
+          (caseWorker(active.roles) ||
+            active.permissions.some((p) =>
+              ['CASE_VIEW_ALL', 'APPROVER', 'AML_OFFICER'].includes(p),
+            )) && <Link to="/cases">{t('cases.link')}</Link>}
         {me.memberships.length > 1 && (
           <Link to="/select-organization">{t('organizations.change')}</Link>
         )}

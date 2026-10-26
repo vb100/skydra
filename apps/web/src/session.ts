@@ -22,12 +22,35 @@ export function useRefreshMe() {
   return () => client.invalidateQueries({ queryKey: ['me'] });
 }
 
+/** Known business-rule refusals from the API (English, from the database) → LT texts. */
+const RULES: [RegExp, string][] = [
+  [/purpose, acting on own behalf/, 'cddAnswers'],
+  [/identity has not been verified/, 'cddIdentity'],
+  [/before moving to the contract/, 'contract'],
+  [/document has expired/, 'documentExpired'],
+  [/someone other than the responsible/, 'fourEyes'],
+  [/approver permission/, 'approverOnly'],
+  [/only the AML officer/, 'amlOfficerOnly'],
+  [/already been (decided|resolved|reviewed)/, 'alreadyDecided'],
+  [/approval request is already open/, 'approvalOpen'],
+  [/does not need an approval/, 'noApprovalNeeded'],
+  [/activate them first/, 'amlNotApplicable'],
+  [/add the parties/, 'addParties'],
+  [/already has this role/, 'duplicateRole'],
+  [/not available yet/, 'providerUnavailable'],
+  [/assign a case to another member/, 'assign'],
+];
+
 /** Translated message for an API error code. */
 export function useErrorMessage() {
   const { t } = useTranslation();
   return (error: unknown) => {
     if (error instanceof ApiError) {
       if (error.code === 'forbidden' && error.detail) return error.detail;
+      if (error.code === 'rule_violation' && error.detail) {
+        const rule = RULES.find(([pattern]) => pattern.test(error.detail!));
+        if (rule) return t(`rules.${rule[1]}`);
+      }
       return t(`errors.${error.code}`, { defaultValue: t('errors.unknown') });
     }
     return t('errors.unknown');

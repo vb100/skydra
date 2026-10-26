@@ -363,6 +363,34 @@ describe('HTTP API: authentication, CSRF and guards', () => {
         (await call('POST', `/api/cases/${id}/screenings`, { cookie: broker2 })).statusCode,
       ).toBe(404);
 
+      // What is missing, identity seen in person, and the list shrinks.
+      const missing = async () =>
+        (await call('GET', `/api/cases/${id}/checklist`, { cookie: broker1 }))
+          .json()
+          .filter((e: { ok: boolean }) => !e.ok)
+          .map((e: { item: string }) => e.item);
+      expect(await missing()).toEqual(['IDENTITY_VERIFIED', 'CDD_COMPLETED']);
+      const casePartyId = detail.json().parties[0].id;
+      const verified = await call('POST', `/api/cases/${id}/identity-verifications/in-person`, {
+        cookie: broker1,
+        body: {
+          casePartyId,
+          documentType: 'PASSPORT',
+          documentNumber: 'LT9876543',
+          documentCountry: 'LT',
+        },
+      });
+      expect(verified.statusCode).toBe(201);
+      expect(await missing()).toEqual(['CDD_COMPLETED']);
+
+      // Deciding approvals needs the approver permission.
+      const decide = await call(
+        'POST',
+        `/api/cases/${id}/approvals/00000000-0000-4000-8000-000000000000/decide`,
+        { cookie: broker1, body: { decision: 'APPROVED', justification: 'Bandau patvirtinti' } },
+      );
+      expect(decide.statusCode).toBe(403);
+
       // Another broker's case does not exist for broker 2.
       expect((await call('GET', `/api/cases/${id}`, { cookie: broker2 })).statusCode).toBe(404);
       expect((await call('GET', '/api/cases', { cookie: broker2 })).json()).toEqual([]);

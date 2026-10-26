@@ -110,6 +110,32 @@ Web aplikacija `/api` užklausas per Vite proxy nukreipia į API. Sveikatos pati
   - `COMPLETED` – visos šalys patikrintos be atvirų sutapimų, o ten, kur CDD atliekame patys, jis užbaigtas.
   - Kitais atvejais būsena yra `IN_PROGRESS`, o `NOT_STARTED` – kai AML netaikoma arba bylai dar nepridėta šalių.
 
+## KYC užbaigimas: tapatybė, patvirtinimai, eskalavimai
+
+- **Kontrolinis sąrašas.** `app.case_checklist` parodo, ko bylai trūksta. Iš jo skaičiuojama ir atitikties būsena, todėl abu visada sutampa. Sąrašo punktai:
+  - šalys pridėtos;
+  - kiekviena šalis patikrinta;
+  - sutapimai įvertinti;
+  - tapatybė patikrinta (fiziniams asmenims, kai CDD atliekame patys);
+  - CDD užbaigtas;
+  - nėra patvirtintų sankcijų;
+  - jei reikia, gautas EDD patvirtinimas, ir jis neatmestas;
+  - nėra neišspręstų eskalavimų.
+- **Tapatybės patikra:**
+  - **gyvai:** brokeris įveda dokumento duomenis, dokumento numeris šifruojamas, pasibaigęs dokumentas atmetamas;
+  - **nuotoliu:** per tiekėją. `MOCK` leidžia imituoti rezultatą „patvirtinta“ arba „atmesta“; Ondato bus prijungtas vėliau.
+  - Užbaigta patikra nebekeičiama.
+- **CDD užbaigtu pažymėti negalima,** kol neužpildytas sandorio tikslas ir pareiškimai (veikia savo vardu, PEP) ir kol nepatikrinta fizinio asmens tapatybė.
+- **Pereiti į sutarties ar užbaigimo etapą** galima tik tada, kai atitikties būsena yra `COMPLETED` (taikoma, kai AML procedūros galioja).
+- **EDD patvirtinimas.** Jo reikia, kai patvirtintas PEP arba neigiama informacija.
+  - Sprendžia narys su teise APPROVER.
+  - Sprendžiantis negali būti nei atsakingas brokeris, nei prašymo autorius. Išimtis – vieno nario organizacija (solo).
+  - Atmestas patvirtinimas sustabdo bylą.
+- **Eskalavimas AML atsakingam asmeniui.**
+  - Pranešti gali bet kuris bylą matantis narys. Kol pranešimas neišspręstas, byla sustabdyta.
+  - Išspręsti gali tik AML_OFFICER: „įtarimas nepasitvirtino“ arba „pranešta FNTT“. Pastaruoju atveju byla lieka sustabdyta.
+- **Visų bylų matomumas.** Tvirtintojai ir AML atsakingi asmenys mato visas organizacijos bylas, nes priima sprendimus dėl kitų narių bylų.
+
 ## Patikros (tos pačios kaip CI)
 
 ```bash

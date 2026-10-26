@@ -1,4 +1,4 @@
-import { CaseStage, CddStatus } from '@skydra/shared';
+import { CaseStage, type HealthResponse } from '@skydra/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -7,10 +7,14 @@ import { api } from '../../api';
 import { useErrorMessage } from '../../session';
 import { ErrorText, Field, Page, Select } from '../../ui';
 import { AddPartyForm } from './AddPartyForm';
+import { ChecklistPanel } from './ChecklistPanel';
+import { DecisionsPanel } from './DecisionsPanel';
+import { PartyKycPanel } from './PartyKycPanel';
 import { ScreeningPanel } from './ScreeningPanel';
-import type { CaseDetail } from './types';
+import type { CaseAbilities, CaseDetail, IdentityVerification } from './types';
 
-export function CaseDetailPage({ canAssign }: { canAssign: boolean }) {
+export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
+  const { canAssign } = abilities;
   const { t, i18n } = useTranslation();
   const { id = '' } = useParams();
   const queryClient = useQueryClient();
@@ -25,6 +29,15 @@ export function CaseDetailPage({ canAssign }: { canAssign: boolean }) {
     queryFn: () => api<{ userId: string; fullName: string }[]>('GET', '/cases/assignees'),
     enabled: canAssign,
   });
+  const verifications = useQuery({
+    queryKey: ['identity', id],
+    queryFn: () => api<IdentityVerification[]>('GET', `/cases/${id}/identity-verifications`),
+  });
+  const health = useQuery({
+    queryKey: ['health'],
+    queryFn: () => api<HealthResponse>('GET', '/health'),
+    staleTime: Infinity,
+  });
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -32,7 +45,9 @@ export function CaseDetailPage({ canAssign }: { canAssign: boolean }) {
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ['case', id] }),
       queryClient.invalidateQueries({ queryKey: ['cases'] }),
-      queryClient.invalidateQueries({ queryKey: ['screenings', id] }),
+      ...['screenings', 'checklist', 'identity', 'decisions'].map((key) =>
+        queryClient.invalidateQueries({ queryKey: [key, id] }),
+      ),
     ]);
 
   async function run(action: () => Promise<unknown>) {
@@ -55,6 +70,7 @@ export function CaseDetailPage({ canAssign }: { canAssign: boolean }) {
     );
   if (!c) return <Page title={t('common.loading')}>{null}</Page>;
 
+  const amlApplies = c.amlApplicability !== 'NOT_APPLICABLE_RENT_THRESHOLD';
   const money = (v: string | null) =>
     v === null ? '' : `${Number(v).toLocaleString(i18n.language)} EUR`;
 
@@ -140,6 +156,8 @@ export function CaseDetailPage({ canAssign }: { canAssign: boolean }) {
         </form>
       )}
 
+      {amlApplies && <ChecklistPanel caseId={id} parties={c.parties} />}
+
       <h2>{t('cases.parties')}</h2>
       {c.parties.length === 0 && <p className="muted">{t('parties.none')}</p>}
       <ul className="list">
@@ -161,26 +179,18 @@ export function CaseDetailPage({ canAssign }: { canAssign: boolean }) {
               {t('parties.cddScope')}: {t(`parties.cddScopes.${cp.cddScope}`)}
               {cp.reliance && ` (${cp.reliance.entityName})`}
             </span>
-            {cp.kyc.purpose && (
-              <span className="muted">
-                {t('parties.kycPurpose')}: {cp.kyc.purpose}
-              </span>
+            <span>
+              {t('parties.cddStatus')}: {t(`parties.cddStatuses.${cp.cddStatus}`)}
+            </span>
+            {amlApplies && (
+              <PartyKycPanel
+                caseId={id}
+                caseParty={cp}
+                verifications={(verifications.data ?? []).filter((v) => v.casePartyId === cp.id)}
+                simulated={!!health.data?.simulatedProviders}
+                run={run}
+              />
             )}
-            {cp.kyc.sourceOfFunds && (
-              <span className="muted">
-                {t('parties.kycSourceOfFunds')}: {cp.kyc.sourceOfFunds}
-              </span>
-            )}
-            <Select
-              label={t('parties.cddStatus')}
-              name={`cddStatus-${cp.id}`}
-              options={CddStatus.options}
-              optionLabel={(v) => t(`parties.cddStatuses.${v}`)}
-              value={cp.cddStatus}
-              onChange={(cddStatus) =>
-                void run(() => api('POST', `/cases/${id}/parties/${cp.id}`, { cddStatus }))
-              }
-            />
             <div className="actions">
               <button
                 type="button"
@@ -194,8 +204,11 @@ export function CaseDetailPage({ canAssign }: { canAssign: boolean }) {
         ))}
       </ul>
 
-      {c.amlApplicability !== 'NOT_APPLICABLE_RENT_THRESHOLD' && (
-        <ScreeningPanel caseId={id} parties={c.parties} run={run} />
+      {amlApplies && (
+        <>
+          <ScreeningPanel caseId={id} parties={c.parties} run={run} />
+          <DecisionsPanel caseId={id} abilities={abilities} run={run} />
+        </>
       )}
 
       <h2>{t('parties.add')}</h2>

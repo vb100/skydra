@@ -10,6 +10,12 @@ import { DatabaseModule, PG_POOL } from './database/database.module';
 import { HealthController } from './health/health.controller';
 import { OrganizationGuard, PlatformAdminGuard, SessionGuard } from './http/session';
 import { OrganizationController } from './organization/organization.controller';
+import {
+  IDENTITY_PROVIDER,
+  MockIdentityProvider,
+  UnavailableIdentityProvider,
+} from './kyc/identity-provider';
+import { KycController } from './kyc/kyc.controller';
 import { PlatformController } from './platform/platform.controller';
 import { MockScreeningProvider } from './screening/mock-provider';
 import { SCREENING_PROVIDER, UnavailableScreeningProvider } from './screening/provider';
@@ -26,6 +32,7 @@ export class AppModule {
         PlatformController,
         OrganizationController,
         CasesController,
+        KycController,
       ],
       providers: [
         {
@@ -43,6 +50,14 @@ export class AppModule {
             config.providers.screening === 'MOCK'
               ? new MockScreeningProvider()
               : new UnavailableScreeningProvider(config.providers.screening),
+        },
+        {
+          // In-person verification needs no provider; remote verification uses this one.
+          provide: IDENTITY_PROVIDER,
+          useValue:
+            config.providers.identity === 'MOCK'
+              ? new MockIdentityProvider()
+              : new UnavailableIdentityProvider(config.providers.identity),
         },
         SessionGuard,
         PlatformAdminGuard,

@@ -11,6 +11,7 @@ import {
   updateCaseParty,
 } from '../cases/cases';
 import { LOCAL_DEVELOPMENT_KEY } from '../config/env';
+import { recordInPersonVerification } from '../kyc/identity';
 import { migrate } from '../database/migrator';
 import { type TenantContext, withTenant } from '../database/tenant';
 import { createTestDatabase, MIGRATIONS_DIR, type TestDatabase } from '../database/test-database';
@@ -61,6 +62,24 @@ describe('screening', () => {
       }),
     );
     return { caseId: id, casePartyId };
+  }
+
+  /** Identity seen in person, KYC answers given, CDD marked completed. */
+  async function completeCdd(caseId: string, casePartyId: string, ctx = broker) {
+    await as(ctx, (c) =>
+      recordInPersonVerification(c, keys, caseId, {
+        casePartyId,
+        documentType: 'ID_CARD',
+        documentNumber: 'AB1234567',
+        documentCountry: 'LT',
+      }),
+    );
+    await as(ctx, (c) =>
+      updateCaseParty(c, caseId, casePartyId, {
+        cddStatus: 'COMPLETED',
+        kyc: { version: 1, purpose: 'Būstas', actsOnOwnBehalf: true, pepSelfDeclared: false },
+      }),
+    );
   }
 
   const status = async (caseId: string, ctx = broker) =>
@@ -120,13 +139,13 @@ describe('screening', () => {
     // The personal code is never sent to the provider or stored with the check.
     expect(JSON.stringify(check!.subject)).not.toMatch(/\d{11}/);
 
-    await as(broker, (c) => updateCaseParty(c, caseId, casePartyId, { cddStatus: 'COMPLETED' }));
+    await completeCdd(caseId, casePartyId);
     expect(await status(caseId)).toBe('COMPLETED');
   });
 
   it('a potential match needs a justified review; a false positive clears it', async () => {
     const { caseId, casePartyId } = await caseWith('Petras Politikas');
-    await as(broker, (c) => updateCaseParty(c, caseId, casePartyId, { cddStatus: 'COMPLETED' }));
+    await completeCdd(caseId, casePartyId);
     expect((await screen(caseId)).complianceStatus).toBe('REVIEW_REQUIRED');
 
     const [check] = await as(broker, (c) => listScreenings(c, caseId));
@@ -188,9 +207,7 @@ describe('screening', () => {
     expect(blocked.complianceStatus).toBe('BLOCKED');
 
     const pep = await caseWith('Ona Politikė');
-    await as(broker, (c) =>
-      updateCaseParty(c, pep.caseId, pep.casePartyId, { cddStatus: 'COMPLETED' }),
-    );
+    await completeCdd(pep.caseId, pep.casePartyId);
     await screen(pep.caseId);
     const [p] = await as(broker, (c) => listScreenings(c, pep.caseId));
     const confirmed = await as(broker, (c) =>

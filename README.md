@@ -23,19 +23,24 @@ pnpm install
 cp .env.example apps/api/.env   # arba eksportuokite kintamuosius
 pnpm db:up                      # PostgreSQL (:5433) ir GCS emuliatorius
 pnpm db:migrate                 # migracijos (schemos savininko teisėmis)
+pnpm db:seed:platform-admin --email admin@skydra.local --name "Vardas Pavardė"
 pnpm dev                        # API :3000, web :5173
 ```
 
 Web aplikacija `/api` užklausas per Vite proxy nukreipia į API. Sveikatos patikra: `http://localhost:3000/api/health`.
 
-> **Jei lokali bazė buvo sukurta prieš atsirandant `infra/docker/postgres-init/`**, naudotojo `skydra_app` joje nėra. Bazę perkurkite: `docker compose -f infra/docker/compose.yaml down -v && pnpm db:up && pnpm db:migrate`. **Dėmesio:** `down -v` ištrina visus lokalios bazės duomenis.
+> **Jei lokali bazė sukurta anksčiau nei dabartinis `infra/docker/postgres-init/01-roles.sql`**, joje trūksta rolių `skydra_migrator` ir (arba) `skydra_app`. Bazę perkurkite: `docker compose -f infra/docker/compose.yaml down -v && pnpm db:up && pnpm db:migrate`. **Dėmesio:** `down -v` ištrina visus lokalios bazės duomenis.
 
 ## Duomenų bazė
 
 - **Migracijos:** SQL failai `apps/api/migrations/NNNN_pavadinimas.sql`, vykdomi eilės tvarka, kiekvienas savo transakcijoje. Pritaikytos migracijos keisti negalima: jei pasikeitė kontrolinė suma, migracijų vykdytojas atsisako tęsti. Pataisos daromos nauja migracija.
 - **Dvi DB rolės:**
-  - `MIGRATION_DATABASE_URL` – schemos savininkas, naudojamas tik migracijoms.
+  - `MIGRATION_DATABASE_URL` – `skydra_migrator`, schemos savininkas. Jis nėra superuser, kaip ir Cloud SQL, todėl RLS lokaliai ir testuose veikia taip pat kaip produkcijoje. Naudojamas tik migracijoms ir pradiniam administratoriaus paruošimui.
   - `DATABASE_URL` – `skydra_app`, kuriuo jungiasi API. Šis naudotojas lentelių neturi, todėl negali keisti schemos ar išjungti RLS.
+- **Organizacijos ir prieigos:** `User ↔ Membership ↔ Organization → Plan`.
+  - **Rolės** (`ORG_ADMIN`, `MANAGER`, `BROKER`) ir **teisės** (`AML_OFFICER`, `APPROVER`, `CASE_VIEW_ALL`) priskiriamos narystei.
+  - **Prieigos sprendimai** priimami tik funkcijoje `can()` (`apps/api/src/access/policy.ts`).
+  - **Organizacijas kuria tik Platform Admin**, per DB funkciją `app.platform_create_organization`. Funkcija pati patikrina, ar kviečiantysis yra Platform Admin, todėl API niekada neprireikia DB naudotojo, galinčio apeiti RLS.
 - **Organizacijų izoliacija (RLS):** visos organizacijos duomenų užklausos vykdomos per `withTenant()` (`apps/api/src/database/tenant.ts`). Ši funkcija transakcijos pradžioje nustato organizacijos kontekstą. Jei konteksto nėra, užklausa negrąžina jokių eilučių.
 - **Naujoms organizacijos lentelėms** reikia `organization_id` stulpelio ir iškvietimo `SELECT app.enable_tenant_isolation('lentele');` migracijoje.
 - **Audit trail.** Kiekvienas reikšmingas veiksmas įrašomas su `recordAudit(client, {...})` (`apps/api/src/audit/audit.ts`), naudojant tą patį `withTenant` klientą. Taip įvykis išsaugomas tada ir tik tada, kai išsaugomas pats pakeitimas.

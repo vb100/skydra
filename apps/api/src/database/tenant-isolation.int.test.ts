@@ -15,10 +15,19 @@ describe('tenant isolation (row-level security)', () => {
   beforeAll(async () => {
     db = await createTestDatabase();
     await migrate(db.owner, MIGRATIONS_DIR);
-    await db.owner.query(
+    await db.superuser.query(
       "INSERT INTO organizations (id, name) VALUES ($1, 'Agentūra A'), ($2, 'Agentūra B')",
       [orgA, orgB],
     );
+    // A generic tenant table the runtime role may write, so the write tests exercise row-level
+    // security itself rather than table privileges (organizations are not writable at all).
+    await db.owner.query(`
+      CREATE TABLE notes (
+        id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+        organization_id uuid NOT NULL DEFAULT app.current_organization_id(),
+        body text NOT NULL
+      );
+      SELECT app.enable_tenant_isolation('notes');`);
     app = db.appPool();
   });
 
@@ -52,10 +61,20 @@ describe('tenant isolation (row-level security)', () => {
     expect(count).toBe(0);
   });
 
+  it('writes new rows into the current organization by default', async () => {
+    const ownerOrg = await withTenant(app, { organizationId: orgA, userId: user }, async (c) => {
+      const { rows } = await c.query<{ organization_id: string }>(
+        "INSERT INTO notes (body) VALUES ('a') RETURNING organization_id",
+      );
+      return rows[0]?.organization_id;
+    });
+    expect(ownerOrg).toBe(orgA);
+  });
+
   it('rejects writing a row that belongs to another organization', async () => {
     await expect(
       withTenant(app, { organizationId: orgA, userId: user }, (c) =>
-        c.query("INSERT INTO organizations (id, name) VALUES ($1, 'Svetima')", [randomUUID()]),
+        c.query("INSERT INTO notes (organization_id, body) VALUES ($1, 'svetima')", [orgB]),
       ),
     ).rejects.toThrow(/row-level security/);
   });
@@ -63,7 +82,7 @@ describe('tenant isolation (row-level security)', () => {
   it('rejects moving a row out of the current organization', async () => {
     await expect(
       withTenant(app, { organizationId: orgA, userId: user }, (c) =>
-        c.query('UPDATE organizations SET id = $1 WHERE id = $2', [randomUUID(), orgA]),
+        c.query('UPDATE notes SET organization_id = $1', [orgB]),
       ),
     ).rejects.toThrow(/row-level security/);
   });
@@ -82,7 +101,7 @@ describe('tenant isolation (row-level security)', () => {
         throw new Error('boom');
       }),
     ).rejects.toThrow('boom');
-    const { rows } = await db.owner.query<{ name: string }>(
+    const { rows } = await db.superuser.query<{ name: string }>(
       'SELECT name FROM organizations WHERE id = $1',
       [orgA],
     );

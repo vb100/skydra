@@ -10,7 +10,8 @@
     "test": "vitest run",
     "test:int": "vitest run --config vitest.int.config.mts",
     "db:migrate": "tsx src/database/migrate.ts",
-    "db:migrate:dist": "node dist/database/migrate.js"
+    "db:migrate:dist": "node dist/database/migrate.js",
+    "db:seed:platform-admin": "tsx src/database/seed-platform-admin.ts"
   },
   "dependencies": {
     "@nestjs/common": "^12.1.3",

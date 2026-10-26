@@ -73,6 +73,25 @@ Web aplikacija `/api` užklausas per Vite proxy nukreipia į API. Sveikatos pati
   - Organizacijos administratorius negali atkurti slaptažodžio naudotojui, kuris priklauso ir kitai organizacijai. Tai gali tik Platform Admin.
 - **El. laiškų MVP nėra:** nuorodas administratorius perduoda pats, saugiu kanalu.
 
+## AML bylos ir šalys
+
+- **Byla = vienas sandoris** su neribotu šalių skaičiumi; fizinis ar juridinis asmuo yra šalies, ne bylos savybė.
+- **Kas mato bylas** (tikrina ir API, ir DB eilučių politika `case_visibility`):
+  - MANAGER arba teisė CASE_VIEW_ALL – visas organizacijos bylas;
+  - BROKER – bylas, už kurias atsakingas arba kurias sukūrė;
+  - vien ORG_ADMIN – jokių bylų.
+- **Bylą kitam priskirti** gali tik vadovas, kai planas turi TASK_ASSIGNMENT. DB leidžia tai tik matančiam visas bylas, o atsakingas asmuo turi būti aktyvus brokeris arba vadovas.
+- **AML taikymą nustato DB:** pirkimui–pardavimui procedūros taikomos visada, nuomai – nuo 10 000 EUR/mėn. Žemiau ribos brokeris gali jas pritaikyti savo sprendimu; tam reikia priežasties, o sprendimo atšaukti negalima.
+- **Teisinis režimas** (PPTFPĮ iki 2027-07-10, vėliau AMLR) užfiksuojamas kuriant bylą ir nebekeičiamas.
+- **Asmens kodai:**
+  - šifruojami AES-256-GCM, o paieškai naudojamas HMAC indeksas, susietas su organizacija;
+  - API rodo tik paskutinius 4 skaitmenis;
+  - į audito žurnalą nepatenka.
+- **Šalys:**
+  - Šalis pakartotinai naudojama organizacijos bylose. Kito brokerio kliento brokeris nemato, bet įvedęs tą patį asmens ar įmonės kodą susieja esamą šalį ir dublikatas nesukuriamas.
+  - Pašalinta iš bylos šalis lieka istorijoje.
+  - Sudėtiniai išoriniai raktai neleidžia susieti kitos organizacijos bylos ir šalies.
+
 ## Patikros (tos pačios kaip CI)
 
 ```bash

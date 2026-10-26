@@ -1,0 +1,54 @@
+/** Shapes returned by /api/cases (see apps/api/src/cases). */
+export type CaseSummary = {
+  id: string;
+  reference: string;
+  transactionType: 'SALE' | 'RENT';
+  propertyType: string;
+  propertyAddress: string;
+  stage: string;
+  amlApplicability: 'APPLICABLE' | 'NOT_APPLICABLE_RENT_THRESHOLD' | 'MANUALLY_ACTIVATED';
+  complianceStatus: string;
+  responsibleUserId: string;
+  responsibleName: string;
+  partyCount: number;
+  updatedAt: string;
+};
+
+export type Party = {
+  id: string;
+  partyType: 'NATURAL' | 'LEGAL';
+  displayName: string;
+  birthDate: string | null;
+  personalCodeMasked: string | null;
+  citizenships: string[];
+  companyCode: string | null;
+  registrationCountry: string | null;
+};
+
+export type CaseParty = {
+  id: string;
+  role: string;
+  isOurClient: boolean;
+  representedByOtherBroker: boolean;
+  cddScope: 'FULL' | 'RELIANCE';
+  reliance: { entityName: string; entityCode?: string | null } | null;
+  cddStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+  kyc: {
+    purpose?: string | null;
+    sourceOfFunds?: string | null;
+    actsOnOwnBehalf?: boolean | null;
+    pepSelfDeclared?: boolean | null;
+  };
+  party: Party;
+};
+
+export type CaseDetail = CaseSummary & {
+  transactionValue: string | null;
+  monthlyRent: string | null;
+  paymentMethod: string | null;
+  paymentMethodOther: string | null;
+  offerAcceptedAt: string | null;
+  amlActivationReason: string | null;
+  legalRegime: 'PPTFPI' | 'AMLR';
+  parties: CaseParty[];
+};

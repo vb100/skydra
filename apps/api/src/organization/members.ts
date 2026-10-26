@@ -2,6 +2,7 @@ import { Email, Permission, Role } from '@skydra/shared';
 import type { PoolClient } from 'pg';
 import { z } from 'zod';
 import { recordAudit } from '../audit/audit';
+import { RuleError } from '../domain-errors';
 
 export const AddMemberInput = z.object({
   email: Email,
@@ -30,7 +31,7 @@ export type Member = {
   status: 'ACTIVE' | 'DISABLED';
 };
 
-export class MemberError extends Error {
+export class MemberError extends RuleError {
   override name = 'MemberError';
 }
 

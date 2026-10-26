@@ -2,7 +2,7 @@ import { type ArgumentsHost, Catch, type ExceptionFilter, HttpException } from '
 import type { FastifyReply } from 'fastify';
 import { ZodError } from 'zod';
 import { AuthError, type AuthErrorCode } from '../auth/auth.service';
-import { MemberError } from '../organization/members';
+import { NotFoundError, RuleError } from '../domain-errors';
 
 const STATUS: Record<AuthErrorCode, number> = {
   invalid_credentials: 401,
@@ -29,7 +29,11 @@ export class HttpErrorFilter implements ExceptionFilter {
       void reply.status(STATUS[error.code]).send(body);
       return;
     }
-    if (error instanceof MemberError) {
+    if (error instanceof NotFoundError) {
+      void reply.status(404).send({ error: 'not_found' });
+      return;
+    }
+    if (error instanceof RuleError) {
       // Business-rule refusals (seat limit, last administrator…) written for the user.
       void reply.status(422).send({ error: 'rule_violation', message: error.message });
       return;

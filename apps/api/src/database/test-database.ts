@@ -42,6 +42,17 @@ export async function createTestDatabase(): Promise<TestDatabase> {
     },
     drop: async () => {
       await Promise.all(pools.map((p) => p.end()));
+      // pool.end() resolves before the server has closed every backend. Dropping with FORCE at
+      // that moment kills sessions that are already shutting down and surfaces as unhandled
+      // "terminating connection" errors, so wait for the server to see them gone first.
+      for (let attempt = 0; attempt < 100; attempt++) {
+        const { rows } = await admin.query<{ n: number }>(
+          'SELECT count(*)::int AS n FROM pg_stat_activity WHERE datname = $1',
+          [name],
+        );
+        if (rows[0]?.n === 0) break;
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
       await admin.query(`DROP DATABASE ${name} WITH (FORCE)`);
       await admin.end();
     },

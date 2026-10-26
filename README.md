@@ -38,6 +38,10 @@ Web aplikacija `/api` užklausas per Vite proxy nukreipia į API. Sveikatos pati
   - `DATABASE_URL` – `skydra_app`, kuriuo jungiasi API. Šis naudotojas lentelių neturi, todėl negali keisti schemos ar išjungti RLS.
 - **Organizacijų izoliacija (RLS):** visos organizacijos duomenų užklausos vykdomos per `withTenant()` (`apps/api/src/database/tenant.ts`). Ši funkcija transakcijos pradžioje nustato organizacijos kontekstą. Jei konteksto nėra, užklausa negrąžina jokių eilučių.
 - **Naujoms organizacijos lentelėms** reikia `organization_id` stulpelio ir iškvietimo `SELECT app.enable_tenant_isolation('lentele');` migracijoje.
+- **Audit trail.** Kiekvienas reikšmingas veiksmas įrašomas su `recordAudit(client, {...})` (`apps/api/src/audit/audit.ts`), naudojant tą patį `withTenant` klientą. Taip įvykis išsaugomas tada ir tik tada, kai išsaugomas pats pakeitimas.
+  - **Ką nustato DB:** laiką, eilės numerį, veikėją ir maišų grandinę. Aplikacija šių reikšmių pasirinkti negali.
+  - **Ką draudžia DB:** `UPDATE`, `DELETE` ir `TRUNCATE` blokuoja trigeriai, net lentelės savininkui.
+  - **Vientisumo patikra:** `verifyAuditChain()` aptinka pakeistus, iš vidurio ištrintus ir nuo grandinės galo pašalintus įrašus.
 
 ## Patikros (tos pačios kaip CI)
 

@@ -42,6 +42,9 @@ export function HomePage({ me }: { me: Me }) {
         {me.memberships.length > 1 && (
           <Link to="/select-organization">{t('organizations.change')}</Link>
         )}
+        {active && (active.roles.includes('ORG_ADMIN') || active.roles.includes('MANAGER')) && (
+          <Link to="/members">{t('members.link')}</Link>
+        )}
         {me.isPlatformAdmin && <Link to="/platform">{t('home.platform')}</Link>}
         <button type="button" className="secondary" onClick={() => void logout()}>
           {t('common.logout')}

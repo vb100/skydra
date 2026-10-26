@@ -5,6 +5,7 @@ import { api } from './api';
 import { ActivatePage } from './pages/ActivatePage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
+import { MembersPage } from './pages/MembersPage';
 import { PlatformPage } from './pages/PlatformPage';
 import { SecondFactorPage } from './pages/SecondFactorPage';
 import { SelectOrganizationPage } from './pages/SelectOrganizationPage';
@@ -31,9 +32,20 @@ function SignedIn() {
 
   if (!data || single) return <Loading />;
   const needsChoice = !data.activeOrganizationId && data.memberships.length > 1;
+  const active = data.memberships.find((m) => m.organizationId === data.activeOrganizationId);
   return (
     <Routes>
       <Route path="/select-organization" element={<SelectOrganizationPage />} />
+      <Route
+        path="/members"
+        element={
+          active && (active.roles.includes('ORG_ADMIN') || active.roles.includes('MANAGER')) ? (
+            <MembersPage canManage={active.roles.includes('ORG_ADMIN')} />
+          ) : (
+            <Navigate to="/" />
+          )
+        }
+      />
       <Route
         path="/platform"
         element={data.isPlatformAdmin ? <PlatformPage /> : <Navigate to="/" />}

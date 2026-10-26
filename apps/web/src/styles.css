@@ -154,3 +154,27 @@ code {
 .wrap {
   word-break: break-all;
 }
+.check {
+  flex-direction: row;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+}
+.check input {
+  min-height: auto;
+  width: 1.2rem;
+  height: 1.2rem;
+}
+fieldset {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  margin: 0;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}

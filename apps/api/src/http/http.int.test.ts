@@ -215,6 +215,62 @@ describe('HTTP API: authentication, CSRF and guards', () => {
       expect((await call('GET', '/api/auth/me', { cookie })).statusCode).toBe(401);
     });
 
+    it('lets an organization admin manage members through the API', async () => {
+      const created = (
+        await call('POST', '/api/platform/organizations', {
+          cookie: adminCookie,
+          body: {
+            name: 'Solo',
+            planCode: 'INDIVIDUAL',
+            adminEmail: 'solo@x.lt',
+            adminFullName: 'Solo',
+          },
+        })
+      ).json();
+      const token = String(created.inviteUrl).split('#token=')[1]!;
+      const cookie = await signInThroughApi('solo@x.lt', await activateThroughApi(token));
+      await call('POST', '/api/auth/organization', {
+        cookie,
+        body: { organizationId: created.organizationId },
+      });
+
+      // The INDIVIDUAL plan has one seat: the rule is reported, not hidden.
+      const full = await call('POST', '/api/organization/members', {
+        cookie,
+        body: { email: 'helper@x.lt', fullName: 'Helper', roles: ['BROKER'] },
+      });
+      expect(full.statusCode).toBe(422);
+      expect(full.json()).toMatchObject({ error: 'rule_violation' });
+
+      await db.superuser.query(
+        `UPDATE organizations SET entitlement_overrides = '{"maxUsers": 3}' WHERE id = $1`,
+        [created.organizationId],
+      );
+      const added = await call('POST', '/api/organization/members', {
+        cookie,
+        body: { email: 'helper@x.lt', fullName: 'Helper', roles: ['BROKER'] },
+      });
+      expect(added.statusCode).toBe(201);
+      expect(added.json().inviteUrl).toMatch(/#token=/);
+
+      const list = (await call('GET', '/api/organization/members', { cookie })).json();
+      expect(list.map((m: { email: string }) => m.email).sort()).toEqual([
+        'helper@x.lt',
+        'solo@x.lt',
+      ]);
+
+      // The helper (a broker) may not manage members.
+      const helperToken = String(added.json().inviteUrl).split('#token=')[1]!;
+      const helper = await signInThroughApi('helper@x.lt', await activateThroughApi(helperToken));
+      await call('POST', '/api/auth/organization', {
+        cookie: helper,
+        body: { organizationId: created.organizationId },
+      });
+      expect((await call('GET', '/api/organization/members', { cookie: helper })).statusCode).toBe(
+        403,
+      );
+    });
+
     it('lists organizations for the platform admin', async () => {
       const res = await call('GET', '/api/platform/organizations', { cookie: adminCookie });
       expect(res.statusCode).toBe(200);

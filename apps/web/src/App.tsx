@@ -1,14 +1,18 @@
-import { useEffect } from 'react';
+import { type ReactNode, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router';
 import { api } from './api';
 import { ActivatePage } from './pages/ActivatePage';
+import { CaseDetailPage } from './pages/cases/CaseDetailPage';
+import { CasesPage } from './pages/cases/CasesPage';
+import { NewCasePage } from './pages/cases/NewCasePage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
+import { MembersPage } from './pages/MembersPage';
 import { PlatformPage } from './pages/PlatformPage';
 import { SecondFactorPage } from './pages/SecondFactorPage';
 import { SelectOrganizationPage } from './pages/SelectOrganizationPage';
-import { useMe, useRefreshMe } from './session';
+import { caseWorker, useMe, useRefreshMe } from './session';
 import { Page } from './ui';
 
 /** Routes for a signed-in user; decides where to go when no organization is chosen yet. */
@@ -31,9 +35,31 @@ function SignedIn() {
 
   if (!data || single) return <Loading />;
   const needsChoice = !data.activeOrganizationId && data.memberships.length > 1;
+  const active = data.memberships.find((m) => m.organizationId === data.activeOrganizationId);
+  // Mirrors access/policy.ts for navigation only; the API decides.
+  const canCreateCases = !!active && caseWorker(active.roles);
+  const canSeeCases = canCreateCases || !!active?.permissions.includes('CASE_VIEW_ALL');
+  const canAssign = !!active?.roles.includes('MANAGER') && active.planCode !== 'INDIVIDUAL';
+  const cases = (element: ReactNode) => (canSeeCases ? element : <Navigate to="/" />);
   return (
     <Routes>
       <Route path="/select-organization" element={<SelectOrganizationPage />} />
+      <Route path="/cases" element={cases(<CasesPage canCreate={canCreateCases} />)} />
+      <Route
+        path="/cases/new"
+        element={canCreateCases ? <NewCasePage /> : <Navigate to="/cases" />}
+      />
+      <Route path="/cases/:id" element={cases(<CaseDetailPage canAssign={canAssign} />)} />
+      <Route
+        path="/members"
+        element={
+          active && (active.roles.includes('ORG_ADMIN') || active.roles.includes('MANAGER')) ? (
+            <MembersPage canManage={active.roles.includes('ORG_ADMIN')} />
+          ) : (
+            <Navigate to="/" />
+          )
+        }
+      />
       <Route
         path="/platform"
         element={data.isPlatformAdmin ? <PlatformPage /> : <Navigate to="/" />}

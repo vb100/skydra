@@ -73,6 +73,43 @@ Web aplikacija `/api` užklausas per Vite proxy nukreipia į API. Sveikatos pati
   - Organizacijos administratorius negali atkurti slaptažodžio naudotojui, kuris priklauso ir kitai organizacijai. Tai gali tik Platform Admin.
 - **El. laiškų MVP nėra:** nuorodas administratorius perduoda pats, saugiu kanalu.
 
+## AML bylos ir šalys
+
+- **Byla = vienas sandoris** su neribotu šalių skaičiumi; fizinis ar juridinis asmuo yra šalies, ne bylos savybė.
+- **Kas mato bylas** (tikrina ir API, ir DB eilučių politika `case_visibility`):
+  - MANAGER arba teisė CASE_VIEW_ALL – visas organizacijos bylas;
+  - BROKER – bylas, už kurias atsakingas arba kurias sukūrė;
+  - vien ORG_ADMIN – jokių bylų.
+- **Bylą kitam priskirti** gali tik vadovas, kai planas turi TASK_ASSIGNMENT. DB leidžia tai tik matančiam visas bylas, o atsakingas asmuo turi būti aktyvus brokeris arba vadovas.
+- **AML taikymą nustato DB:** pirkimui–pardavimui procedūros taikomos visada, nuomai – nuo 10 000 EUR/mėn. Žemiau ribos brokeris gali jas pritaikyti savo sprendimu; tam reikia priežasties, o sprendimo atšaukti negalima.
+- **Teisinis režimas** (PPTFPĮ iki 2027-07-10, vėliau AMLR) užfiksuojamas kuriant bylą ir nebekeičiamas.
+- **Asmens kodai:**
+  - šifruojami AES-256-GCM, o paieškai naudojamas HMAC indeksas, susietas su organizacija;
+  - API rodo tik paskutinius 4 skaitmenis;
+  - į audito žurnalą nepatenka.
+- **Šalys:**
+  - Šalis pakartotinai naudojama organizacijos bylose. Kito brokerio kliento brokeris nemato, bet įvedęs tą patį asmens ar įmonės kodą susieja esamą šalį ir dublikatas nesukuriamas.
+  - Pašalinta iš bylos šalis lieka istorijoje.
+  - Sudėtiniai išoriniai raktai neleidžia susieti kitos organizacijos bylos ir šalies.
+
+## Patikros: sankcijos, PEP, neigiama informacija
+
+- **Tiekėjai:**
+  - Visi tiekėjai jungiami per `ScreeningProvider` sąsają (`SCREENING_PROVIDER`).
+  - `MOCK` (lokaliai ir demo) imituoja rezultatus. Pavardė su „Sankcij“ grąžina sankcijas, „Politik“ – PEP, „Artimas“ – PEP artimą asmenį, „Skandal“ – neigiamą informaciją; kitais atvejais sutapimų nėra.
+  - Prod aplinkoje `MOCK` uždraustas. `ONDATO` ir `MANUAL` kol kas aiškiai atsisako veikti.
+- **Ką siunčiame tiekėjui:** vardą, gimimo datą ir šalis. Asmens kodo – niekada.
+- **Patikros eiga:**
+  - Tiekėjas kviečiamas ne DB transakcijos metu, o rezultatai išsaugomi vienoje transakcijoje kartu su auditu.
+  - Nepavykusi patikra irgi užfiksuojama (`FAILED`).
+- **Įrodymai:** užbaigtos patikros ir rasti sutapimai nebekeičiami ir netrinami.
+- **Sutapimų vertinimas:** brokeris kiekvieną sutapimą įvertina vieną kartą – „klaidingas“ arba „patvirtintas“ – ir privalo nurodyti pagrindimą (bent 10 simbolių).
+- **Bylos atitikties būseną** skaičiuoja tik `app.refresh_case_compliance`; programa jos tiesiogiai nustatyti negali.
+  - `BLOCKED` – patvirtintos sankcijos.
+  - `REVIEW_REQUIRED` – yra neįvertintas sutapimas arba patvirtintas PEP ar neigiama informacija.
+  - `COMPLETED` – visos šalys patikrintos be atvirų sutapimų, o ten, kur CDD atliekame patys, jis užbaigtas.
+  - Kitais atvejais būsena yra `IN_PROGRESS`, o `NOT_STARTED` – kai AML netaikoma arba bylai dar nepridėta šalių.
+
 ## Patikros (tos pačios kaip CI)
 
 ```bash

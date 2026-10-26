@@ -33,3 +33,8 @@ export function useErrorMessage() {
     return t('errors.unknown');
   };
 }
+
+/** Brokers and managers work on cases (mirrors access/policy.ts; for navigation only). */
+export function caseWorker(roles: string[]): boolean {
+  return roles.includes('BROKER') || roles.includes('MANAGER');
+}

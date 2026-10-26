@@ -31,6 +31,7 @@ export function CasesPage({ canCreate }: { canCreate: boolean }) {
                 {t(`stages.${c.stage}`)} · {t('cases.aml')}:{' '}
                 {t(`amlApplicability.${c.amlApplicability}`)} ·{' '}
                 {t('cases.partyCount', { count: c.partyCount })}
+                {c.riskLevel && ` · ${t('risk.title')}: ${t(`riskLevels.${c.riskLevel}`)}`}
               </span>
               <span className="muted">
                 {t('cases.responsible')}: {c.responsibleName}

@@ -12,6 +12,7 @@ import {
 } from '../cases/cases';
 import { LOCAL_DEVELOPMENT_KEY } from '../config/env';
 import { recordInPersonVerification } from '../kyc/identity';
+import { assessRisk } from '../risk/risk';
 import { migrate } from '../database/migrator';
 import { type TenantContext, withTenant } from '../database/tenant';
 import { createTestDatabase, MIGRATIONS_DIR, type TestDatabase } from '../database/test-database';
@@ -80,6 +81,7 @@ describe('screening', () => {
         kyc: { version: 1, purpose: 'Būstas', actsOnOwnBehalf: true, pepSelfDeclared: false },
       }),
     );
+    await as(ctx, (c) => assessRisk(c, caseId, {}));
   }
 
   const status = async (caseId: string, ctx = broker) =>
@@ -164,7 +166,9 @@ describe('screening', () => {
         justification: 'Kita gimimo data ir pilietybė nei sąraše',
       }),
     );
-    expect(reviewed.complianceStatus).toBe('COMPLETED');
+    // The review is new evidence, so the risk is assessed again before the case completes.
+    expect(reviewed.complianceStatus).toBe('IN_PROGRESS');
+    expect((await as(broker, (c) => assessRisk(c, caseId, {}))).complianceStatus).toBe('COMPLETED');
 
     const [after] = await as(broker, (c) => listScreenings(c, caseId));
     expect(after!.matches[0]).toMatchObject({

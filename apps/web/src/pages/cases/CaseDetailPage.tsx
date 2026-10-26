@@ -7,6 +7,7 @@ import { api } from '../../api';
 import { useErrorMessage } from '../../session';
 import { ErrorText, Field, Page, Select } from '../../ui';
 import { AddPartyForm } from './AddPartyForm';
+import { ScreeningPanel } from './ScreeningPanel';
 import type { CaseDetail } from './types';
 
 export function CaseDetailPage({ canAssign }: { canAssign: boolean }) {
@@ -31,6 +32,7 @@ export function CaseDetailPage({ canAssign }: { canAssign: boolean }) {
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ['case', id] }),
       queryClient.invalidateQueries({ queryKey: ['cases'] }),
+      queryClient.invalidateQueries({ queryKey: ['screenings', id] }),
     ]);
 
   async function run(action: () => Promise<unknown>) {
@@ -191,6 +193,10 @@ export function CaseDetailPage({ canAssign }: { canAssign: boolean }) {
           </li>
         ))}
       </ul>
+
+      {c.amlApplicability !== 'NOT_APPLICABLE_RENT_THRESHOLD' && (
+        <ScreeningPanel caseId={id} parties={c.parties} run={run} />
+      )}
 
       <h2>{t('parties.add')}</h2>
       <AddPartyForm caseId={id} onAdded={() => void refresh()} />

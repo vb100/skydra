@@ -38,8 +38,14 @@ function SignedIn() {
   const active = data.memberships.find((m) => m.organizationId === data.activeOrganizationId);
   // Mirrors access/policy.ts for navigation only; the API decides.
   const canCreateCases = !!active && caseWorker(active.roles);
-  const canSeeCases = canCreateCases || !!active?.permissions.includes('CASE_VIEW_ALL');
-  const canAssign = !!active?.roles.includes('MANAGER') && active.planCode !== 'INDIVIDUAL';
+  const canSeeCases =
+    canCreateCases ||
+    !!active?.permissions.some((p) => ['CASE_VIEW_ALL', 'APPROVER', 'AML_OFFICER'].includes(p));
+  const abilities = {
+    canAssign: !!active?.roles.includes('MANAGER') && active.planCode !== 'INDIVIDUAL',
+    canApprove: !!active?.permissions.includes('APPROVER'),
+    isAmlOfficer: !!active?.permissions.includes('AML_OFFICER'),
+  };
   const cases = (element: ReactNode) => (canSeeCases ? element : <Navigate to="/" />);
   return (
     <Routes>
@@ -49,7 +55,7 @@ function SignedIn() {
         path="/cases/new"
         element={canCreateCases ? <NewCasePage /> : <Navigate to="/cases" />}
       />
-      <Route path="/cases/:id" element={cases(<CaseDetailPage canAssign={canAssign} />)} />
+      <Route path="/cases/:id" element={cases(<CaseDetailPage abilities={abilities} />)} />
       <Route
         path="/members"
         element={

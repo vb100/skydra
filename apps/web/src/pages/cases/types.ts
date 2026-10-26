@@ -73,3 +73,37 @@ export type ScreeningCheck = {
   requestedAt: string;
   matches: ScreeningMatch[];
 };
+
+export type ChecklistEntry = { casePartyId: string | null; item: string; ok: boolean };
+
+export type IdentityVerification = {
+  id: string;
+  casePartyId: string;
+  method: 'REMOTE' | 'IN_PERSON';
+  provider: string;
+  status: 'PENDING' | 'VERIFIED' | 'REJECTED' | 'FAILED';
+  documentType: string | null;
+  documentNumberMasked: string | null;
+  requestedAt: string;
+};
+
+export type Approval = {
+  id: string;
+  reason: string;
+  status: 'OPEN' | 'APPROVED' | 'REJECTED';
+  requestedByName: string;
+  decidedByName: string | null;
+  decisionJustification: string | null;
+};
+
+export type Escalation = {
+  id: string;
+  reason: string;
+  status: 'OPEN' | 'CLEARED' | 'REPORTED';
+  requestedByName: string;
+  resolvedByName: string | null;
+  resolutionNotes: string | null;
+};
+
+/** What the signed-in member may do beyond working on cases (mirrors access/policy.ts). */
+export type CaseAbilities = { canAssign: boolean; canApprove: boolean; isAmlOfficer: boolean };

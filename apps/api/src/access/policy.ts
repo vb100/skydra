@@ -39,7 +39,12 @@ const RULES: Record<Action, (p: Principal) => boolean> = {
   'member.manage': (p) => has(p, 'ORG_ADMIN'),
   'case.create': (p) => has(p, 'BROKER') || has(p, 'MANAGER'),
   'case.view_own': (p) => has(p, 'BROKER') || has(p, 'MANAGER'),
-  'case.view_all': (p) => has(p, 'MANAGER') || holds(p, 'CASE_VIEW_ALL'),
+  // Approvers and AML officers act on cases of others, so they see them (app.case_access too).
+  'case.view_all': (p) =>
+    has(p, 'MANAGER') ||
+    holds(p, 'CASE_VIEW_ALL') ||
+    holds(p, 'APPROVER') ||
+    holds(p, 'AML_OFFICER'),
   'case.approve': (p) => holds(p, 'APPROVER'),
   'case.assign': (p) => has(p, 'MANAGER') && hasFeature(p.entitlements, 'TASK_ASSIGNMENT'),
   'aml.escalation_handle': (p) => holds(p, 'AML_OFFICER'),

@@ -16,6 +16,7 @@ export type SecretKeys = {
   recoveryCodeHmac: Buffer;
   personalCodeEncryption: Buffer;
   personalCodeIndex: Buffer;
+  documentNumberEncryption: Buffer;
 };
 
 export function deriveKeys(masterKeyBase64: string): SecretKeys {
@@ -27,6 +28,7 @@ export function deriveKeys(masterKeyBase64: string): SecretKeys {
     recoveryCodeHmac: derive('skydra/recovery-code-hmac/v1'),
     personalCodeEncryption: derive('skydra/personal-code-encryption/v1'),
     personalCodeIndex: derive('skydra/personal-code-index/v1'),
+    documentNumberEncryption: derive('skydra/document-number-encryption/v1'),
   };
 }
 

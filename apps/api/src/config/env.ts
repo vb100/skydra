@@ -5,6 +5,12 @@ const EnvSchema = z.object({
   APP_ENV: AppEnv,
   PORT: z.coerce.number().int().positive().default(3000),
   DATABASE_URL: z.url(),
+  // Origin the browser uses (links in invitations, Origin check for state-changing requests).
+  PUBLIC_APP_URL: z.url(),
+  // 32 random bytes, base64. Encrypts TOTP secrets and keys recovery-code hashes.
+  SECRET_ENCRYPTION_KEY: z
+    .string()
+    .refine((v) => Buffer.from(v, 'base64').length === 32, 'must be 32 bytes, base64-encoded'),
   SCREENING_PROVIDER: ProviderMode,
   IDENTITY_PROVIDER: ProviderMode,
   REGISTRY_PROVIDER: ProviderMode,
@@ -14,12 +20,17 @@ export type AppConfig = {
   env: AppEnv;
   port: number;
   databaseUrl: string;
+  publicAppUrl: string;
+  secretEncryptionKey: string;
   providers: {
     screening: ProviderMode;
     identity: ProviderMode;
     registry: ProviderMode;
   };
 };
+
+/** The key published in .env.example for local development. Never acceptable elsewhere. */
+export const LOCAL_DEVELOPMENT_KEY = 'Z8hzHf+pb3kjsnM+F2d6M4dOgyCtk50GkW/f8Af5R44=';
 
 export class ConfigError extends Error {
   override name = 'ConfigError';
@@ -42,12 +53,18 @@ export function loadConfig(source: NodeJS.ProcessEnv): AppConfig {
     env: e.APP_ENV,
     port: e.PORT,
     databaseUrl: e.DATABASE_URL,
+    publicAppUrl: new URL(e.PUBLIC_APP_URL).origin,
+    secretEncryptionKey: e.SECRET_ENCRYPTION_KEY,
     providers: {
       screening: e.SCREENING_PROVIDER,
       identity: e.IDENTITY_PROVIDER,
       registry: e.REGISTRY_PROVIDER,
     },
   };
+
+  if (config.env !== 'local' && config.secretEncryptionKey === LOCAL_DEVELOPMENT_KEY) {
+    throw new ConfigError('SECRET_ENCRYPTION_KEY is the public local development key');
+  }
 
   if (config.env === 'prod') {
     const mocked = Object.entries(config.providers)

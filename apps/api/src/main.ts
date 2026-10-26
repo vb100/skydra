@@ -1,8 +1,6 @@
 import 'reflect-metadata';
 import { existsSync } from 'node:fs';
-import { NestFactory } from '@nestjs/core';
-import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { AppModule } from './app.module';
+import { createApp } from './app.factory';
 import { loadConfig } from './config/env';
 
 async function bootstrap(): Promise<void> {
@@ -11,14 +9,7 @@ async function bootstrap(): Promise<void> {
 
   // Fail fast before anything starts if the configuration is invalid or unsafe.
   const config = loadConfig(process.env);
-
-  const app = await NestFactory.create<NestFastifyApplication>(
-    AppModule.forRoot(config),
-    new FastifyAdapter(),
-  );
-  app.setGlobalPrefix('api');
-  app.enableShutdownHooks();
-
+  const app = await createApp(config);
   await app.listen(config.port, '0.0.0.0');
 }
 

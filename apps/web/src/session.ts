@@ -39,6 +39,10 @@ const RULES: [RegExp, string][] = [
   [/already has this role/, 'duplicateRole'],
   [/not available yet/, 'providerUnavailable'],
   [/assign a case to another member/, 'assign'],
+  [/assess the risk before/, 'assessRiskFirst'],
+  [/below the mandatory minimum/, 'riskMinimum'],
+  [/lowering the calculated risk/, 'riskLowering'],
+  [/needs a justification/, 'riskJustification'],
 ];
 
 /** Translated message for an API error code. */

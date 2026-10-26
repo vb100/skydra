@@ -17,6 +17,7 @@ import {
 } from './kyc/identity-provider';
 import { KycController } from './kyc/kyc.controller';
 import { PlatformController } from './platform/platform.controller';
+import { RiskController } from './risk/risk.controller';
 import { MockScreeningProvider } from './screening/mock-provider';
 import { SCREENING_PROVIDER, UnavailableScreeningProvider } from './screening/provider';
 
@@ -33,6 +34,7 @@ export class AppModule {
         OrganizationController,
         CasesController,
         KycController,
+        RiskController,
       ],
       providers: [
         {

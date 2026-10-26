@@ -16,6 +16,7 @@ import { createTestDatabase, MIGRATIONS_DIR, type TestDatabase } from '../databa
 import { NotFoundError, RuleError } from '../domain-errors';
 import { addMember } from '../organization/members';
 import { createOrganization, withPlatform } from '../platform/platform';
+import { assessRisk } from '../risk/risk';
 import { MockScreeningProvider } from '../screening/mock-provider';
 import { listScreenings, reviewMatch, runScreening } from '../screening/screening';
 import {
@@ -102,6 +103,8 @@ describe('KYC completion', () => {
     return { caseId: id, casePartyId };
   }
 
+  const assess = (caseId: string, ctx = broker) => as(ctx, (c) => assessRisk(c, caseId, {}));
+
   async function verifyAndComplete(caseId: string, casePartyId: string, ctx = broker) {
     await as(ctx, (c) =>
       recordInPersonVerification(c, keys, caseId, { casePartyId, ...DOCUMENT } as never),
@@ -109,6 +112,7 @@ describe('KYC completion', () => {
     await as(ctx, (c) =>
       updateCaseParty(c, caseId, casePartyId, { kyc: KYC, cddStatus: 'COMPLETED' }),
     );
+    await assess(caseId, ctx);
   }
 
   async function confirmFirstMatch(caseId: string, ctx = broker) {
@@ -119,6 +123,8 @@ describe('KYC completion', () => {
         justification: 'Sutampa gimimo data ir pilietybė',
       }),
     );
+    // A confirmed match is new evidence: the risk is assessed again (HIGH for a PEP).
+    await assess(caseId, ctx);
   }
 
   beforeAll(async () => {
@@ -145,7 +151,11 @@ describe('KYC completion', () => {
   describe('identity verification and CDD', () => {
     it('lists what is missing and completes the case once everything is done', async () => {
       const { caseId, casePartyId } = await screenedCase('Švarutė');
-      expect(await failing(caseId)).toEqual(['IDENTITY_VERIFIED', 'CDD_COMPLETED']);
+      expect(await failing(caseId)).toEqual([
+        'IDENTITY_VERIFIED',
+        'CDD_COMPLETED',
+        'RISK_ASSESSED',
+      ]);
       expect(await status(caseId)).toBe('IN_PROGRESS');
 
       // CDD cannot be marked completed before the identity is verified and KYC answered.
@@ -247,7 +257,7 @@ describe('KYC completion', () => {
       await as(broker, (c) =>
         simulateRemoteVerification(c, idv, caseId, second.id, { outcome: 'VERIFIED' }),
       );
-      expect(await failing(caseId)).toEqual(['CDD_COMPLETED']);
+      expect(await failing(caseId)).toEqual(['CDD_COMPLETED', 'RISK_ASSESSED']);
 
       await expect(
         startRemoteVerification(app, broker, new UnavailableIdentityProvider('ONDATO'), caseId, {
@@ -274,6 +284,7 @@ describe('KYC completion', () => {
       await as(broker, (c) =>
         updateCaseParty(c, id, casePartyId, { kyc: KYC, cddStatus: 'COMPLETED' }),
       );
+      await assess(id);
       expect(await status(id)).toBe('COMPLETED');
 
       await expect(as(colleague, (c) => getChecklist(c, id))).rejects.toBeInstanceOf(NotFoundError);

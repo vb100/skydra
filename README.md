@@ -136,6 +136,25 @@ Web aplikacija `/api` užklausas per Vite proxy nukreipia į API. Sveikatos pati
   - Išspręsti gali tik AML_OFFICER: „įtarimas nepasitvirtino“ arba „pranešta FNTT“. Pastaruoju atveju byla lieka sustabdyta.
 - **Visų bylų matomumas.** Tvirtintojai ir AML atsakingi asmenys mato visas organizacijos bylas, nes priima sprendimus dėl kitų narių bylų.
 
+## Rizikos vertinimas (LT-RISK-01)
+
+- **Taisyklės yra duomenys.**
+  - Versijuoti rinkiniai laikomi lentelėje `risk_rule_sets`. Programa juos gali tik skaityti.
+  - Dabar galioja `LT-RISK-01 / DEMO-1` – laikina lentelė, kurią sąsaja žymi kaip DEMO. Ji aprašyta `docs/rizikos-metodika-LT-RISK-01.md`.
+  - Tikroji lentelė bus nauja versija, įdėta migracija. Varikliui pakeitimų nereikės.
+- **Variklis** (`apps/api/src/risk/engine.ts`) yra gryna funkcija. Ji surenka bylos faktus (PEP, sankcijas, šalis, atsiskaitymo būdą, vertę ir kt.) ir pritaiko taisykles.
+  - Galimi lygiai: LOW / MEDIUM / HIGH, be balų.
+  - Bendras lygis lygus didžiausiam suveikusio veiksnio lygiui. Jei suveikia keli MEDIUM veiksniai (DEMO-1 – trys), rizika tampa HIGH.
+  - Privalomi veiksniai (PEP, sankcijos, didelės rizikos trečioji šalis) nustato minimumą.
+  - Netaisyklingas rinkinys atmetamas iškart (zod), o ne skaičiuojamas.
+- **Vertinimai nekeičiami.**
+  - Įrašoma: faktai, kiekvieno veiksnio rezultatas, apskaičiuotas ir galutinis lygis, metodikos versija, teisinis režimas ir kitos peržiūros data (5 / 3 / 1 m.).
+  - Brokeris galutinį lygį gali padidinti, nurodęs pagrindimą.
+  - Sumažinti gali tik tvirtintojas, kuris nėra atsakingas brokeris (išskyrus solo).
+  - Žemiau privalomo minimumo nustatyti negali niekas. Tai užtikrina DB.
+- **Pasenęs vertinimas.** Jei po vertinimo pasikeičia rizikos duomenys (vertė, atsiskaitymas, šalys, KYC atsakymai, patikros, tapatybė), sąrašo punktas „Įvertinta rizika“ vėl tampa neįvykdytas. Etapo keitimas ir CDD užbaigimas vertinimo nepasendina.
+- **HIGH rizika** reikalauja EDD patvirtinimo, kaip ir patvirtintas PEP. Prašyti patvirtinimo galima tik įvertinus riziką.
+
 ## Patikros (tos pačios kaip CI)
 
 ```bash

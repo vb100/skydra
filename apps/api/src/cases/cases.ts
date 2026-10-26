@@ -23,6 +23,8 @@ export type CaseSummary = {
   responsibleUserId: string;
   responsibleName: string;
   partyCount: number;
+  /** Final level of the latest risk assessment, if any. */
+  riskLevel: string | null;
   updatedAt: string;
 };
 
@@ -62,6 +64,8 @@ const SUMMARY = `
          c.responsible_user_id AS "responsibleUserId", u.full_name AS "responsibleName",
          (SELECT count(*)::int FROM case_parties cp
            WHERE cp.case_id = c.id AND cp.removed_at IS NULL) AS "partyCount",
+         (SELECT ra.final_level FROM risk_assessments ra
+           WHERE ra.case_id = c.id ORDER BY ra.assessed_at DESC LIMIT 1) AS "riskLevel",
          c.updated_at AS "updatedAt"`;
 
 const DETAIL = `${SUMMARY},

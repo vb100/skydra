@@ -218,3 +218,21 @@ fieldset {
 .checklist li {
   margin: 0.25rem 0;
 }
+
+.level {
+  display: inline-block;
+  padding: 0 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-weight: 600;
+}
+
+.level-high {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.level-medium {
+  border-color: var(--accent);
+  color: var(--accent);
+}

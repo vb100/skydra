@@ -10,6 +10,7 @@ import { AddPartyForm } from './AddPartyForm';
 import { ChecklistPanel } from './ChecklistPanel';
 import { DecisionsPanel } from './DecisionsPanel';
 import { PartyKycPanel } from './PartyKycPanel';
+import { RiskPanel } from './RiskPanel';
 import { ScreeningPanel } from './ScreeningPanel';
 import type { CaseAbilities, CaseDetail, IdentityVerification } from './types';
 
@@ -45,7 +46,7 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ['case', id] }),
       queryClient.invalidateQueries({ queryKey: ['cases'] }),
-      ...['screenings', 'checklist', 'identity', 'decisions'].map((key) =>
+      ...['screenings', 'checklist', 'identity', 'decisions', 'risk'].map((key) =>
         queryClient.invalidateQueries({ queryKey: [key, id] }),
       ),
     ]);
@@ -207,6 +208,7 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
       {amlApplies && (
         <>
           <ScreeningPanel caseId={id} parties={c.parties} run={run} />
+          <RiskPanel caseId={id} run={run} />
           <DecisionsPanel caseId={id} abilities={abilities} run={run} />
         </>
       )}

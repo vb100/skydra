@@ -71,8 +71,11 @@ export async function requestApproval(
 ): Promise<{ id: string; complianceStatus: string }> {
   const id = z.uuid().parse(caseId);
   const { reason } = RequestApprovalInput.parse(input);
-  if (!(await failing(client, id)).has('EDD_APPROVED'))
-    throw new RuleError('this case does not need an approval');
+  const missing = await failing(client, id);
+  // The approver decides on the final risk, so it must be assessed and current.
+  if (missing.has('RISK_ASSESSED'))
+    throw new RuleError('assess the risk before asking for approval');
+  if (!missing.has('EDD_APPROVED')) throw new RuleError('this case does not need an approval');
   try {
     const { rows } = await client.query<{ id: string }>(
       'INSERT INTO case_approvals (case_id, reason) VALUES ($1, $2) RETURNING id',

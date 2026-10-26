@@ -11,6 +11,7 @@ export type CaseSummary = {
   responsibleUserId: string;
   responsibleName: string;
   partyCount: number;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | null;
   updatedAt: string;
 };
 
@@ -107,3 +108,39 @@ export type Escalation = {
 
 /** What the signed-in member may do beyond working on cases (mirrors access/policy.ts). */
 export type CaseAbilities = { canAssign: boolean; canApprove: boolean; isAmlOfficer: boolean };
+
+export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
+
+export type RiskFactor = {
+  code: string;
+  group: string;
+  level: RiskLevel;
+  mandatory: boolean;
+  matched: boolean;
+};
+
+export type RiskAssessment = {
+  id: string;
+  ruleSetCode: string;
+  ruleSetVersion: string;
+  calculatedLevel: RiskLevel;
+  finalLevel: RiskLevel;
+  justification: string | null;
+  factors: RiskFactor[];
+  nextReviewOn: string;
+  assessedByName: string;
+  assessedAt: string;
+};
+
+export type RiskOverview = {
+  ruleSet: { code: string; version: string; isDemo: boolean };
+  preview: {
+    calculatedLevel: RiskLevel;
+    mandatoryLevel: RiskLevel | null;
+    escalatedByMediumCount: boolean;
+    factors: RiskFactor[];
+  };
+  current: RiskAssessment | null;
+  stale: boolean;
+  history: RiskAssessment[];
+};

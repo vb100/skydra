@@ -369,7 +369,7 @@ describe('HTTP API: authentication, CSRF and guards', () => {
           .json()
           .filter((e: { ok: boolean }) => !e.ok)
           .map((e: { item: string }) => e.item);
-      expect(await missing()).toEqual(['IDENTITY_VERIFIED', 'CDD_COMPLETED']);
+      expect(await missing()).toEqual(['IDENTITY_VERIFIED', 'CDD_COMPLETED', 'RISK_ASSESSED']);
       const casePartyId = detail.json().parties[0].id;
       const verified = await call('POST', `/api/cases/${id}/identity-verifications/in-person`, {
         cookie: broker1,
@@ -381,7 +381,7 @@ describe('HTTP API: authentication, CSRF and guards', () => {
         },
       });
       expect(verified.statusCode).toBe(201);
-      expect(await missing()).toEqual(['CDD_COMPLETED']);
+      expect(await missing()).toEqual(['CDD_COMPLETED', 'RISK_ASSESSED']);
 
       // Deciding approvals needs the approver permission.
       const decide = await call(

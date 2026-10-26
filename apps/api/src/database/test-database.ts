@@ -5,7 +5,9 @@ import { Pool, type PoolConfig } from 'pg';
 export const MIGRATIONS_DIR = path.resolve(process.cwd(), 'migrations');
 
 export type TestDatabase = {
-  /** Schema owner (superuser in tests): bypasses RLS, used for setup only. */
+  /** Superuser: bypasses RLS and triggers' privilege checks. Test setup and tamper simulation only. */
+  superuser: Pool;
+  /** Schema owner exactly as in production: not a superuser, subject to FORCE RLS. Runs migrations. */
   owner: Pool;
   /** Connections that act as the runtime role, exactly like the API. */
   appPool: (config?: PoolConfig) => Pool;
@@ -19,24 +21,24 @@ export async function createTestDatabase(): Promise<TestDatabase> {
 
   const name = `skydra_test_${randomUUID().replaceAll('-', '')}`;
   const admin = new Pool({ connectionString: adminUrl, max: 1 });
-  await admin.query(`CREATE DATABASE ${name}`);
+  await admin.query(`CREATE DATABASE ${name} OWNER skydra_migrator`);
 
   const url = new URL(adminUrl);
   url.pathname = `/${name}`;
-  const owner = new Pool({ connectionString: url.toString(), max: 2 });
-  const pools: Pool[] = [owner];
+  // Connect as the test superuser and switch roles for the whole session: RLS and privileges
+  // then apply exactly as for the real users, without managing passwords.
+  const asRole = (role: string, config: PoolConfig = {}) =>
+    new Pool({ connectionString: url.toString(), max: 2, options: `-c role=${role}`, ...config });
+
+  const superuser = new Pool({ connectionString: url.toString(), max: 2 });
+  const owner = asRole('skydra_migrator');
+  const pools: Pool[] = [superuser, owner];
 
   return {
+    superuser,
     owner,
-    appPool: (config = {}) => {
-      // Connect as the test superuser but switch to skydra_app for the whole session, so RLS and
-      // privileges apply exactly as for the real runtime user without managing passwords.
-      const pool = new Pool({
-        connectionString: url.toString(),
-        max: 2,
-        options: '-c role=skydra_app',
-        ...config,
-      });
+    appPool: (config) => {
+      const pool = asRole('skydra_app', config);
       pools.push(pool);
       return pool;
     },

@@ -24,7 +24,7 @@ describe('audit trail', () => {
   beforeAll(async () => {
     db = await createTestDatabase();
     await migrate(db.owner, MIGRATIONS_DIR);
-    await db.owner.query("INSERT INTO organizations (id, name) VALUES ($1, 'A'), ($2, 'B')", [
+    await db.superuser.query("INSERT INTO organizations (id, name) VALUES ($1, 'A'), ($2, 'B')", [
       orgA,
       orgB,
     ]);
@@ -40,7 +40,7 @@ describe('audit trail', () => {
     const second = await withTenant(app, asA, (c) => recordAudit(c, event(2)));
     expect([first.seq, second.seq]).toEqual(['1', '2']);
 
-    const { rows } = await db.owner.query<{
+    const { rows } = await db.superuser.query<{
       organization_id: string;
       actor_user_id: string;
       prev_hash: string;
@@ -59,7 +59,7 @@ describe('audit trail', () => {
         after: { passwordHash: 'secret' },
       }),
     );
-    const { rows } = await db.owner.query<{ after: unknown }>(
+    const { rows } = await db.superuser.query<{ after: unknown }>(
       "SELECT after FROM audit_events WHERE action = 'user.password_changed'",
     );
     expect(rows[0]?.after).toEqual({ passwordHash: '[REDACTED]' });
@@ -88,12 +88,12 @@ describe('audit trail', () => {
     }
   });
 
-  it('is append-only even for the table owner', async () => {
-    await expect(db.owner.query("UPDATE audit_events SET action = 'x.y'")).rejects.toThrow(
+  it('is append-only even for a database superuser', async () => {
+    await expect(db.superuser.query("UPDATE audit_events SET action = 'x.y'")).rejects.toThrow(
       /append-only/,
     );
-    await expect(db.owner.query('DELETE FROM audit_events')).rejects.toThrow(/append-only/);
-    await expect(db.owner.query('TRUNCATE audit_events')).rejects.toThrow(/append-only/);
+    await expect(db.superuser.query('DELETE FROM audit_events')).rejects.toThrow(/append-only/);
+    await expect(db.superuser.query('TRUNCATE audit_events')).rejects.toThrow(/append-only/);
   });
 
   it('keeps organizations apart and cannot write into another one', async () => {
@@ -137,7 +137,7 @@ describe('audit trail', () => {
     );
     const result = await withTenant(app, asA, verifyAuditChain);
     expect(result.valid).toBe(true);
-    const { rows } = await db.owner.query<{ n: string; max: string }>(
+    const { rows } = await db.superuser.query<{ n: string; max: string }>(
       'SELECT count(*)::text AS n, max(seq)::text AS max FROM audit_events WHERE organization_id = $1',
       [orgA],
     );
@@ -146,20 +146,22 @@ describe('audit trail', () => {
 
   describe('tamper detection (simulating someone with database superuser access)', () => {
     // Each case runs in its own database so the tampering does not affect the others.
-    async function tamperedChain(tamper: (owner: Pool, org: string) => Promise<unknown>) {
+    async function tamperedChain(tamper: (superuser: Pool, org: string) => Promise<unknown>) {
       const scratch = await createTestDatabase();
       try {
         await migrate(scratch.owner, MIGRATIONS_DIR);
         const org = randomUUID();
-        await scratch.owner.query("INSERT INTO organizations (id, name) VALUES ($1, 'T')", [org]);
+        await scratch.superuser.query("INSERT INTO organizations (id, name) VALUES ($1, 'T')", [
+          org,
+        ]);
         const pool = scratch.appPool();
         const ctx = { organizationId: org, userId: user };
         for (let i = 1; i <= 3; i++) await withTenant(pool, ctx, (c) => recordAudit(c, event(i)));
         expect((await withTenant(pool, ctx, verifyAuditChain)).valid).toBe(true);
 
-        await scratch.owner.query('ALTER TABLE audit_events DISABLE TRIGGER USER');
-        await tamper(scratch.owner, org);
-        await scratch.owner.query('ALTER TABLE audit_events ENABLE TRIGGER USER');
+        await scratch.superuser.query('ALTER TABLE audit_events DISABLE TRIGGER USER');
+        await tamper(scratch.superuser, org);
+        await scratch.superuser.query('ALTER TABLE audit_events ENABLE TRIGGER USER');
         return await withTenant(pool, ctx, verifyAuditChain);
       } finally {
         await scratch.drop();
@@ -167,22 +169,22 @@ describe('audit trail', () => {
     }
 
     it('detects an edited event', async () => {
-      const result = await tamperedChain((owner) =>
-        owner.query(`UPDATE audit_events SET after = '{"n": 42}' WHERE seq = 2`),
+      const result = await tamperedChain((superuser) =>
+        superuser.query(`UPDATE audit_events SET after = '{"n": 42}' WHERE seq = 2`),
       );
       expect(result).toMatchObject({ valid: false, firstInvalidSeq: 2 });
     });
 
     it('detects a deleted event in the middle', async () => {
-      const result = await tamperedChain((owner) =>
-        owner.query('DELETE FROM audit_events WHERE seq = 2'),
+      const result = await tamperedChain((superuser) =>
+        superuser.query('DELETE FROM audit_events WHERE seq = 2'),
       );
       expect(result).toMatchObject({ valid: false, firstInvalidSeq: 2, reason: 'missing event' });
     });
 
     it('detects removed events at the end of the chain', async () => {
-      const result = await tamperedChain((owner) =>
-        owner.query('DELETE FROM audit_events WHERE seq = 3'),
+      const result = await tamperedChain((superuser) =>
+        superuser.query('DELETE FROM audit_events WHERE seq = 3'),
       );
       expect(result).toMatchObject({ valid: false, reason: 'events missing at the end' });
     });

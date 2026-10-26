@@ -3,6 +3,7 @@ import type { Pool } from 'pg';
 import { AuthController } from './auth/auth.controller';
 import { AUTH_DEPS } from './auth/auth.module-tokens';
 import { deriveKeys } from './auth/crypto';
+import { CasesController } from './cases/cases.controller';
 import { APP_CONFIG, ConfigModule } from './config/config.module';
 import type { AppConfig } from './config/env';
 import { DatabaseModule, PG_POOL } from './database/database.module';
@@ -17,7 +18,13 @@ export class AppModule {
     return {
       module: AppModule,
       imports: [ConfigModule.forRoot(config), DatabaseModule.forRoot(pool)],
-      controllers: [HealthController, AuthController, PlatformController, OrganizationController],
+      controllers: [
+        HealthController,
+        AuthController,
+        PlatformController,
+        OrganizationController,
+        CasesController,
+      ],
       providers: [
         {
           provide: AUTH_DEPS,

@@ -271,6 +271,96 @@ describe('HTTP API: authentication, CSRF and guards', () => {
       );
     });
 
+    it('lets brokers work on cases, each only on their own', async () => {
+      const created = (
+        await call('POST', '/api/platform/organizations', {
+          cookie: adminCookie,
+          body: {
+            name: 'Agentūra Y',
+            planCode: 'AGENCY',
+            adminEmail: 'admin@y.lt',
+            adminFullName: 'Admin Y',
+          },
+        })
+      ).json();
+      const { organizationId } = created;
+      const enter = async (inviteUrl: string, email: string) => {
+        const token = String(inviteUrl).split('#token=')[1]!;
+        const cookie = await signInThroughApi(email, await activateThroughApi(token));
+        await call('POST', '/api/auth/organization', { cookie, body: { organizationId } });
+        return cookie;
+      };
+      const admin = await enter(created.inviteUrl, 'admin@y.lt');
+      const addBroker = async (email: string) => {
+        const res = await call('POST', '/api/organization/members', {
+          cookie: admin,
+          body: { email, fullName: email, roles: ['BROKER'] },
+        });
+        return enter(res.json().inviteUrl, email);
+      };
+      const broker1 = await addBroker('b1@y.lt');
+      const broker2 = await addBroker('b2@y.lt');
+
+      // Administration is separate from AML work.
+      expect((await call('GET', '/api/cases', { cookie: admin })).statusCode).toBe(403);
+
+      const invalid = await call('POST', '/api/cases', {
+        cookie: broker1,
+        body: { transactionType: 'SALE', propertyType: 'HOUSE', propertyAddress: 'X' },
+      });
+      expect(invalid.statusCode).toBe(400);
+
+      const res = await call('POST', '/api/cases', {
+        cookie: broker1,
+        body: {
+          transactionType: 'SALE',
+          propertyType: 'HOUSE',
+          propertyAddress: 'Laisvės al. 10, Kaunas',
+          transactionValue: '250000',
+        },
+      });
+      expect(res.statusCode).toBe(201);
+      const { id, reference } = res.json();
+      expect(reference).toMatch(/^AML-\d{4}-0001$/);
+
+      const party = await call('POST', `/api/cases/${id}/parties`, {
+        cookie: broker1,
+        body: {
+          party: {
+            partyType: 'NATURAL',
+            firstName: 'Petras',
+            lastName: 'Petraitis',
+            personalCode: '39001010003',
+          },
+          role: 'SELLER',
+          isOurClient: true,
+        },
+      });
+      expect(party.statusCode).toBe(201);
+
+      const detail = await call('GET', `/api/cases/${id}`, { cookie: broker1 });
+      expect(detail.json()).toMatchObject({
+        reference,
+        amlApplicability: 'APPLICABLE',
+        parties: [{ role: 'SELLER', party: { personalCodeMasked: '•••••••0003' } }],
+      });
+      expect(JSON.stringify(detail.json())).not.toContain('39001010003');
+
+      // A rule refusal is reported as such.
+      const activate = await call('POST', `/api/cases/${id}/activate-aml`, {
+        cookie: broker1,
+        body: { reason: 'Rizikos požymiai sandoryje' },
+      });
+      expect(activate.statusCode).toBe(422);
+
+      // Another broker's case does not exist for broker 2.
+      expect((await call('GET', `/api/cases/${id}`, { cookie: broker2 })).statusCode).toBe(404);
+      expect((await call('GET', '/api/cases', { cookie: broker2 })).json()).toEqual([]);
+      expect((await call('GET', '/api/parties?query=Petr', { cookie: broker2 })).json()).toEqual(
+        [],
+      );
+    });
+
     it('lists organizations for the platform admin', async () => {
       const res = await call('GET', '/api/platform/organizations', { cookie: adminCookie });
       expect(res.statusCode).toBe(200);

@@ -14,6 +14,8 @@ import {
 export type SecretKeys = {
   totpEncryption: Buffer;
   recoveryCodeHmac: Buffer;
+  personalCodeEncryption: Buffer;
+  personalCodeIndex: Buffer;
 };
 
 export function deriveKeys(masterKeyBase64: string): SecretKeys {
@@ -23,6 +25,8 @@ export function deriveKeys(masterKeyBase64: string): SecretKeys {
   return {
     totpEncryption: derive('skydra/totp-secret-encryption/v1'),
     recoveryCodeHmac: derive('skydra/recovery-code-hmac/v1'),
+    personalCodeEncryption: derive('skydra/personal-code-encryption/v1'),
+    personalCodeIndex: derive('skydra/personal-code-index/v1'),
   };
 }
 
@@ -81,4 +85,14 @@ export function normalizeRecoveryCode(code: string): string {
  */
 export function hashRecoveryCode(key: Buffer, code: string): string {
   return createHmac('sha256', key).update(normalizeRecoveryCode(code)).digest('hex');
+}
+
+/**
+ * Blind index for finding a person by personal code without storing it in clear. Keyed and bound
+ * to the organization, so a leaked database neither reveals codes nor links people across agencies.
+ */
+export function personalCodeIndex(key: Buffer, organizationId: string, code: string): string {
+  return createHmac('sha256', key)
+    .update(`${organizationId}:${code.toUpperCase().replace(/[\s-]/g, '')}`)
+    .digest('hex');
 }

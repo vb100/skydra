@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router';
 import { api, type Me } from '../api';
-import { useRefreshMe } from '../session';
+import { caseWorker, useRefreshMe } from '../session';
 import { Page } from '../ui';
 
 export function HomePage({ me }: { me: Me }) {
@@ -35,10 +35,12 @@ export function HomePage({ me }: { me: Me }) {
               {active.permissions.map((p) => t(`permissions.${p}`)).join(', ')}
             </p>
           )}
-          <p className="muted">{t('home.nextSteps')}</p>
         </section>
       )}
       <nav className="stack">
+        {active && (caseWorker(active.roles) || active.permissions.includes('CASE_VIEW_ALL')) && (
+          <Link to="/cases">{t('cases.link')}</Link>
+        )}
         {me.memberships.length > 1 && (
           <Link to="/select-organization">{t('organizations.change')}</Link>
         )}

@@ -1,10 +1,18 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export function Page({ title, children }: { title: string; children: ReactNode }) {
+export function Page({
+  title,
+  children,
+  wide = false,
+}: {
+  title: string;
+  children: ReactNode;
+  wide?: boolean;
+}) {
   const { t } = useTranslation();
   return (
-    <main className="page">
+    <main className={wide ? 'page wide' : 'page'}>
       <p className="brand">{t('app.name')}</p>
       <h1>{title}</h1>
       {children}
@@ -88,4 +96,9 @@ export function Check(props: { label: string; checked: boolean; onChange: (v: bo
       {props.label}
     </label>
   );
+}
+
+/** A status pill; `kind` selects the colour (compliance status or `risk-LEVEL`). */
+export function Badge({ kind, children }: { kind: string; children: ReactNode }) {
+  return <span className={`badge badge-${kind.toLowerCase()}`}>{children}</span>;
 }

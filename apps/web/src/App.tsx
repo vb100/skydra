@@ -13,6 +13,7 @@ import { PlatformPage } from './pages/PlatformPage';
 import { SecondFactorPage } from './pages/SecondFactorPage';
 import { SelectOrganizationPage } from './pages/SelectOrganizationPage';
 import { caseWorker, useMe, useRefreshMe } from './session';
+import { AppShell } from './shell';
 import { Page } from './ui';
 
 /** Routes for a signed-in user; decides where to go when no organization is chosen yet. */
@@ -47,42 +48,46 @@ function SignedIn() {
     isAmlOfficer: !!active?.permissions.includes('AML_OFFICER'),
   };
   const cases = (element: ReactNode) => (canSeeCases ? element : <Navigate to="/" />);
+  const canSeeMembers =
+    !!active && (active.roles.includes('ORG_ADMIN') || active.roles.includes('MANAGER'));
   return (
-    <Routes>
-      <Route path="/select-organization" element={<SelectOrganizationPage />} />
-      <Route path="/cases" element={cases(<CasesPage canCreate={canCreateCases} />)} />
-      <Route
-        path="/cases/new"
-        element={canCreateCases ? <NewCasePage /> : <Navigate to="/cases" />}
-      />
-      <Route path="/cases/:id" element={cases(<CaseDetailPage abilities={abilities} />)} />
-      <Route
-        path="/members"
-        element={
-          active && (active.roles.includes('ORG_ADMIN') || active.roles.includes('MANAGER')) ? (
-            <MembersPage canManage={active.roles.includes('ORG_ADMIN')} />
-          ) : (
-            <Navigate to="/" />
-          )
-        }
-      />
-      <Route
-        path="/platform"
-        element={data.isPlatformAdmin ? <PlatformPage /> : <Navigate to="/" />}
-      />
-      <Route
-        path="*"
-        element={
-          needsChoice ? (
-            <Navigate to="/select-organization" />
-          ) : !data.activeOrganizationId && data.isPlatformAdmin ? (
-            <Navigate to="/platform" />
-          ) : (
-            <HomePage me={data} />
-          )
-        }
-      />
-    </Routes>
+    <AppShell me={data} active={active} canSeeCases={canSeeCases} canSeeMembers={canSeeMembers}>
+      <Routes>
+        <Route path="/select-organization" element={<SelectOrganizationPage />} />
+        <Route path="/cases" element={cases(<CasesPage canCreate={canCreateCases} />)} />
+        <Route
+          path="/cases/new"
+          element={canCreateCases ? <NewCasePage /> : <Navigate to="/cases" />}
+        />
+        <Route path="/cases/:id" element={cases(<CaseDetailPage abilities={abilities} />)} />
+        <Route
+          path="/members"
+          element={
+            active && (active.roles.includes('ORG_ADMIN') || active.roles.includes('MANAGER')) ? (
+              <MembersPage canManage={active.roles.includes('ORG_ADMIN')} />
+            ) : (
+              <Navigate to="/" />
+            )
+          }
+        />
+        <Route
+          path="/platform"
+          element={data.isPlatformAdmin ? <PlatformPage /> : <Navigate to="/" />}
+        />
+        <Route
+          path="*"
+          element={
+            needsChoice ? (
+              <Navigate to="/select-organization" />
+            ) : !data.activeOrganizationId && data.isPlatformAdmin ? (
+              <Navigate to="/platform" />
+            ) : (
+              <HomePage me={data} />
+            )
+          }
+        />
+      </Routes>
+    </AppShell>
   );
 }
 

@@ -113,7 +113,7 @@ function MatchView({ caseId, match, run }: { caseId: string; match: ScreeningMat
       </strong>
       {details.map(([key, value]) => (
         <span key={key} className="muted">
-          {key}: {String(value)}
+          {t(`screening.details.${key}`, { defaultValue: key })}: {String(value)}
         </span>
       ))}
       <span>{t(`screening.reviewStatuses.${match.reviewStatus}`)}</span>

@@ -45,6 +45,7 @@ const RULES: [RegExp, string][] = [
   [/newer registry data/, 'newerOwnership'],
   [/added from registry data/, 'uboManual'],
   [/no discrepancy to resolve/, 'noDiscrepancy'],
+  [/before exporting the case/, 'exportCompleted'],
   [/below the mandatory minimum/, 'riskMinimum'],
   [/lowering the calculated risk/, 'riskLowering'],
   [/needs a justification/, 'riskJustification'],

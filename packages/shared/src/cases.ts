@@ -59,6 +59,8 @@ export const PartyRole = z.enum([
   'LANDLORD',
   'REPRESENTATIVE',
   'PAYER',
+  /** Natural person who owns or controls a legal-entity party (added from registry data). */
+  'BENEFICIAL_OWNER',
   'OTHER',
 ]);
 export type PartyRole = z.infer<typeof PartyRole>;

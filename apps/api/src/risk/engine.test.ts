@@ -20,6 +20,7 @@ const clean: RiskFacts = {
   thirdPartyPayer: false,
   transactionValueEur: 150000,
   sourceOfFundsMissing: false,
+  complexOwnership: false,
 };
 const matched = (facts: Partial<RiskFacts>) =>
   evaluateRisk(demo, { ...clean, ...facts })

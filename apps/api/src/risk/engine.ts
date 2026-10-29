@@ -15,6 +15,8 @@ export type RiskFacts = {
   thirdPartyPayer: boolean;
   transactionValueEur: number | null;
   sourceOfFundsMissing: boolean;
+  /** A legal entity owned through other companies, or with an untraceable owner. */
+  complexOwnership: boolean;
 };
 
 const FactName = z.enum([
@@ -30,6 +32,7 @@ const FactName = z.enum([
   'thirdPartyPayer',
   'transactionValueEur',
   'sourceOfFundsMissing',
+  'complexOwnership',
 ]);
 
 /** One factor: a condition on a fact and the level it sets when the condition holds. */

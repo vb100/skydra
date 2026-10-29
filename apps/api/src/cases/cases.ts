@@ -51,6 +51,8 @@ export type CaseParty = {
   cddStatus: string;
   kyc: unknown;
   addedAt: string;
+  /** For a beneficial owner: the case party of the legal entity owned or controlled. */
+  beneficialOwnerOf: string | null;
   party: Party;
 };
 
@@ -125,7 +127,8 @@ export async function getCase(
   const { rows: links } = await client.query<Omit<CaseParty, 'party'> & { partyId: string }>(
     `SELECT id, party_id AS "partyId", role, is_our_client AS "isOurClient",
             represented_by_other_broker AS "representedByOtherBroker", cdd_scope AS "cddScope",
-            reliance, cdd_status AS "cddStatus", kyc, added_at AS "addedAt"
+            reliance, cdd_status AS "cddStatus", kyc, added_at AS "addedAt",
+            beneficial_owner_of AS "beneficialOwnerOf"
        FROM case_parties WHERE case_id = $1 AND removed_at IS NULL ORDER BY added_at`,
     [id],
   );
@@ -298,6 +301,8 @@ export async function addCaseParty(
 ): Promise<{ casePartyId: string; partyId: string }> {
   const id = z.uuid().parse(caseId);
   const i = AddCasePartyInput.parse(input);
+  if (i.role === 'BENEFICIAL_OWNER')
+    throw new RuleError('beneficial owners are added from registry data');
   await assertCaseVisible(client, id);
 
   let partyId: string;
@@ -410,11 +415,23 @@ export async function removeCaseParty(
     ids,
   );
   if (!rows[0]) throw new NotFoundError('case party not found');
+  // A legal entity's beneficial owners leave the case with it.
+  const { rows: owners } = await client.query<{ id: string }>(
+    `UPDATE case_parties SET removed_at = now()
+      WHERE beneficial_owner_of = $1 AND removed_at IS NULL
+      RETURNING id`,
+    [ids[0]],
+  );
   await recordAudit(client, {
     action: 'case_party.removed',
     entityType: 'case',
     entityId: ids[1],
-    before: { casePartyId: ids[0], partyId: rows[0].party_id, role: rows[0].role },
+    before: {
+      casePartyId: ids[0],
+      partyId: rows[0].party_id,
+      role: rows[0].role,
+      beneficialOwnerLinks: owners.map((o) => o.id),
+    },
   });
   await refreshCompliance(client, ids[1]!);
 }

@@ -120,6 +120,15 @@ export async function gatherFacts(client: PoolClient, caseId: string): Promise<R
     [caseId],
   );
 
+  // Latest registry data of each legal entity in the case.
+  const { rows: ownership } = await client.query<{ complex: boolean }>(
+    `SELECT DISTINCT ON (o.case_party_id) (o.depth > 1 OR o.incomplete) AS complex
+       FROM ownership_snapshots o JOIN case_parties cp ON cp.id = o.case_party_id
+      WHERE o.case_id = $1 AND cp.removed_at IS NULL
+      ORDER BY o.case_party_id, o.fetched_at DESC`,
+    [caseId],
+  );
+
   const full = parties.filter((p) => p.cdd_scope === 'FULL');
   const value =
     c.transaction_type === 'SALE'
@@ -150,6 +159,7 @@ export async function gatherFacts(client: PoolClient, caseId: string): Promise<R
     thirdPartyPayer: parties.some((p) => p.role === 'PAYER'),
     transactionValueEur: value ? Number(value) : null,
     sourceOfFundsMissing: full.some((p) => p.is_our_client && !p.kyc.sourceOfFunds),
+    complexOwnership: ownership.some((o) => o.complex),
   };
 }
 

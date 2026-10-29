@@ -125,7 +125,7 @@ describe('risk assessment', () => {
 
     const overview = await as(broker, (c) => riskOverview(c, caseId));
     expect(overview).toMatchObject({
-      ruleSet: { code: 'LT-RISK-01', version: 'DEMO-1', isDemo: true },
+      ruleSet: { code: 'LT-RISK-01', version: 'DEMO-2', isDemo: true },
       preview: { calculatedLevel: 'LOW', mandatoryLevel: null },
       current: null,
       stale: false,
@@ -143,7 +143,7 @@ describe('risk assessment', () => {
     const fiveYears = new Date();
     fiveYears.setUTCFullYear(fiveYears.getUTCFullYear() + 5);
     expect(after.current).toMatchObject({
-      ruleSetVersion: 'DEMO-1',
+      ruleSetVersion: 'DEMO-2',
       calculatedLevel: 'LOW',
       finalLevel: 'LOW',
       assessedBy: broker.userId,
@@ -155,7 +155,7 @@ describe('risk assessment', () => {
       "SELECT after FROM audit_events WHERE action = 'risk.assessed' AND entity_id = $1",
       [caseId],
     );
-    expect(rows[0].after).toMatchObject({ ruleSet: 'LT-RISK-01/DEMO-1', finalLevel: 'LOW' });
+    expect(rows[0].after).toMatchObject({ ruleSet: 'LT-RISK-01/DEMO-2', finalLevel: 'LOW' });
   });
 
   it('a change of risk inputs requires a new assessment; workflow changes do not', async () => {

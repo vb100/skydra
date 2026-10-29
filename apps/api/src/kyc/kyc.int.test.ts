@@ -16,6 +16,8 @@ import { createTestDatabase, MIGRATIONS_DIR, type TestDatabase } from '../databa
 import { NotFoundError, RuleError } from '../domain-errors';
 import { addMember } from '../organization/members';
 import { createOrganization, withPlatform } from '../platform/platform';
+import { MockRegistryProvider } from '../ownership/mock-registry';
+import { fetchOwnership, linkBeneficialOwners } from '../ownership/ownership';
 import { assessRisk } from '../risk/risk';
 import { MockScreeningProvider } from '../screening/mock-provider';
 import { listScreenings, reviewMatch, runScreening } from '../screening/screening';
@@ -270,7 +272,12 @@ describe('KYC completion', () => {
       const { id } = await as(broker, (c) => createCase(c, actor(broker), SALE));
       const { casePartyId } = await as(broker, (c) =>
         addCaseParty(c, keys, actor(broker), id, {
-          party: { partyType: 'LEGAL', companyName: 'UAB Pirkėjas', registrationCountry: 'LT' },
+          party: {
+            partyType: 'LEGAL',
+            companyName: 'UAB Paprasta įmonė',
+            companyCode: '300000001',
+            registrationCountry: 'LT',
+          },
           role: 'BUYER',
           isOurClient: true,
         }),
@@ -280,6 +287,16 @@ describe('KYC completion', () => {
           recordInPersonVerification(c, keys, id, { casePartyId, ...DOCUMENT } as never),
         ),
       ).rejects.toThrow(/natural persons/);
+      // Its beneficial owner comes from the registries and is screened with the others.
+      const { snapshotId } = await fetchOwnership(
+        app,
+        broker,
+        keys,
+        new MockRegistryProvider(),
+        id,
+        casePartyId,
+      );
+      await as(broker, (c) => linkBeneficialOwners(c, keys, broker.organizationId, id, snapshotId));
       await runScreening(app, broker, screening, id, {});
       await as(broker, (c) =>
         updateCaseParty(c, id, casePartyId, { kyc: KYC, cddStatus: 'COMPLETED' }),

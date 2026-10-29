@@ -207,7 +207,7 @@ export function AddPartyForm({ caseId, onAdded }: { caseId: string; onAdded: () 
       <Select
         label={t('parties.role')}
         name="role"
-        options={PartyRole.options}
+        options={PartyRole.options.filter((r) => r !== 'BENEFICIAL_OWNER')}
         optionLabel={(v) => t(`partyRoles.${v}`)}
         value={role}
         onChange={setRole}

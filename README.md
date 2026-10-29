@@ -136,6 +136,30 @@ Web aplikacija `/api` užklausas per Vite proxy nukreipia į API. Sveikatos pati
   - Išspręsti gali tik AML_OFFICER: „įtarimas nepasitvirtino“ arba „pranešta FNTT“. Pastaruoju atveju byla lieka sustabdyta.
 - **Visų bylų matomumas.** Tvirtintojai ir AML atsakingi asmenys mato visas organizacijos bylas, nes priima sprendimus dėl kitų narių bylų.
 
+## Juridiniai asmenys: registrai ir naudos gavėjai (UBO)
+
+- **Registrų duomenys.** Kiekvienam juridiniam asmeniui, kuriam atliekame CDD, gaunami registrų duomenys per `RegistryProvider`: JAR, JADIS ir JANGIS.
+  - `MOCK` naudoja sintetines įmones. Jų kodai:
+    - `300000001` – paprasta įmonė;
+    - `300000002` – nuosavybė per holdingą (60 % × 100 %);
+    - `300000003` – UBO neatitikimas;
+    - `300000004` – neatsekamas užsienio savininkas.
+  - Bet kuris kitas kodas duoda paprastą įmonę su vienu savininku.
+- **Analizė** (`ownership/analysis.ts`) yra gryna funkcija:
+  - atseka grandinę ir apskaičiuoja netiesiogines dalis;
+  - UBO nustato pagal ribą, kuri saugoma kaip duomenys (`ownership_rule_sets`, LT-UBO-01: 25 %). Jei savininko virš ribos nėra, UBO laikomas vadovas;
+  - palygina rezultatą su JANGIS ir aptinka nepilnas grandines bei ciklus.
+- **Išrašai** (`ownership_snapshots`) nekeičiami.
+  - Asmens kodai JSON'e saugomi tik užšifruoti ir užmaskuoti, o UBO raktas – kaip su organizacija susieta HMAC reikšmė.
+  - Veikti galima tik pagal naujausius duomenis.
+- **UBO bylos šalys.** Nustatyti UBO pridedami kaip bylos šalys su vaidmeniu `BENEFICIAL_OWNER`.
+  - Jiems taikoma sankcijų ir PEP patikra.
+  - Gyvo tapatybės patikrinimo ir KYC atsakymų iš jų nereikia, nes jų CDD apima įmonės CDD.
+  - Rankiniu būdu UBO pridėti negalima. Pašalinus įmonę, pašalinami ir jos UBO.
+- **Neatitikimas arba nepilna grandinė** blokuoja bylos užbaigimą, kol užfiksuojamas sprendimo būdas, pagrindimas (bent 20 simbolių) ir įrodymas. Tai galima padaryti vieną kartą.
+- **Kontrolinis sąrašas** papildytas punktais `OWNERSHIP_FETCHED`, `OWNERSHIP_RESOLVED` ir `UBOS_LINKED`.
+- **Rizikos metodika `DEMO-2`** prideda veiksnį „sudėtinga arba neatsekama nuosavybė“. Užsienio UBO veikia per geografijos veiksnius.
+
 ## Rizikos vertinimas (LT-RISK-01)
 
 - **Taisyklės yra duomenys.**

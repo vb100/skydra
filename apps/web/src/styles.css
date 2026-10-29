@@ -236,3 +236,12 @@ fieldset {
   border-color: var(--accent);
   color: var(--accent);
 }
+
+.tree {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.tree li {
+  margin: 0.2rem 0;
+}

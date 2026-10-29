@@ -1,8 +1,10 @@
+import { ComplianceStatus } from '@skydra/shared';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 import { api } from '../../api';
-import { Page } from '../../ui';
+import { Badge, Page } from '../../ui';
 import type { CaseSummary } from './types';
 
 export function CasesPage({ canCreate }: { canCreate: boolean }) {
@@ -11,31 +13,67 @@ export function CasesPage({ canCreate }: { canCreate: boolean }) {
     queryKey: ['cases'],
     queryFn: () => api<CaseSummary[]>('GET', '/cases'),
   });
+  const [status, setStatus] = useState<ComplianceStatus | null>(null);
+  const all = cases.data ?? [];
+  const shown = status ? all.filter((c) => c.complianceStatus === status) : all;
+  const count = (s: ComplianceStatus) => all.filter((c) => c.complianceStatus === s).length;
 
   return (
-    <Page title={t('cases.title')}>
+    <Page title={t('cases.title')} wide>
       <nav className="actions">
-        <Link to="/">{t('common.back')}</Link>
-        {canCreate && <Link to="/cases/new">{t('cases.create')}</Link>}
+        {canCreate && (
+          <Link to="/cases/new" className="button-link">
+            {t('cases.create')}
+          </Link>
+        )}
       </nav>
-      {cases.data?.length === 0 && <p className="muted">{t('cases.none')}</p>}
+      {all.length > 0 && (
+        <div className="filters" role="group" aria-label={t('cases.compliance')}>
+          <button
+            type="button"
+            className={status ? 'secondary' : undefined}
+            onClick={() => setStatus(null)}
+          >
+            {t('cases.all', { count: all.length })}
+          </button>
+          {ComplianceStatus.options
+            .filter((s) => count(s) > 0)
+            .map((s) => (
+              <button
+                key={s}
+                type="button"
+                className={status === s ? undefined : 'secondary'}
+                onClick={() => setStatus(s)}
+              >
+                {t(`complianceStatuses.${s}`)} ({count(s)})
+              </button>
+            ))}
+        </div>
+      )}
+      {all.length === 0 && cases.isSuccess && <p className="muted">{t('cases.none')}</p>}
       <ul className="list">
-        {cases.data?.map((c) => (
+        {shown.map((c) => (
           <li key={c.id}>
-            <Link to={`/cases/${c.id}`} className="card">
+            <Link to={`/cases/${c.id}`} className="card case-row">
               <strong>
-                {c.reference} · {t(`transactionTypes.${c.transactionType}`)}
+                {c.reference} · {t(`transactionTypes.${c.transactionType}`)} ·{' '}
+                {t(`propertyTypes.${c.propertyType}`)}
               </strong>
+              <span className="badges">
+                <Badge kind={c.complianceStatus}>
+                  {t(`complianceStatuses.${c.complianceStatus}`)}
+                </Badge>
+                {c.riskLevel && (
+                  <Badge kind={`risk-${c.riskLevel}`}>{t(`riskLevels.${c.riskLevel}`)}</Badge>
+                )}
+              </span>
               <span>{c.propertyAddress}</span>
+              <span className="muted">{t(`stages.${c.stage}`)}</span>
               <span className="muted">
-                {t(`stages.${c.stage}`)} · {t('cases.aml')}:{' '}
                 {t(`amlApplicability.${c.amlApplicability}`)} ·{' '}
                 {t('cases.partyCount', { count: c.partyCount })}
-                {c.riskLevel && ` · ${t('risk.title')}: ${t(`riskLevels.${c.riskLevel}`)}`}
               </span>
-              <span className="muted">
-                {t('cases.responsible')}: {c.responsibleName}
-              </span>
+              <span className="muted">{c.responsibleName}</span>
             </Link>
           </li>
         ))}

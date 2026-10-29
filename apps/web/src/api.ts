@@ -43,3 +43,28 @@ export type Me = {
   memberships: Membership[];
   activeOrganizationId: string | null;
 };
+
+/**
+ * Downloads a file the API produces on POST (e.g. a registered case export) and hands it to the
+ * browser as a download. Returns the SHA-256 the API reported for the file.
+ */
+export async function apiDownload(path: string, fallbackName: string): Promise<string | null> {
+  const res = await fetch(`/api${path}`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'x-skydra-csrf': '1' },
+  });
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
+    throw new ApiError(data.error ?? 'unknown', res.status, data.message);
+  }
+  const name =
+    /filename="([^"]+)"/.exec(res.headers.get('content-disposition') ?? '')?.[1] ?? fallbackName;
+  const url = URL.createObjectURL(await res.blob());
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = name;
+  link.click();
+  URL.revokeObjectURL(url);
+  return res.headers.get('x-content-sha256');
+}

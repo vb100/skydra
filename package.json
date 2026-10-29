@@ -17,7 +17,8 @@
     "db:down": "docker compose -f infra/docker/compose.yaml down",
     "test:int": "pnpm --filter @skydra/shared build && pnpm --filter @skydra/api test:int",
     "db:migrate": "pnpm --filter @skydra/api db:migrate",
-    "db:seed:platform-admin": "pnpm --filter @skydra/api db:seed:platform-admin"
+    "db:seed:platform-admin": "pnpm --filter @skydra/api db:seed:platform-admin",
+    "db:seed:demo": "pnpm --filter @skydra/api db:seed:demo"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

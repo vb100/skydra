@@ -165,8 +165,9 @@ export function PartyKycPanel(props: {
         </div>
       )}
 
-      <div className="match">
-        <strong>{t('kyc.edit')}</strong>
+      {/* Answers of a completed CDD stay available but out of the way. */}
+      <details className="match disclosure" open={cp.cddStatus !== 'COMPLETED'}>
+        <summary>{t('kyc.edit')}</summary>
         <Field
           label={t('parties.kycPurpose')}
           name={`purpose-${cp.id}`}
@@ -201,7 +202,7 @@ export function PartyKycPanel(props: {
             </button>
           )}
         </div>
-      </div>
+      </details>
     </div>
   );
 }

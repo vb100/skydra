@@ -33,6 +33,44 @@ Web aplikacija `/api` užklausas per Vite proxy nukreipia į API. Sveikatos pati
 
 > **Jei lokali bazė sukurta anksčiau nei dabartinis `infra/docker/postgres-init/01-roles.sql`**, joje trūksta rolių `skydra_migrator` ir (arba) `skydra_app`. Bazę perkurkite: `docker compose -f infra/docker/compose.yaml down -v && pnpm db:up && pnpm db:migrate`. **Dėmesio:** `down -v` ištrina visus lokalios bazės duomenis.
 
+## Demo duomenys (prototipo pristatymui)
+
+```bash
+pnpm db:seed:demo               # „Demo NT agentūra“: 3 nariai ir 9 bylos
+pnpm dev
+```
+
+- **Nariai.** Komanda sukuria tris narius ir kiekvienam išveda vienkartinę aktyvavimo nuorodą (galioja 72 val.). Paskyrą aktyvuodamas pristatantis asmuo pats nusistato slaptažodį ir 2FA, todėl iš anksto žinomų prisijungimo duomenų nėra.
+  - Gintarė Vadovaitė (`vadove@demo.skydra.eu`) – administratorė, vadovė, tvirtintoja;
+  - Tomas Brokeraitis (`brokeris@demo.skydra.eu`) – brokeris, atsakingas už bylas;
+  - Aistė Atitiktytė (`aml@demo.skydra.eu`) – brokerė ir AML atsakinga asmuo.
+- **Bylos sukuriamos per tuos pačius servisus kaip ir sąsajoje**, todėl joms galioja visos taisyklės ir pilnas auditas:
+
+| Byla | Būsena                          | Ką rodo                                                     |
+| ---- | ------------------------------- | ----------------------------------------------------------- |
+| 0001 | Atlikta, žema rizika            | pilnas fizinių asmenų sandoris; galima eksportuoti PDF      |
+| 0002 | Reikia peržiūros, didelė rizika | patvirtintas PEP; patvirtinimo laukia vadovė                |
+| 0003 | Reikia peržiūros                | neigiamos informacijos sutapimas laukia brokerio įvertinimo |
+| 0004 | Nepradėta                       | nuoma < 10 000 EUR/mėn., AML netaikoma                      |
+| 0005 | Vykdoma                         | nuoma, kuriai AML pritaikyta brokerio sprendimu             |
+| 0006 | Vykdoma                         | įmonė su UBO neatitikimu (JANGIS)                           |
+| 0007 | Atlikta, vidutinė rizika        | įmonė per holdingą, UBO nustatyti ir patikrinti             |
+| 0008 | Sustabdyta                      | grynieji ir pranešimas AML atsakingam asmeniui              |
+| 0009 | Sustabdyta                      | patvirtintas sankcijų sutapimas                             |
+
+- **Pakartotinis paleidimas** bylų nekuria. Jis tik išduoda naujas nuorodas dar neaktyvavusiems nariams.
+- **Prod aplinkoje** komanda neveikia.
+
+## Bylos eksportas (PDF)
+
+- **Kada galima.** Eksportuoti galima tik užbaigtą bylą (atitikties būsena `COMPLETED`). Tai tikrina ir API, ir DB.
+- **Turinys.** PDF apima sandorį, šalis, tapatybės nustatymą, registrų duomenis ir UBO, patikras, rizikos vertinimą, sprendimus, AML reikalavimų įvykdymą ir veiksmų istoriją.
+  - Asmens ir dokumentų numeriai rodomi tik užmaskuoti.
+  - Demonstraciniai duomenys PDF faile aiškiai pažymėti.
+- **Registras.** Kiekvieno eksporto SHA-256 maiša įrašoma į `case_exports` ir audito žurnalą. Pagal ją vėliau galima patikrinti, ar pateiktas failas nepakeistas.
+- **Kaip daromas.** Eksportas daromas POST užklausa su CSRF antrašte, todėl jo negalima sukelti iš kitos svetainės.
+- **Šriftas.** Naudojamas DejaVu Sans – su juo teisingai rodomos lietuviškos raidės.
+
 ## Duomenų bazė
 
 - **Migracijos:** SQL failai `apps/api/migrations/NNNN_pavadinimas.sql`, vykdomi eilės tvarka, kiekvienas savo transakcijoje. Pritaikytos migracijos keisti negalima: jei pasikeitė kontrolinė suma, migracijų vykdytojas atsisako tęsti. Pataisos daromos nauja migracija.

@@ -11,7 +11,8 @@
     "test:int": "vitest run --config vitest.int.config.mts",
     "db:migrate": "tsx src/database/migrate.ts",
     "db:migrate:dist": "node dist/database/migrate.js",
-    "db:seed:platform-admin": "tsx src/database/seed-platform-admin.ts"
+    "db:seed:platform-admin": "tsx src/database/seed-platform-admin.ts",
+    "db:seed:demo": "tsx src/database/seed-demo.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.3",
@@ -20,8 +21,10 @@
     "@nestjs/platform-fastify": "^12.1.3",
     "@skydra/shared": "workspace:*",
     "argon2": "^0.45.1",
+    "dejavu-fonts-ttf": "2.37.3",
     "fastify": "5.12.5",
     "otpauth": "^9.5.2",
+    "pdfkit": "0.20.2",
     "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
@@ -30,6 +33,7 @@
   "devDependencies": {
     "@nestjs/cli": "^12.0.8",
     "@types/node": "^24.19.2",
+    "@types/pdfkit": "0.17.7",
     "@types/pg": "^8.23.1",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",

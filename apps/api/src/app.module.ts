@@ -7,6 +7,7 @@ import { CasesController } from './cases/cases.controller';
 import { APP_CONFIG, ConfigModule } from './config/config.module';
 import type { AppConfig } from './config/env';
 import { DatabaseModule, PG_POOL } from './database/database.module';
+import { ExportController } from './export/export.controller';
 import { HealthController } from './health/health.controller';
 import { OrganizationGuard, PlatformAdminGuard, SessionGuard } from './http/session';
 import { OrganizationController } from './organization/organization.controller';
@@ -39,6 +40,7 @@ export class AppModule {
         KycController,
         RiskController,
         OwnershipController,
+        ExportController,
       ],
       providers: [
         {

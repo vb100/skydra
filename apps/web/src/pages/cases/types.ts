@@ -34,6 +34,7 @@ export type CaseParty = {
   cddScope: 'FULL' | 'RELIANCE';
   reliance: { entityName: string; entityCode?: string | null } | null;
   cddStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+  beneficialOwnerOf: string | null;
   kyc: {
     purpose?: string | null;
     sourceOfFunds?: string | null;
@@ -143,4 +144,53 @@ export type RiskOverview = {
   current: RiskAssessment | null;
   stale: boolean;
   history: RiskAssessment[];
+};
+
+export type OwnershipNode = {
+  kind: 'NATURAL' | 'LEGAL';
+  name: string;
+  code: string | null;
+  country: string | null;
+  sharePercent: number;
+  effectivePercent: number;
+  unresolved: boolean;
+  children: OwnershipNode[];
+};
+
+export type OwnershipView = {
+  snapshotId: string;
+  casePartyId: string;
+  provider: string;
+  company: {
+    name: string;
+    code: string;
+    legalForm: string | null;
+    address: string | null;
+    manager: { firstName: string; lastName: string } | null;
+  };
+  analysis: { thresholdPercent: number; tree: OwnershipNode[]; depth: number; issues: string[] };
+  ubos: {
+    key: string;
+    person: {
+      firstName: string;
+      lastName: string;
+      birthDate: string | null;
+      citizenship: string | null;
+      personalCodeMasked: string | null;
+    };
+    basis: 'OWNERSHIP' | 'CONTROL' | 'SENIOR_MANAGING_OFFICIAL';
+    effectivePercent: number | null;
+    computed: boolean;
+    declared: boolean;
+    linked: boolean;
+  }[];
+  incomplete: boolean;
+  discrepancy: boolean;
+  resolution: {
+    resolution: string;
+    notes: string;
+    evidence: string;
+    resolvedByName: string;
+  } | null;
+  fetchedAt: string;
 };

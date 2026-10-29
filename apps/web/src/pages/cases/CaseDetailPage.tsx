@@ -9,10 +9,11 @@ import { ErrorText, Field, Page, Select } from '../../ui';
 import { AddPartyForm } from './AddPartyForm';
 import { ChecklistPanel } from './ChecklistPanel';
 import { DecisionsPanel } from './DecisionsPanel';
+import { OwnershipPanel } from './OwnershipPanel';
 import { PartyKycPanel } from './PartyKycPanel';
 import { RiskPanel } from './RiskPanel';
 import { ScreeningPanel } from './ScreeningPanel';
-import type { CaseAbilities, CaseDetail, IdentityVerification } from './types';
+import type { CaseAbilities, CaseDetail, IdentityVerification, OwnershipView } from './types';
 
 export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
   const { canAssign } = abilities;
@@ -34,6 +35,10 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
     queryKey: ['identity', id],
     queryFn: () => api<IdentityVerification[]>('GET', `/cases/${id}/identity-verifications`),
   });
+  const ownership = useQuery({
+    queryKey: ['ownership', id],
+    queryFn: () => api<OwnershipView[]>('GET', `/cases/${id}/ownership`),
+  });
   const health = useQuery({
     queryKey: ['health'],
     queryFn: () => api<HealthResponse>('GET', '/health'),
@@ -46,7 +51,7 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
     Promise.all([
       queryClient.invalidateQueries({ queryKey: ['case', id] }),
       queryClient.invalidateQueries({ queryKey: ['cases'] }),
-      ...['screenings', 'checklist', 'identity', 'decisions', 'risk'].map((key) =>
+      ...['screenings', 'checklist', 'identity', 'decisions', 'risk', 'ownership'].map((key) =>
         queryClient.invalidateQueries({ queryKey: [key, id] }),
       ),
     ]);
@@ -172,6 +177,14 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
               {cp.party.personalCodeMasked && ` · ${cp.party.personalCodeMasked}`}
               {cp.party.companyCode && ` · ${cp.party.companyCode}`}
             </span>
+            {cp.beneficialOwnerOf && (
+              <span>
+                {t('ownership.ownerOf', {
+                  company:
+                    c.parties.find((x) => x.id === cp.beneficialOwnerOf)?.party.displayName ?? '',
+                })}
+              </span>
+            )}
             <span>
               {cp.isOurClient && t('parties.isOurClient')}
               {cp.representedByOtherBroker && ` · ${t('parties.representedByOtherBroker')}`}
@@ -183,7 +196,16 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
             <span>
               {t('parties.cddStatus')}: {t(`parties.cddStatuses.${cp.cddStatus}`)}
             </span>
-            {amlApplies && (
+            {amlApplies && cp.party.partyType === 'LEGAL' && cp.cddScope === 'FULL' && (
+              <OwnershipPanel
+                caseId={id}
+                casePartyId={cp.id}
+                ownership={ownership.data?.find((o) => o.casePartyId === cp.id)}
+                simulated={!!health.data?.simulatedProviders}
+                run={run}
+              />
+            )}
+            {amlApplies && cp.role !== 'BENEFICIAL_OWNER' && (
               <PartyKycPanel
                 caseId={id}
                 caseParty={cp}

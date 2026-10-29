@@ -383,6 +383,40 @@ describe('HTTP API: authentication, CSRF and guards', () => {
       expect(verified.statusCode).toBe(201);
       expect(await missing()).toEqual(['CDD_COMPLETED', 'RISK_ASSESSED']);
 
+      // A company buyer: registry data through the simulated provider, then its owners.
+      const company = await call('POST', `/api/cases/${id}/parties`, {
+        cookie: broker1,
+        body: {
+          party: {
+            partyType: 'LEGAL',
+            companyName: 'UAB Neatitikimas',
+            companyCode: '300000003',
+            registrationCountry: 'LT',
+          },
+          role: 'BUYER',
+          isOurClient: true,
+        },
+      });
+      const fetched = await call(
+        'POST',
+        `/api/cases/${id}/parties/${company.json().casePartyId}/ownership`,
+        { cookie: broker1 },
+      );
+      expect(fetched.statusCode).toBe(201);
+      const [ownership] = (
+        await call('GET', `/api/cases/${id}/ownership`, { cookie: broker1 })
+      ).json();
+      expect(ownership).toMatchObject({ discrepancy: true, ubos: [{}, {}] });
+      expect(ownership.fetchedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+      for (const secret of ['37905050044', '48509090055', 'personalCodeEncrypted'])
+        expect(JSON.stringify(ownership)).not.toContain(secret);
+      const linked = await call(
+        'POST',
+        `/api/cases/${id}/ownership/${fetched.json().snapshotId}/link-owners`,
+        { cookie: broker1 },
+      );
+      expect(linked.json().linked).toBe(2);
+
       // Deciding approvals needs the approver permission.
       const decide = await call(
         'POST',

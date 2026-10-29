@@ -16,6 +16,9 @@ import {
   UnavailableIdentityProvider,
 } from './kyc/identity-provider';
 import { KycController } from './kyc/kyc.controller';
+import { MockRegistryProvider } from './ownership/mock-registry';
+import { OwnershipController } from './ownership/ownership.controller';
+import { REGISTRY_PROVIDER, UnavailableRegistryProvider } from './ownership/registry-provider';
 import { PlatformController } from './platform/platform.controller';
 import { RiskController } from './risk/risk.controller';
 import { MockScreeningProvider } from './screening/mock-provider';
@@ -35,6 +38,7 @@ export class AppModule {
         CasesController,
         KycController,
         RiskController,
+        OwnershipController,
       ],
       providers: [
         {
@@ -60,6 +64,13 @@ export class AppModule {
             config.providers.identity === 'MOCK'
               ? new MockIdentityProvider()
               : new UnavailableIdentityProvider(config.providers.identity),
+        },
+        {
+          provide: REGISTRY_PROVIDER,
+          useValue:
+            config.providers.registry === 'MOCK'
+              ? new MockRegistryProvider()
+              : new UnavailableRegistryProvider(config.providers.registry),
         },
         SessionGuard,
         PlatformAdminGuard,

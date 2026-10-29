@@ -71,6 +71,21 @@ pnpm dev
 - **Kaip daromas.** Eksportas daromas POST užklausa su CSRF antrašte, todėl jo negalima sukelti iš kitos svetainės.
 - **Šriftas.** Naudojamas DejaVu Sans – su juo teisingai rodomos lietuviškos raidės.
 
+## Diegimas (GCP)
+
+- **Atvaizdas.** Vienas Docker atvaizdas (`Dockerfile`): API aptarnauja ir sukompiliuotą web sąsają tame pačiame origin'e (`WEB_DIST_DIR`).
+- **Saugumo antraštės:** CSP, HSTS (ne lokaliai), `nosniff`, `X-Frame-Options`.
+- **Migracijos ir demo duomenys** vykdomi Cloud Run job'ais iš to paties atvaizdo.
+- **Infrastruktūra:**
+  - aprašyta `infra/terraform`: `shared` – API ir Artifact Registry, `env` – viena aplinka;
+  - skriptai yra `infra/scripts`;
+  - Terraform paleidžiamas konteineryje su trumpalaikiu `gcloud` žetonu.
+- **Žingsnis po žingsnio:** `docs/diegimas-demo.md`.
+
+```bash
+docker build -t skydra:local .   # lokaliai; Cloud Run atvaizdą kompiliuoja infra/scripts/build-push.sh (linux/amd64)
+```
+
 ## Duomenų bazė
 
 - **Migracijos:** SQL failai `apps/api/migrations/NNNN_pavadinimas.sql`, vykdomi eilės tvarka, kiekvienas savo transakcijoje. Pritaikytos migracijos keisti negalima: jei pasikeitė kontrolinė suma, migracijų vykdytojas atsisako tęsti. Pataisos daromos nauja migracija.

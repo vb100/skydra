@@ -11,6 +11,8 @@ const EnvSchema = z.object({
   SECRET_ENCRYPTION_KEY: z
     .string()
     .refine((v) => Buffer.from(v, 'base64').length === 32, 'must be 32 bytes, base64-encoded'),
+  // Built web app to serve from the same origin (the container image); unset in development.
+  WEB_DIST_DIR: z.string().min(1).optional(),
   SCREENING_PROVIDER: ProviderMode,
   IDENTITY_PROVIDER: ProviderMode,
   REGISTRY_PROVIDER: ProviderMode,
@@ -22,6 +24,7 @@ export type AppConfig = {
   databaseUrl: string;
   publicAppUrl: string;
   secretEncryptionKey: string;
+  webDistDir: string | null;
   providers: {
     screening: ProviderMode;
     identity: ProviderMode;
@@ -55,6 +58,7 @@ export function loadConfig(source: NodeJS.ProcessEnv): AppConfig {
     databaseUrl: e.DATABASE_URL,
     publicAppUrl: new URL(e.PUBLIC_APP_URL).origin,
     secretEncryptionKey: e.SECRET_ENCRYPTION_KEY,
+    webDistDir: e.WEB_DIST_DIR ?? null,
     providers: {
       screening: e.SCREENING_PROVIDER,
       identity: e.IDENTITY_PROVIDER,

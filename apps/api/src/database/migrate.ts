@@ -15,6 +15,18 @@ async function main(): Promise<void> {
   try {
     const applied = await migrate(pool, dir);
     console.log(applied.length > 0 ? `Applied: ${applied.join(', ')}` : 'Database is up to date');
+
+    // In GCP the runtime role is created by migration 0001 (not through Cloud SQL, whose users
+    // join cloudsqlsuperuser); here it gets its login password from Secret Manager.
+    const appPassword = process.env.APP_DB_PASSWORD;
+    if (appPassword) {
+      const { rows } = await pool.query<{ sql: string }>(
+        "SELECT format('ALTER ROLE skydra_app WITH LOGIN PASSWORD %L', $1::text) AS sql",
+        [appPassword],
+      );
+      await pool.query(rows[0]!.sql);
+      console.log('Runtime role skydra_app: login enabled');
+    }
   } finally {
     await pool.end();
   }

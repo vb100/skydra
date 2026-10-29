@@ -40,3 +40,26 @@ jobs:
       - run: pnpm test
       - run: pnpm test:int
       - run: pnpm build
+
+  # The deployable image builds and starts its runtime pieces; Terraform is formatted and valid.
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t skydra:ci .
+      - name: Image smoke test
+        run: |
+          docker run --rm skydra:ci sh -c '
+            test "$(id -u)" != 0 &&
+            test -f web/index.html &&
+            test -f dist/database/migrate.js &&
+            ls migrations/*.sql >/dev/null &&
+            node -e "require(\"argon2\"); require(\"pdfkit\")"'
+      - name: Terraform fmt and validate
+        run: |
+          tf() { docker run --rm -v "$PWD/infra/terraform:/w" -w "/w/$1" hashicorp/terraform:1.13 "${@:2}"; }
+          tf . fmt -check -recursive
+          for stack in shared env; do
+            tf "$stack" init -backend=false -input=false
+            tf "$stack" validate
+          done

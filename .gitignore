@@ -13,3 +13,9 @@ docs/*.mp4
 
 # Personal Claude Code settings
 .claude/settings.local.json
+
+# Terraform: providers and any local state (state holds secrets and lives in GCS)
+infra/terraform/**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan

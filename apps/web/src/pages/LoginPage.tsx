@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { api } from '../api';
 import { useErrorMessage } from '../session';
-import { ErrorText, Field, Page } from '../ui';
+import { ErrorText, Field } from '../ui';
+import { AuthLayout, PasswordField } from './AuthLayout';
 
 export function LoginPage() {
   const { t } = useTranslation();
@@ -19,17 +20,34 @@ export function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      await api('POST', '/auth/login', { email, password });
+      await api('POST', '/auth/login', { email: email.trim(), password });
       navigate('/login/second-factor');
     } catch (err) {
       setError(errorMessage(err));
+      setPassword('');
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Page title={t('login.title')}>
+    <AuthLayout
+      title={t('login.title')}
+      subtitle={t('login.subtitle')}
+      step={{ current: 1, total: 2 }}
+      footer={
+        <>
+          <details className="auth-help">
+            <summary>{t('login.forgot')}</summary>
+            <p>{t('login.forgotHint')}</p>
+          </details>
+          <details className="auth-help">
+            <summary>{t('login.noAccount')}</summary>
+            <p>{t('login.noAccountHint')}</p>
+          </details>
+        </>
+      }
+    >
       <form onSubmit={submit} className="stack">
         <Field
           label={t('login.email')}
@@ -40,19 +58,18 @@ export function LoginPage() {
           value={email}
           onChange={setEmail}
         />
-        <Field
+        <PasswordField
           label={t('login.password')}
           name="password"
-          type="password"
           autoComplete="current-password"
           value={password}
           onChange={setPassword}
         />
         <ErrorText message={error} />
-        <button type="submit" className="primary block" disabled={busy}>
-          {t('login.submit')}
+        <button type="submit" className="primary block large" disabled={busy}>
+          {busy ? t('login.busy') : t('login.submit')}
         </button>
       </form>
-    </Page>
+    </AuthLayout>
   );
 }

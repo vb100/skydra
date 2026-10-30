@@ -14,6 +14,7 @@ import {
   type CaseActor,
   createCase,
   getCase,
+  getCaseHistory,
   listCases,
   removeCaseParty,
   updateCase,
@@ -218,6 +219,17 @@ describe('cases and parties', () => {
         monthlyRent: '700.00',
         amlApplicability: 'NOT_APPLICABLE_RENT_THRESHOLD',
       });
+    });
+
+    it('shows its history newest first, with only whitelisted details', async () => {
+      const { id } = await as(broker, (c) => createCase(c, actor(broker), SALE));
+      await as(broker, (c) => updateCase(c, actor(broker), id, { stage: 'DATA_COLLECTION' }));
+      const history = await as(broker, (c) => getCaseHistory(c, id));
+      expect(history.map((h) => h.action)).toEqual(['case.updated', 'case.created']);
+      expect(history[0]).toMatchObject({ actorName: expect.any(String), details: {} });
+      await expect(as(org.admin, (c) => getCaseHistory(c, id))).rejects.toBeInstanceOf(
+        NotFoundError,
+      );
     });
 
     it('keeps the reference, author and regime immutable', async () => {

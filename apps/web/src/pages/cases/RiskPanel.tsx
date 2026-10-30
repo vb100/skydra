@@ -23,6 +23,10 @@ export function RiskPanel({ caseId, run }: { caseId: string; run: Run }) {
   if (!r) return null;
   const { preview, current } = r;
   const differs = finalLevel !== '' && finalLevel !== preview.calculatedLevel;
+  const needsAssessment = !current || r.stale;
+  // The recorded level while it is current; otherwise what the data says now.
+  const shown: RiskLevel =
+    !needsAssessment && current ? current.finalLevel : preview.calculatedLevel;
   const date = formatDate;
 
   async function assess(e: FormEvent) {
@@ -48,9 +52,90 @@ export function RiskPanel({ caseId, run }: { caseId: string; run: Run }) {
     }
   }
 
+  const form = (
+    <form onSubmit={assess} className="stack">
+      <Select
+        label={t('risk.finalLevel')}
+        name="finalLevel"
+        options={RiskLevel.options}
+        optionLabel={(v) => t(`riskLevels.${v}`)}
+        value={finalLevel}
+        onChange={setFinalLevel}
+        emptyLabel={`${t('risk.asCalculated')} (${t(`riskLevels.${preview.calculatedLevel}`)})`}
+      />
+      {differs && (
+        <>
+          <Field
+            label={t('risk.justification')}
+            name="riskJustification"
+            value={justification}
+            onChange={setJustification}
+          />
+          <small className="muted">{t('risk.lowerHint')}</small>
+        </>
+      )}
+      <div className="actions">
+        <button
+          type="submit"
+          className={needsAssessment ? 'primary' : undefined}
+          disabled={differs && justification.trim().length < 10}
+        >
+          {t('risk.assess')}
+        </button>
+      </div>
+    </form>
+  );
+  const matched = preview.factors.filter((f) => f.matched);
+
   return (
     <section className="card static stack">
       <h2>{t('risk.title')}</h2>
+      <Gauge level={shown} pending={needsAssessment} />
+      {current ? (
+        <span className="muted">
+          {t('risk.entry', {
+            level: t(`riskLevels.${current.finalLevel}`),
+            date: date(current.assessedAt),
+            by: current.assessedByName,
+          })}
+          {current.finalLevel !== current.calculatedLevel &&
+            ` (${t('risk.calculatedWas', { level: t(`riskLevels.${current.calculatedLevel}`) })})`}
+          {' · '}
+          {t('risk.nextReview', { date: date(current.nextReviewOn) })}
+        </span>
+      ) : (
+        <span className="muted">{t('risk.none')}</span>
+      )}
+      {current?.justification && <span className="muted">{current.justification}</span>}
+      {r.stale && (
+        <div className="banner warn" role="status">
+          {t('risk.stale')}
+        </div>
+      )}
+      {(r.stale || !current || preview.calculatedLevel !== current.finalLevel) && (
+        <span>
+          {t('risk.calculatedNow', { level: t(`riskLevels.${preview.calculatedLevel}`) })}
+        </span>
+      )}
+      {preview.mandatoryLevel && (
+        <span>{t('risk.mandatory', { level: t(`riskLevels.${preview.mandatoryLevel}`) })}</span>
+      )}
+      {preview.escalatedByMediumCount && <span>{t('risk.mediumEscalation')}</span>}
+
+      <details className="disclosure" open={needsAssessment}>
+        <summary>{t('risk.factors', { count: matched.length })}</summary>
+        <Factors factors={preview.factors} />
+      </details>
+
+      {needsAssessment ? (
+        form
+      ) : (
+        <details className="disclosure">
+          <summary>{t('risk.changeAssessment')}</summary>
+          {form}
+        </details>
+      )}
+
       <span className="muted">
         {t('risk.methodology', { code: r.ruleSet.code, version: r.ruleSet.version })}
       </span>
@@ -59,74 +144,8 @@ export function RiskPanel({ caseId, run }: { caseId: string; run: Run }) {
           <p className="muted">{t('risk.demo')}</p>
         </Hint>
       )}
-
-      <div className="match">
-        <strong>
-          {t('risk.current')}: {current ? <Level level={current.finalLevel} /> : t('risk.none')}
-        </strong>
-        {current && (
-          <>
-            <span className="muted">
-              {t('risk.entry', {
-                level: t(`riskLevels.${current.finalLevel}`),
-                date: date(current.assessedAt),
-                by: current.assessedByName,
-              })}
-              {current.finalLevel !== current.calculatedLevel &&
-                ` (${t('risk.calculatedWas', { level: t(`riskLevels.${current.calculatedLevel}`) })})`}
-            </span>
-            {current.justification && <span className="muted">{current.justification}</span>}
-            <span>{t('risk.nextReview', { date: date(current.nextReviewOn) })}</span>
-          </>
-        )}
-        {r.stale && <span className="error">{t('risk.stale')}</span>}
-      </div>
-
-      <div className="match">
-        <strong>
-          {t('risk.preliminary')}: <Level level={preview.calculatedLevel} />
-        </strong>
-        {preview.mandatoryLevel && (
-          <span>{t('risk.mandatory', { level: t(`riskLevels.${preview.mandatoryLevel}`) })}</span>
-        )}
-        {preview.escalatedByMediumCount && <span>{t('risk.mediumEscalation')}</span>}
-        <Factors factors={preview.factors} />
-      </div>
-
-      <form onSubmit={assess} className="stack">
-        <Select
-          label={t('risk.finalLevel')}
-          name="finalLevel"
-          options={RiskLevel.options}
-          optionLabel={(v) => t(`riskLevels.${v}`)}
-          value={finalLevel}
-          onChange={setFinalLevel}
-          emptyLabel={`${t('risk.asCalculated')} (${t(`riskLevels.${preview.calculatedLevel}`)})`}
-        />
-        {differs && (
-          <>
-            <Field
-              label={t('risk.justification')}
-              name="riskJustification"
-              value={justification}
-              onChange={setJustification}
-            />
-            <small className="muted">{t('risk.lowerHint')}</small>
-          </>
-        )}
-        <div className="actions">
-          <button
-            type="submit"
-            className={r.stale || !current ? 'primary' : undefined}
-            disabled={differs && justification.trim().length < 10}
-          >
-            {t('risk.assess')}
-          </button>
-        </div>
-      </form>
-
       {r.history.length > 1 && (
-        <details>
+        <details className="disclosure">
           <summary>{t('risk.history')}</summary>
           <ul className="checklist">
             {r.history.slice(1).map((a) => (
@@ -145,6 +164,24 @@ export function RiskPanel({ caseId, run }: { caseId: string; run: Run }) {
         </details>
       )}
     </section>
+  );
+}
+
+/** Three segments, the current level filled; dashed while the assessment is missing or stale. */
+function Gauge({ level, pending }: { level: RiskLevel; pending: boolean }) {
+  const { t } = useTranslation();
+  return (
+    <div
+      className={`gauge ${pending ? 'gauge-pending' : ''}`}
+      role="img"
+      aria-label={`${t('risk.gauge')}: ${t(`riskLevels.${level}`)}`}
+    >
+      {RiskLevel.options.map((l) => (
+        <span key={l} className={`gauge-seg gauge-${l.toLowerCase()} ${l === level ? 'on' : ''}`}>
+          {t(`riskLevels.${l}`)}
+        </span>
+      ))}
+    </div>
   );
 }
 

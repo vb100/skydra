@@ -436,6 +436,66 @@ export async function removeCaseParty(
   await refreshCompliance(client, ids[1]!);
 }
 
+export type CaseHistoryEntry = {
+  seq: string;
+  occurredAt: string;
+  action: string;
+  actorName: string | null;
+  /** A few short, non-personal facts about the change (e.g. the risk level), for the timeline. */
+  details: Record<string, string | number | boolean>;
+};
+
+/** Fields of an audit event's `after` value shown in the case timeline; nothing else leaves. */
+const HISTORY_DETAILS = [
+  'role',
+  'matchCount',
+  'status',
+  'reviewStatus',
+  'finalLevel',
+  'decision',
+  'resolution',
+  'compliance_status',
+  'provider',
+  'documentType',
+] as const;
+
+/** The case's audit trail, newest first, as a timeline for the people who can see the case. */
+export async function getCaseHistory(
+  client: PoolClient,
+  caseId: string,
+): Promise<CaseHistoryEntry[]> {
+  const id = z.uuid().parse(caseId);
+  await assertCaseVisible(client, id);
+  const { rows } = await client.query<{
+    seq: string;
+    occurred_at: string;
+    action: string;
+    actor_name: string | null;
+    after: Record<string, unknown> | null;
+  }>(
+    `SELECT e.seq::text, e.occurred_at, e.action, u.full_name AS actor_name, e.after
+       FROM audit_events e LEFT JOIN users u ON u.id = e.actor_user_id
+      WHERE e.entity_type = 'case' AND e.entity_id = $1
+      ORDER BY e.seq DESC
+      LIMIT 500`,
+    [id],
+  );
+  return rows.map((r) => ({
+    seq: r.seq,
+    occurredAt: r.occurred_at,
+    action: r.action,
+    actorName: r.actor_name,
+    details: Object.fromEntries(
+      HISTORY_DETAILS.flatMap((k) => {
+        const v = r.after?.[k];
+        return typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean'
+          ? [[k, v]]
+          : [];
+      }),
+    ),
+  }));
+}
+
 /** Active brokers and managers who can be responsible for a case. */
 export async function listAssignees(
   client: PoolClient,

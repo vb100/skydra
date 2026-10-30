@@ -2,6 +2,7 @@ export * from './access';
 export * from './cases';
 export * from './kyc';
 export * from './ownership';
+export * from './progress';
 export * from './risk';
 export * from './runtime';
 export * from './screening';

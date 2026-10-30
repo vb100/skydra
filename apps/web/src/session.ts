@@ -1,3 +1,4 @@
+import type { HealthResponse } from '@skydra/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { api, ApiError, type Me } from './api';
@@ -20,6 +21,15 @@ export function useMe() {
 export function useRefreshMe() {
   const client = useQueryClient();
   return () => client.invalidateQueries({ queryKey: ['me'] });
+}
+
+/** Server status; `simulatedProviders` marks a demo environment. Public, fetched once. */
+export function useHealth() {
+  return useQuery({
+    queryKey: ['health'],
+    queryFn: () => api<HealthResponse>('GET', '/health'),
+    staleTime: Infinity,
+  });
 }
 
 /** Known business-rule refusals from the API (English, from the database) → LT texts. */

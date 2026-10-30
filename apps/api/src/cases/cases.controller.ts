@@ -23,6 +23,7 @@ import {
   type CaseActor,
   createCase,
   getCase,
+  getCaseHistory,
   listAssignees,
   listCases,
   removeCaseParty,
@@ -81,6 +82,11 @@ export class CasesController {
   @Get('cases/:id')
   get(@CurrentPrincipal() principal: Principal, @Param('id') id: string) {
     return this.run(principal, (c) => getCase(c, this.deps.keys, id));
+  }
+
+  @Get('cases/:id/history')
+  history(@CurrentPrincipal() principal: Principal, @Param('id') id: string) {
+    return this.run(principal, (c) => getCaseHistory(c, id));
   }
 
   @Post('cases/:id')

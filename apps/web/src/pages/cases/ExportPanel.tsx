@@ -30,9 +30,18 @@ export function ExportPanel(props: {
     if (ok) toast(t('toast.exported', { hash: `${(hash ?? '').slice(0, 16)}…` }));
   }
 
+  // Before completion the panel is a single line; the list of exports appears once there is one.
+  if (!completed && exports.data?.length === 0)
+    return (
+      <section className="card static export-compact">
+        <h2 className="card-title">{t('exports.title')}</h2>
+        <span className="muted">{t('exports.onlyCompleted')}</span>
+      </section>
+    );
+
   return (
     <section className="card static stack">
-      <h2>{t('exports.title')}</h2>
+      <h2 className="card-title">{t('exports.title')}</h2>
       {completed ? (
         <button type="button" className="primary" onClick={() => void download()}>
           {t('exports.download')}

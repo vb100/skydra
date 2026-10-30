@@ -76,7 +76,8 @@ export type ScreeningCheck = {
   matches: ScreeningMatch[];
 };
 
-export type ChecklistEntry = { casePartyId: string | null; item: string; ok: boolean };
+/** One checklist row from the API (app.case_checklist). */
+export type ChecklistEntry = import('@skydra/shared').ChecklistResult;
 
 export type IdentityVerification = {
   id: string;
@@ -93,6 +94,7 @@ export type Approval = {
   id: string;
   reason: string;
   status: 'OPEN' | 'APPROVED' | 'REJECTED';
+  requestedBy: string;
   requestedByName: string;
   decidedByName: string | null;
   decisionJustification: string | null;
@@ -108,7 +110,14 @@ export type Escalation = {
 };
 
 /** What the signed-in member may do beyond working on cases (mirrors access/policy.ts). */
-export type CaseAbilities = { canAssign: boolean; canApprove: boolean; isAmlOfficer: boolean };
+export type CaseAbilities = {
+  userId: string;
+  canAssign: boolean;
+  canApprove: boolean;
+  isAmlOfficer: boolean;
+  /** A one-member organization, where the four-eyes rule does not apply. */
+  solo: boolean;
+};
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
 
@@ -200,3 +209,13 @@ export type OwnershipView = {
  * when the action succeeded (callers reset their form only then).
  */
 export type Run = (action: () => Promise<unknown>, success?: string) => Promise<boolean>;
+
+export type CaseHistoryEntry = {
+  seq: string;
+  occurredAt: string;
+  action: string;
+  actorName: string | null;
+  details: Record<string, string | number | boolean>;
+};
+
+export type CaseTab = 'overview' | 'parties' | 'screening' | 'risk' | 'decisions' | 'history';

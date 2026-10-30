@@ -43,6 +43,8 @@ function SignedIn() {
     canCreateCases ||
     !!active?.permissions.some((p) => ['CASE_VIEW_ALL', 'APPROVER', 'AML_OFFICER'].includes(p));
   const abilities = {
+    userId: data.user.id,
+    solo: active?.planCode === 'INDIVIDUAL',
     canAssign: !!active?.roles.includes('MANAGER') && active.planCode !== 'INDIVIDUAL',
     canApprove: !!active?.permissions.includes('APPROVER'),
     isAmlOfficer: !!active?.permissions.includes('AML_OFFICER'),

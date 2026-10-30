@@ -12,6 +12,7 @@ export function AppShell(props: {
   me: Me;
   active: Membership | undefined;
   canSeeCases: boolean;
+  canSeeDashboard: boolean;
   canSeeMembers: boolean;
   children: ReactNode;
 }) {
@@ -41,7 +42,13 @@ export function AppShell(props: {
           {active && <span className="topbar-org">{active.organizationName}</span>}
           {health.data?.simulatedProviders && <span className="badge badge-demo">DEMO</span>}
           <nav className="topbar-nav">
+            {props.canSeeCases && (
+              <NavLink to="/" end>
+                {t('work.link')}
+              </NavLink>
+            )}
             {props.canSeeCases && <NavLink to="/cases">{t('cases.link')}</NavLink>}
+            {props.canSeeDashboard && <NavLink to="/dashboard">{t('dashboard.link')}</NavLink>}
             {props.canSeeMembers && <NavLink to="/members">{t('members.link')}</NavLink>}
             {me.isPlatformAdmin && <NavLink to="/platform">{t('home.platform')}</NavLink>}
           </nav>

@@ -5,5 +5,6 @@ export * from './ownership';
 export * from './progress';
 export * from './risk';
 export * from './runtime';
+export * from './work';
 export * from './screening';
 export { lt, type Translations } from './i18n/lt';

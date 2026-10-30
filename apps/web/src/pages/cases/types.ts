@@ -12,7 +12,22 @@ export type CaseSummary = {
   responsibleName: string;
   partyCount: number;
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | null;
+  clientName: string | null;
+  partyNames: string[];
+  nextReviewOn: string | null;
+  openApprovalBy: string | null;
+  escalation: 'OPEN' | 'REPORTED' | null;
+  createdAt: string;
   updatedAt: string;
+};
+
+/** A row of GET /api/cases: the summary and the next step the case page would show. */
+export type CaseListItem = CaseSummary & {
+  next: {
+    item: import('@skydra/shared').ChecklistItem;
+    casePartyId: string | null;
+    partyName: string | null;
+  } | null;
 };
 
 export type Party = {

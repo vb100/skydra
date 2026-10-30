@@ -1,5 +1,8 @@
 import {
   ActivateAmlInput,
+  type ChecklistItem,
+  type ChecklistResult,
+  nextStep,
   AddCasePartyInput,
   CreateCaseInput,
   UpdateCaseInput,
@@ -25,7 +28,20 @@ export type CaseSummary = {
   partyCount: number;
   /** Final level of the latest risk assessment, if any. */
   riskLevel: string | null;
+  /** The client (or the first party) by name, and every active party's name for search. */
+  clientName: string | null;
+  partyNames: string[];
+  nextReviewOn: string | null;
+  /** Requester of an approval waiting for a decision. */
+  openApprovalBy: string | null;
+  escalation: 'OPEN' | 'REPORTED' | null;
+  createdAt: string;
   updatedAt: string;
+};
+
+/** A case in a list, with the next thing it needs (same rule as the case page). */
+export type CaseListItem = CaseSummary & {
+  next: { item: ChecklistItem; casePartyId: string | null; partyName: string | null } | null;
 };
 
 export type CaseDetail = CaseSummary & {
@@ -68,13 +84,27 @@ const SUMMARY = `
            WHERE cp.case_id = c.id AND cp.removed_at IS NULL) AS "partyCount",
          (SELECT ra.final_level FROM risk_assessments ra
            WHERE ra.case_id = c.id ORDER BY ra.assessed_at DESC LIMIT 1) AS "riskLevel",
+         (SELECT to_char(ra.next_review_on, 'YYYY-MM-DD') FROM risk_assessments ra
+           WHERE ra.case_id = c.id ORDER BY ra.assessed_at DESC LIMIT 1) AS "nextReviewOn",
+         (SELECT p.display_name FROM case_parties cp JOIN parties p ON p.id = cp.party_id
+           WHERE cp.case_id = c.id AND cp.removed_at IS NULL AND cp.beneficial_owner_of IS NULL
+           ORDER BY cp.is_our_client DESC, cp.added_at LIMIT 1) AS "clientName",
+         ARRAY(SELECT p.display_name FROM case_parties cp JOIN parties p ON p.id = cp.party_id
+                WHERE cp.case_id = c.id AND cp.removed_at IS NULL
+                ORDER BY cp.added_at) AS "partyNames",
+         (SELECT a.requested_by FROM case_approvals a
+           WHERE a.case_id = c.id AND a.status = 'OPEN') AS "openApprovalBy",
+         (SELECT e.status FROM case_escalations e
+           WHERE e.case_id = c.id AND e.status IN ('OPEN', 'REPORTED')
+           ORDER BY e.requested_at DESC LIMIT 1) AS "escalation",
+         c.created_at AS "createdAt",
          c.updated_at AS "updatedAt"`;
 
 const DETAIL = `${SUMMARY},
          c.transaction_value::text AS "transactionValue", c.monthly_rent::text AS "monthlyRent",
          c.payment_method AS "paymentMethod", c.payment_method_other AS "paymentMethodOther",
          c.offer_accepted_at AS "offerAcceptedAt", c.aml_activation_reason AS "amlActivationReason",
-         c.legal_regime AS "legalRegime", c.created_by AS "createdBy", c.created_at AS "createdAt"`;
+         c.legal_regime AS "legalRegime", c.created_by AS "createdBy"`;
 
 // Cases are filtered by row-level security: the member sees only what case_access() allows.
 const FROM = 'FROM cases c JOIN users u ON u.id = c.responsible_user_id';
@@ -86,11 +116,50 @@ const AUDITED = `SELECT transaction_type, property_type, property_address, trans
                         responsible_user_id
                    FROM cases WHERE id = $1`;
 
-export async function listCases(client: PoolClient): Promise<CaseSummary[]> {
+export async function listCases(client: PoolClient): Promise<CaseListItem[]> {
   const { rows } = await client.query<CaseSummary>(
     `${SUMMARY} ${FROM} ORDER BY c.updated_at DESC LIMIT 500`,
   );
-  return rows;
+  if (rows.length === 0) return [];
+
+  // The checklist of every listed case in one query; the next step follows the case page's rule.
+  const ids = rows.map((r) => r.id);
+  const { rows: checklist } = await client.query<{
+    case_id: string;
+    case_party_id: string | null;
+    item: ChecklistItem;
+    ok: boolean;
+  }>(
+    `SELECT c.id AS case_id, ck.case_party_id, ck.item, ck.ok
+       FROM cases c CROSS JOIN LATERAL app.case_checklist(c.id) ck
+      WHERE c.id = ANY($1) AND c.aml_applicability <> 'NOT_APPLICABLE_RENT_THRESHOLD'`,
+    [ids],
+  );
+  const { rows: names } = await client.query<{ id: string; name: string }>(
+    `SELECT cp.id, p.display_name AS name
+       FROM case_parties cp JOIN parties p ON p.id = cp.party_id
+      WHERE cp.case_id = ANY($1)`,
+    [ids],
+  );
+  const partyName = new Map(names.map((n) => [n.id, n.name]));
+  const byCase = new Map<string, ChecklistResult[]>();
+  for (const r of checklist)
+    byCase.set(r.case_id, [
+      ...(byCase.get(r.case_id) ?? []),
+      { casePartyId: r.case_party_id, item: r.item, ok: r.ok },
+    ]);
+
+  return rows.map((r) => {
+    const next = nextStep(byCase.get(r.id) ?? []);
+    return {
+      ...r,
+      next: next && {
+        item: next.item,
+        casePartyId: next.casePartyId,
+        partyName: next.casePartyId ? (partyName.get(next.casePartyId) ?? null) : null,
+      },
+    };
+  });
 }
 
 /**

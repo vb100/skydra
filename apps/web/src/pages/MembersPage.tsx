@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 import { api } from '../api';
 import { useErrorMessage } from '../session';
 import { ErrorText, Field, Page } from '../ui';
@@ -107,7 +106,6 @@ export function MembersPage({ canManage }: { canManage: boolean }) {
 
   return (
     <Page title={t('members.title')}>
-      <Link to="/">{t('common.back')}</Link>
       <ErrorText message={error} />
       {notice && (
         <section className="card static" role="status">
@@ -218,7 +216,7 @@ export function MembersPage({ canManage }: { canManage: boolean }) {
               value={permissions}
               onChange={setPermissions}
             />
-            <button type="submit" disabled={roles.length === 0}>
+            <button type="submit" className="primary" disabled={roles.length === 0}>
               {t('members.submit')}
             </button>
           </form>

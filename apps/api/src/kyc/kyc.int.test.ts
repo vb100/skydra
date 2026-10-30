@@ -381,6 +381,16 @@ describe('KYC completion', () => {
       expect(result.complianceStatus).toBe('BLOCKED');
     });
 
+    it('confirmed sanctions cannot be taken to an approver', async () => {
+      const { caseId, casePartyId } = await screenedCase('Sankcijonienė');
+      await verifyAndComplete(caseId, casePartyId);
+      await confirmFirstMatch(caseId);
+      expect(await status(caseId)).toBe('BLOCKED');
+      await expect(
+        as(broker, (c) => requestApproval(c, caseId, { reason: 'Bandau patvirtinti sankcijas' })),
+      ).rejects.toThrow(/confirmed sanctions/);
+    });
+
     it('a solo broker approves their own case', async () => {
       const solo = await organization('solo@kyc.lt', 'INDIVIDUAL');
       const { caseId, casePartyId } = await screenedCase('Politikaitė', solo);

@@ -49,7 +49,7 @@ export function LoginPage() {
           onChange={setPassword}
         />
         <ErrorText message={error} />
-        <button type="submit" disabled={busy}>
+        <button type="submit" className="primary block" disabled={busy}>
           {t('login.submit')}
         </button>
       </form>

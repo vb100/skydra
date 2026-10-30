@@ -3,14 +3,14 @@ import { useQuery } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api';
-import { Field, Select } from '../../ui';
-import type { CaseParty, ScreeningCheck, ScreeningMatch } from './types';
-
-type Run = (action: () => Promise<unknown>) => Promise<void>;
+import { useConfirm } from '../../feedback';
+import { formatDateTime } from '../../format';
+import { Field, Hint, Select } from '../../ui';
+import type { CaseParty, Run, ScreeningCheck, ScreeningMatch } from './types';
 
 /** Sanctions / PEP / adverse-media checks of the case parties and the broker's review. */
 export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; run: Run }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { caseId, parties, run } = props;
   const checks = useQuery({
     queryKey: ['screenings', caseId],
@@ -25,21 +25,26 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
   // Checks come newest first, so the first one per party is the latest.
   const latest = (casePartyId: string) => checks.data?.find((c) => c.casePartyId === casePartyId);
   const screen = (casePartyId?: string) =>
-    run(() => api('POST', `/cases/${caseId}/screenings`, casePartyId ? { casePartyId } : {}));
-  const date = (v: string) => new Date(v).toLocaleString(i18n.language);
+    run(
+      () => api('POST', `/cases/${caseId}/screenings`, casePartyId ? { casePartyId } : {}),
+      t('toast.screened'),
+    );
+  const date = formatDateTime;
 
   return (
     <section className="stack">
-      <h2>{t('screening.title')}</h2>
+      <div className="page-head">
+        <h2>{t('screening.title')}</h2>
+        {parties.length > 0 && (
+          <button type="button" onClick={() => void screen()}>
+            {t('screening.runAll')}
+          </button>
+        )}
+      </div>
       {health.data?.simulatedProviders && (
-        <p className="notice">
-          {t('screening.simulated')} <span className="muted">{t('screening.simulatedHint')}</span>
-        </p>
-      )}
-      {parties.length > 0 && (
-        <button type="button" onClick={() => void screen()}>
-          {t('screening.runAll')}
-        </button>
+        <Hint summary={t('common.demoData')}>
+          <p className="muted">{t('screening.simulatedHint')}</p>
+        </Hint>
       )}
       <ul className="list">
         {parties.map((cp) => {
@@ -74,7 +79,7 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
                 </>
               )}
               <div className="actions">
-                <button type="button" className="secondary" onClick={() => void screen(cp.id)}>
+                <button type="button" className="ghost small" onClick={() => void screen(cp.id)}>
                   {t('screening.run')}
                 </button>
               </div>
@@ -87,17 +92,27 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
 }
 
 function MatchView({ caseId, match, run }: { caseId: string; match: ScreeningMatch; run: Run }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const confirm = useConfirm();
   const [decision, setDecision] = useState<'FALSE_POSITIVE' | 'TRUE_POSITIVE' | ''>('');
   const [justification, setJustification] = useState('');
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    await run(() =>
-      api('POST', `/cases/${caseId}/screening-matches/${match.id}/review`, {
-        decision,
-        justification,
-      }),
+    if (!decision) return;
+    const ok = await confirm({
+      title: t('confirm.reviewMatch'),
+      body: `${t(`screening.decisions.${decision}`)}. ${t('confirm.irreversible')}`,
+      confirmLabel: t('confirm.record'),
+    });
+    if (!ok) return;
+    await run(
+      () =>
+        api('POST', `/cases/${caseId}/screening-matches/${match.id}/review`, {
+          decision,
+          justification,
+        }),
+      t('toast.matchReviewed'),
     );
   }
 
@@ -134,16 +149,21 @@ function MatchView({ caseId, match, run }: { caseId: string; match: ScreeningMat
             value={justification}
             onChange={setJustification}
           />
-          <button type="submit" disabled={!decision || justification.trim().length < 10}>
-            {t('screening.submitReview')}
-          </button>
-          <small className="muted">{t('screening.reviewFinal')}</small>
+          <div className="actions">
+            <button
+              type="submit"
+              className="primary"
+              disabled={!decision || justification.trim().length < 10}
+            >
+              {t('screening.submitReview')}
+            </button>
+          </div>
         </form>
       ) : (
         match.reviewedAt && (
           <span className="muted">
             {t('screening.reviewedBy', {
-              date: new Date(match.reviewedAt).toLocaleString(i18n.language),
+              date: formatDateTime(match.reviewedAt),
               justification: match.reviewJustification,
             })}
           </span>

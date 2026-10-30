@@ -2,10 +2,10 @@ import { DiscrepancyResolution } from '@skydra/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api';
-import { Field, Select } from '../../ui';
-import type { OwnershipNode, OwnershipView } from './types';
-
-type Run = (action: () => Promise<unknown>) => Promise<void>;
+import { useConfirm } from '../../feedback';
+import { formatDateTime } from '../../format';
+import { Field, Hint, Select } from '../../ui';
+import type { OwnershipNode, OwnershipView, Run } from './types';
 
 /** Registry data, ownership chain and beneficial owners of one legal-entity party. */
 export function OwnershipPanel(props: {
@@ -15,23 +15,27 @@ export function OwnershipPanel(props: {
   simulated: boolean;
   run: Run;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { caseId, casePartyId, ownership: o, simulated, run } = props;
-  const fetch = () => run(() => api('POST', `/cases/${caseId}/parties/${casePartyId}/ownership`));
+  const fetch = () =>
+    run(
+      () => api('POST', `/cases/${caseId}/parties/${casePartyId}/ownership`),
+      t('toast.ownershipFetched'),
+    );
 
   return (
     <div className="match">
       <strong>{t('ownership.title')}</strong>
       {simulated && (
-        <span className="muted">
-          {t('ownership.simulated')} {t('ownership.simulatedHint')}
-        </span>
+        <Hint summary={t('common.demoData')}>
+          <p className="muted">{t('ownership.simulatedHint')}</p>
+        </Hint>
       )}
       {!o ? (
         <>
           <span className="muted">{t('ownership.none')}</span>
           <div className="actions">
-            <button type="button" onClick={() => void fetch()}>
+            <button type="button" className="primary" onClick={() => void fetch()}>
               {t('ownership.fetch')}
             </button>
           </div>
@@ -52,7 +56,7 @@ export function OwnershipPanel(props: {
           )}
           <span className="muted">
             {t('ownership.fetchedAt', {
-              date: new Date(o.fetchedAt).toLocaleString(i18n.language),
+              date: formatDateTime(o.fetchedAt),
               provider: o.provider,
             })}
           </span>
@@ -103,16 +107,18 @@ export function OwnershipPanel(props: {
             {o.ubos.some((u) => !u.linked) && (
               <button
                 type="button"
+                className="primary"
                 onClick={() =>
-                  void run(() =>
-                    api('POST', `/cases/${caseId}/ownership/${o.snapshotId}/link-owners`),
+                  void run(
+                    () => api('POST', `/cases/${caseId}/ownership/${o.snapshotId}/link-owners`),
+                    t('toast.ownersLinked'),
                   )
                 }
               >
                 {t('ownership.link')}
               </button>
             )}
-            <button type="button" className="secondary" onClick={() => void fetch()}>
+            <button type="button" className="ghost" onClick={() => void fetch()}>
               {t('ownership.refetch')}
             </button>
           </div>
@@ -154,18 +160,27 @@ function ResolveForm({
   run: Run;
 }) {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const [resolution, setResolution] = useState<DiscrepancyResolution | ''>('');
   const [notes, setNotes] = useState('');
   const [evidence, setEvidence] = useState('');
 
   async function submit(e: FormEvent) {
     e.preventDefault();
-    await run(() =>
-      api('POST', `/cases/${caseId}/ownership/${snapshotId}/resolve`, {
-        resolution,
-        notes,
-        evidence,
-      }),
+    const ok = await confirm({
+      title: t('confirm.resolveOwnership'),
+      body: t('confirm.irreversible'),
+      confirmLabel: t('confirm.record'),
+    });
+    if (!ok) return;
+    await run(
+      () =>
+        api('POST', `/cases/${caseId}/ownership/${snapshotId}/resolve`, {
+          resolution,
+          notes,
+          evidence,
+        }),
+      t('toast.ownershipResolved'),
     );
   }
 
@@ -193,12 +208,15 @@ function ResolveForm({
         value={evidence}
         onChange={setEvidence}
       />
-      <button
-        type="submit"
-        disabled={!resolution || notes.trim().length < 20 || evidence.trim().length < 3}
-      >
-        {t('ownership.resolve')}
-      </button>
+      <div className="actions">
+        <button
+          type="submit"
+          className="primary"
+          disabled={!resolution || notes.trim().length < 20 || evidence.trim().length < 3}
+        >
+          {t('ownership.resolve')}
+        </button>
+      </div>
     </form>
   );
 }

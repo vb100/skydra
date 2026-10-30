@@ -1,7 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router';
 import { api } from '../api';
 import { useErrorMessage } from '../session';
 import { ErrorText, Field, Page } from '../ui';
@@ -44,7 +43,6 @@ export function PlatformPage() {
 
   return (
     <Page title={t('platform.title')}>
-      <Link to="/">{t('common.back')}</Link>
       <h2>{t('platform.create')}</h2>
       <form onSubmit={submit} className="stack">
         <Field label={t('platform.name')} name="name" value={form.name} onChange={set('name')} />
@@ -73,7 +71,9 @@ export function PlatformPage() {
           onChange={set('adminFullName')}
         />
         <ErrorText message={error} />
-        <button type="submit">{t('platform.submit')}</button>
+        <button type="submit" className="primary">
+          {t('platform.submit')}
+        </button>
       </form>
       {invite && (
         <section className="card static">

@@ -2,10 +2,10 @@ import { DocumentType } from '@skydra/shared';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api';
-import { Check, Field, Select } from '../../ui';
-import type { CaseParty, IdentityVerification } from './types';
-
-type Run = (action: () => Promise<unknown>) => Promise<void>;
+import { useConfirm } from '../../feedback';
+import { formatDateTime } from '../../format';
+import { Check, DateField, Field, Select } from '../../ui';
+import type { CaseParty, IdentityVerification, Run } from './types';
 
 /** Identity verification and KYC answers of one party in a case. */
 export function PartyKycPanel(props: {
@@ -15,7 +15,8 @@ export function PartyKycPanel(props: {
   simulated: boolean;
   run: Run;
 }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const confirm = useConfirm();
   const { caseId, caseParty: cp, verifications, simulated, run } = props;
   const base = `/cases/${caseId}/identity-verifications`;
   const pending = verifications.find((v) => v.status === 'PENDING' && v.method === 'REMOTE');
@@ -36,16 +37,24 @@ export function PartyKycPanel(props: {
 
   async function inPerson(e: FormEvent) {
     e.preventDefault();
-    await run(() =>
-      api('POST', `${base}/in-person`, {
-        casePartyId: cp.id,
-        documentType: doc.type,
-        documentNumber: doc.number,
-        documentCountry: doc.country,
-        documentExpiresOn: doc.expires || null,
-      }),
+    const ok = await confirm({
+      title: t('confirm.verifyInPerson'),
+      body: t('confirm.irreversible'),
+      confirmLabel: t('confirm.record'),
+    });
+    if (!ok) return;
+    const done = await run(
+      () =>
+        api('POST', `${base}/in-person`, {
+          casePartyId: cp.id,
+          documentType: doc.type,
+          documentNumber: doc.number,
+          documentCountry: doc.country,
+          documentExpiresOn: doc.expires || null,
+        }),
+      t('toast.identityVerified'),
     );
-    setDoc({ type: '', number: '', country: 'LT', expires: '' });
+    if (done) setDoc({ type: '', number: '', country: 'LT', expires: '' });
   }
 
   const kycBody = () => ({
@@ -55,12 +64,28 @@ export function PartyKycPanel(props: {
     actsOnOwnBehalf: kyc.ownBehalf,
     pepSelfDeclared: kyc.pep,
   });
-  const saveKyc = (complete: boolean) =>
-    run(() =>
-      api('POST', `/cases/${caseId}/parties/${cp.id}`, {
-        kyc: kycBody(),
-        ...(complete ? { cddStatus: 'COMPLETED' } : {}),
-      }),
+  async function saveKyc(complete: boolean) {
+    if (complete) {
+      const ok = await confirm({
+        title: t('confirm.completeCdd'),
+        confirmLabel: t('kyc.complete'),
+      });
+      if (!ok) return;
+    }
+    await run(
+      () =>
+        api('POST', `/cases/${caseId}/parties/${cp.id}`, {
+          kyc: kycBody(),
+          ...(complete ? { cddStatus: 'COMPLETED' } : {}),
+        }),
+      complete ? t('toast.cddCompleted') : t('toast.kycSaved'),
+    );
+  }
+  const simulate = (outcome: 'VERIFIED' | 'REJECTED') =>
+    pending &&
+    run(
+      () => api('POST', `${base}/${pending.id}/simulate`, { outcome }),
+      t('toast.remoteSimulated'),
     );
 
   return (
@@ -74,7 +99,7 @@ export function PartyKycPanel(props: {
               {t('identity.entry', {
                 status: t(`identity.statuses.${v.status}`),
                 method: t(`identity.methods.${v.method}`),
-                date: new Date(v.requestedAt).toLocaleString(i18n.language),
+                date: formatDateTime(v.requestedAt),
               })}
               {v.documentType && ` · ${t(`identity.documentTypes.${v.documentType}`)}`}
               {v.documentNumberMasked && ` ${v.documentNumberMasked}`}
@@ -85,26 +110,10 @@ export function PartyKycPanel(props: {
               <span className="muted">{t('identity.remotePending')}</span>
               {simulated && (
                 <div className="actions">
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() =>
-                      void run(() =>
-                        api('POST', `${base}/${pending.id}/simulate`, { outcome: 'VERIFIED' }),
-                      )
-                    }
-                  >
+                  <button type="button" onClick={() => void simulate('VERIFIED')}>
                     {t('identity.simulateVerified')}
                   </button>
-                  <button
-                    type="button"
-                    className="secondary"
-                    onClick={() =>
-                      void run(() =>
-                        api('POST', `${base}/${pending.id}/simulate`, { outcome: 'REJECTED' }),
-                      )
-                    }
-                  >
+                  <button type="button" onClick={() => void simulate('REJECTED')}>
                     {t('identity.simulateRejected')}
                   </button>
                 </div>
@@ -113,15 +122,19 @@ export function PartyKycPanel(props: {
           ) : (
             !verified && (
               <>
-                <button
-                  type="button"
-                  className="secondary"
-                  onClick={() =>
-                    void run(() => api('POST', `${base}/remote`, { casePartyId: cp.id }))
-                  }
-                >
-                  {t('identity.remoteStart')}
-                </button>
+                <div className="actions">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      void run(
+                        () => api('POST', `${base}/remote`, { casePartyId: cp.id }),
+                        t('toast.remoteStarted'),
+                      )
+                    }
+                  >
+                    {t('identity.remoteStart')}
+                  </button>
+                </div>
                 <form onSubmit={inPerson} className="stack">
                   <strong>{t('identity.inPerson')}</strong>
                   <Select
@@ -147,17 +160,17 @@ export function PartyKycPanel(props: {
                     value={doc.country}
                     onChange={(country) => setDoc({ ...doc, country })}
                   />
-                  <Field
+                  <DateField
                     label={t('identity.documentExpiresOn')}
                     name={`documentExpiresOn-${cp.id}`}
-                    type="date"
                     value={doc.expires}
                     onChange={(expires) => setDoc({ ...doc, expires })}
-                    required={false}
                   />
-                  <button type="submit" disabled={!doc.type}>
-                    {t('identity.submit')}
-                  </button>
+                  <div className="actions">
+                    <button type="submit" className="primary" disabled={!doc.type}>
+                      {t('identity.submit')}
+                    </button>
+                  </div>
                 </form>
               </>
             )
@@ -193,11 +206,11 @@ export function PartyKycPanel(props: {
           onChange={(pep) => setKyc({ ...kyc, pep })}
         />
         <div className="actions">
-          <button type="button" className="secondary" onClick={() => void saveKyc(false)}>
+          <button type="button" onClick={() => void saveKyc(false)}>
             {t('kyc.save')}
           </button>
           {cp.cddStatus !== 'COMPLETED' && (
-            <button type="button" onClick={() => void saveKyc(true)}>
+            <button type="button" className="primary" onClick={() => void saveKyc(true)}>
               {t('kyc.complete')}
             </button>
           )}

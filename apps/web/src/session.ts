@@ -40,6 +40,7 @@ const RULES: [RegExp, string][] = [
   [/not available yet/, 'providerUnavailable'],
   [/assign a case to another member/, 'assign'],
   [/assess the risk before/, 'assessRiskFirst'],
+  [/confirmed sanctions/, 'sanctionsNoApproval'],
   [/enter the company code/, 'companyCode'],
   [/not found in the registries/, 'companyNotFound'],
   [/newer registry data/, 'newerOwnership'],

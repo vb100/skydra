@@ -2,8 +2,10 @@ import { CaseStage, type HealthResponse } from '@skydra/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link, useParams } from 'react-router';
+import { useParams } from 'react-router';
 import { api } from '../../api';
+import { useConfirm, useToast } from '../../feedback';
+import { formatDateTime, formatMoney } from '../../format';
 import { useErrorMessage } from '../../session';
 import { Badge, ErrorText, Field, Page, Select } from '../../ui';
 import { AddPartyForm } from './AddPartyForm';
@@ -14,11 +16,13 @@ import { OwnershipPanel } from './OwnershipPanel';
 import { PartyKycPanel } from './PartyKycPanel';
 import { RiskPanel } from './RiskPanel';
 import { ScreeningPanel } from './ScreeningPanel';
-import type { CaseAbilities, CaseDetail, IdentityVerification, OwnershipView } from './types';
+import type { CaseAbilities, CaseDetail, IdentityVerification, OwnershipView, Run } from './types';
 
 export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
   const { canAssign } = abilities;
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const toast = useToast();
+  const confirm = useConfirm();
   const { id = '' } = useParams();
   const queryClient = useQueryClient();
   const errorMessage = useErrorMessage();
@@ -46,7 +50,6 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
     staleTime: Infinity,
   });
   const [reason, setReason] = useState('');
-  const [error, setError] = useState<string | null>(null);
 
   const refresh = () =>
     Promise.all([
@@ -57,40 +60,67 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
       ),
     ]);
 
-  async function run(action: () => Promise<unknown>) {
-    setError(null);
+  const run: Run = async (action, success) => {
     try {
       await action();
       await refresh();
+      if (success) toast(success);
+      return true;
     } catch (err) {
-      setError(errorMessage(err));
+      toast(errorMessage(err), 'error');
+      return false;
     }
-  }
+  };
+  const back = { to: '/cases', label: t('cases.title') };
 
   const c = detail.data;
   if (detail.error)
     return (
-      <Page title={t('cases.title')}>
-        <Link to="/cases">{t('common.back')}</Link>
+      <Page title={t('cases.title')} back={back}>
         <ErrorText message={errorMessage(detail.error)} />
       </Page>
     );
-  if (!c) return <Page title={t('common.loading')}>{null}</Page>;
+  if (!c)
+    return (
+      <Page title={t('common.loading')} back={back} wide>
+        {null}
+      </Page>
+    );
 
   const amlApplies = c.amlApplicability !== 'NOT_APPLICABLE_RENT_THRESHOLD';
-  const money = (v: string | null) =>
-    v === null ? '' : `${Number(v).toLocaleString(i18n.language)} EUR`;
-
   async function activate(e: FormEvent) {
     e.preventDefault();
-    await run(() => api('POST', `/cases/${id}/activate-aml`, { reason }));
-    setReason('');
+    const ok = await confirm({
+      title: t('confirm.activateAml'),
+      body: t('confirm.irreversible'),
+      confirmLabel: t('cases.activateAml'),
+    });
+    if (
+      ok &&
+      (await run(
+        () => api('POST', `/cases/${id}/activate-aml`, { reason }),
+        t('toast.amlActivated'),
+      ))
+    )
+      setReason('');
+  }
+
+  async function removeParty(casePartyId: string) {
+    const ok = await confirm({
+      title: t('confirm.removeParty'),
+      body: t('confirm.removePartyBody'),
+      confirmLabel: t('confirm.remove'),
+      danger: true,
+    });
+    if (ok)
+      await run(
+        () => api('POST', `/cases/${id}/parties/${casePartyId}/remove`),
+        t('toast.partyRemoved'),
+      );
   }
 
   return (
-    <Page title={`${c.reference} · ${t(`transactionTypes.${c.transactionType}`)}`} wide>
-      <Link to="/cases">{t('common.back')}</Link>
-      <ErrorText message={error} />
+    <Page title={`${c.reference} · ${t(`transactionTypes.${c.transactionType}`)}`} back={back} wide>
       <div className="badges">
         <Badge kind={c.complianceStatus}>{t(`complianceStatuses.${c.complianceStatus}`)}</Badge>
         {c.riskLevel && (
@@ -113,7 +143,9 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
                   ? t('cases.transactionValue')
                   : t('cases.monthlyRent')}
               </dt>
-              <dd>{money(c.transactionType === 'SALE' ? c.transactionValue : c.monthlyRent)}</dd>
+              <dd>
+                {formatMoney(c.transactionType === 'SALE' ? c.transactionValue : c.monthlyRent)}
+              </dd>
               <dt>{t('cases.paymentMethod')}</dt>
               <dd>
                 {c.paymentMethod
@@ -125,8 +157,6 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
                 {t(`amlApplicability.${c.amlApplicability}`)}
                 {c.amlActivationReason && <span className="muted"> ({c.amlActivationReason})</span>}
               </dd>
-              <dt>{t('cases.compliance')}</dt>
-              <dd>{t(`complianceStatuses.${c.complianceStatus}`)}</dd>
               <dt>{t('cases.legalRegime')}</dt>
               <dd>{t(`legalRegimes.${c.legalRegime}`)}</dd>
               <dt>{t('cases.responsible')}</dt>
@@ -134,7 +164,7 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
               {c.offerAcceptedAt && (
                 <>
                   <dt>{t('cases.offerAcceptedAt')}</dt>
-                  <dd>{new Date(c.offerAcceptedAt).toLocaleString(i18n.language)}</dd>
+                  <dd>{formatDateTime(c.offerAcceptedAt)}</dd>
                 </>
               )}
             </dl>
@@ -144,7 +174,9 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
               options={CaseStage.options}
               optionLabel={(v) => t(`stages.${v}`)}
               value={c.stage as CaseStage}
-              onChange={(stage) => void run(() => api('POST', `/cases/${id}`, { stage }))}
+              onChange={(stage) =>
+                void run(() => api('POST', `/cases/${id}`, { stage }), t('toast.saved'))
+              }
             />
             {canAssign && assignees.data && (
               <Select
@@ -154,7 +186,10 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
                 optionLabel={(v) => assignees.data.find((a) => a.userId === v)?.fullName ?? v}
                 value={c.responsibleUserId}
                 onChange={(responsibleUserId) =>
-                  void run(() => api('POST', `/cases/${id}`, { responsibleUserId }))
+                  void run(
+                    () => api('POST', `/cases/${id}`, { responsibleUserId }),
+                    t('toast.saved'),
+                  )
                 }
               />
             )}
@@ -169,10 +204,11 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
                 value={reason}
                 onChange={setReason}
               />
-              <button type="submit" disabled={reason.trim().length < 10}>
-                {t('cases.activateAml')}
-              </button>
-              <small className="muted">{t('cases.activateConfirm')}</small>
+              <div className="actions">
+                <button type="submit" disabled={reason.trim().length < 10}>
+                  {t('cases.activateAml')}
+                </button>
+              </div>
             </form>
           )}
 
@@ -237,10 +273,8 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
                 <div className="actions">
                   <button
                     type="button"
-                    className="secondary"
-                    onClick={() =>
-                      void run(() => api('POST', `/cases/${id}/parties/${cp.id}/remove`))
-                    }
+                    className="danger small"
+                    onClick={() => void removeParty(cp.id)}
                   >
                     {t('parties.remove')}
                   </button>
@@ -253,12 +287,18 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
 
           <details className="disclosure card static" open={c.parties.length === 0}>
             <summary>{t('parties.add')}</summary>
-            <AddPartyForm caseId={id} onAdded={() => void refresh()} />
+            <AddPartyForm
+              caseId={id}
+              onAdded={() => {
+                toast(t('toast.partyAdded'));
+                void refresh();
+              }}
+            />
           </details>
         </div>
         {amlApplies && (
           <aside className="case-side">
-            <ChecklistPanel caseId={id} parties={c.parties} />
+            <ChecklistPanel caseId={id} parties={c.parties} complianceStatus={c.complianceStatus} />
             <RiskPanel caseId={id} run={run} />
             <DecisionsPanel caseId={id} abilities={abilities} run={run} />
             <ExportPanel

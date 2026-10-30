@@ -19,21 +19,20 @@ export function CasesPage({ canCreate }: { canCreate: boolean }) {
   const count = (s: ComplianceStatus) => all.filter((c) => c.complianceStatus === s).length;
 
   return (
-    <Page title={t('cases.title')} wide>
-      <nav className="actions">
-        {canCreate && (
-          <Link to="/cases/new" className="button-link">
-            {t('cases.create')}
+    <Page
+      title={t('cases.title')}
+      wide
+      actions={
+        canCreate && (
+          <Link to="/cases/new" className="button-link primary">
+            + {t('cases.create')}
           </Link>
-        )}
-      </nav>
+        )
+      }
+    >
       {all.length > 0 && (
         <div className="filters" role="group" aria-label={t('cases.compliance')}>
-          <button
-            type="button"
-            className={status ? 'secondary' : undefined}
-            onClick={() => setStatus(null)}
-          >
+          <button type="button" aria-pressed={status === null} onClick={() => setStatus(null)}>
             {t('cases.all', { count: all.length })}
           </button>
           {ComplianceStatus.options
@@ -42,7 +41,7 @@ export function CasesPage({ canCreate }: { canCreate: boolean }) {
               <button
                 key={s}
                 type="button"
-                className={status === s ? undefined : 'secondary'}
+                aria-pressed={status === s}
                 onClick={() => setStatus(s)}
               >
                 {t(`complianceStatuses.${s}`)} ({count(s)})

@@ -75,7 +75,7 @@ export function ActivatePage() {
             <li key={c}>{c}</li>
           ))}
         </ul>
-        <button type="button" onClick={() => navigate('/login')}>
+        <button type="button" className="primary" onClick={() => navigate('/login')}>
           {t('activate.recoveryConfirm')}
         </button>
       </Page>
@@ -123,7 +123,9 @@ export function ActivatePage() {
             value={code}
             onChange={setCode}
           />
-          <button type="submit">{t('activate.submit')}</button>
+          <button type="submit" className="primary block">
+            {t('activate.submit')}
+          </button>
         </form>
       )}
     </Page>

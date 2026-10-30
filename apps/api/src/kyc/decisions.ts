@@ -72,6 +72,9 @@ export async function requestApproval(
   const id = z.uuid().parse(caseId);
   const { reason } = RequestApprovalInput.parse(input);
   const missing = await failing(client, id);
+  // Confirmed sanctions stop the transaction; there is nothing an approver could approve.
+  if (missing.has('NO_CONFIRMED_SANCTIONS'))
+    throw new RuleError('confirmed sanctions: the transaction cannot be approved');
   // The approver decides on the final risk, so it must be assessed and current.
   if (missing.has('RISK_ASSESSED'))
     throw new RuleError('assess the risk before asking for approval');

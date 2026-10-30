@@ -4,7 +4,7 @@ import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api';
 import { useErrorMessage } from '../../session';
-import { Check, ErrorText, Field, Select } from '../../ui';
+import { Check, DateField, ErrorText, Field, Select } from '../../ui';
 import type { Party } from './types';
 
 const blank = {
@@ -99,7 +99,7 @@ export function AddPartyForm({ caseId, onAdded }: { caseId: string; onAdded: () 
       {existing ? (
         <p>
           {t('parties.selected', { name: existing.displayName })}{' '}
-          <button type="button" className="secondary" onClick={() => setExisting(null)}>
+          <button type="button" className="ghost small" onClick={() => setExisting(null)}>
             {t('parties.newParty')}
           </button>
         </p>
@@ -119,7 +119,7 @@ export function AddPartyForm({ caseId, onAdded }: { caseId: string; onAdded: () 
                 {party.displayName}{' '}
                 <span className="muted">{party.personalCodeMasked ?? party.companyCode ?? ''}</span>
               </span>
-              <button type="button" className="secondary" onClick={() => setExisting(party)}>
+              <button type="button" className="small" onClick={() => setExisting(party)}>
                 {t('parties.useExisting')}
               </button>
             </div>
@@ -156,13 +156,11 @@ export function AddPartyForm({ caseId, onAdded }: { caseId: string; onAdded: () 
                 required={false}
                 hint={t('parties.personalCodeHint')}
               />
-              <Field
+              <DateField
                 label={t('parties.birthDate')}
                 name="birthDate"
-                type="date"
                 value={p.birthDate}
                 onChange={set('birthDate')}
-                required={false}
               />
               <Field
                 label={t('parties.citizenship')}
@@ -266,9 +264,11 @@ export function AddPartyForm({ caseId, onAdded }: { caseId: string; onAdded: () 
         onChange={(pep) => setKyc({ ...kyc, pep })}
       />
       <ErrorText message={error} />
-      <button type="submit" disabled={!role}>
-        {t('parties.submit')}
-      </button>
+      <div className="actions">
+        <button type="submit" className="primary" disabled={!role}>
+          {t('parties.submit')}
+        </button>
+      </div>
     </form>
   );
 }

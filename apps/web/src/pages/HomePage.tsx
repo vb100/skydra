@@ -1,20 +1,12 @@
 import { useTranslation } from 'react-i18next';
-import { Link, useNavigate } from 'react-router';
-import { api, type Me } from '../api';
-import { caseWorker, useRefreshMe } from '../session';
+import { Link } from 'react-router';
+import type { Me } from '../api';
+import { caseWorker } from '../session';
 import { Page } from '../ui';
 
 export function HomePage({ me }: { me: Me }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const refreshMe = useRefreshMe();
   const active = me.memberships.find((m) => m.organizationId === me.activeOrganizationId);
-
-  async function logout() {
-    await api('POST', '/auth/logout');
-    await refreshMe();
-    navigate('/login');
-  }
 
   return (
     <Page title={t('home.title')}>
@@ -50,9 +42,6 @@ export function HomePage({ me }: { me: Me }) {
           <Link to="/members">{t('members.link')}</Link>
         )}
         {me.isPlatformAdmin && <Link to="/platform">{t('home.platform')}</Link>}
-        <button type="button" className="secondary" onClick={() => void logout()}>
-          {t('common.logout')}
-        </button>
       </nav>
     </Page>
   );

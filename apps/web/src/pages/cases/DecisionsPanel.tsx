@@ -2,14 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api';
+import { useConfirm } from '../../feedback';
 import { Field, Select } from '../../ui';
-import type { Approval, CaseAbilities, ChecklistEntry, Escalation } from './types';
-
-type Run = (action: () => Promise<unknown>) => Promise<void>;
+import type { Approval, CaseAbilities, ChecklistEntry, Escalation, Run } from './types';
 
 /** Approval after a confirmed PEP / adverse-media match, and escalations to the AML officer. */
 export function DecisionsPanel(props: { caseId: string; abilities: CaseAbilities; run: Run }) {
   const { t } = useTranslation();
+  const confirm = useConfirm();
   const { caseId, abilities, run } = props;
   const decisions = useQuery({
     queryKey: ['decisions', caseId],
@@ -28,24 +28,57 @@ export function DecisionsPanel(props: { caseId: string; abilities: CaseAbilities
 
   const approvals = decisions.data?.approvals ?? [];
   const escalations = decisions.data?.escalations ?? [];
-  const needsApproval = checklist.data?.some((e) => e.item === 'EDD_APPROVED' && !e.ok);
+  const failing = (item: string) => !!checklist.data?.some((e) => e.item === item && !e.ok);
+  // Confirmed sanctions stop the transaction: there is nothing for an approver to approve.
+  const sanctioned = failing('NO_CONFIRMED_SANCTIONS');
+  const needsApproval = failing('EDD_APPROVED') && !sanctioned;
   const openApproval = approvals.find((a) => a.status === 'OPEN');
 
   async function requestApproval(e: FormEvent) {
     e.preventDefault();
-    await run(() => api('POST', `/cases/${caseId}/approvals`, { reason: approvalReason }));
-    setApprovalReason('');
+    const ok = await confirm({
+      title: t('confirm.requestApproval'),
+      confirmLabel: t('confirm.send'),
+    });
+    if (
+      ok &&
+      (await run(
+        () => api('POST', `/cases/${caseId}/approvals`, { reason: approvalReason }),
+        t('toast.approvalRequested'),
+      ))
+    )
+      setApprovalReason('');
   }
 
   async function raise(e: FormEvent) {
     e.preventDefault();
-    await run(() => api('POST', `/cases/${caseId}/escalations`, { reason: escalationReason }));
-    setEscalationReason('');
+    const ok = await confirm({
+      title: t('confirm.escalate'),
+      body: t('confirm.escalateBody'),
+      confirmLabel: t('confirm.send'),
+      danger: true,
+    });
+    if (
+      ok &&
+      (await run(
+        () => api('POST', `/cases/${caseId}/escalations`, { reason: escalationReason }),
+        t('toast.escalated'),
+      ))
+    )
+      setEscalationReason('');
   }
 
   return (
     <>
-      {(needsApproval || approvals.length > 0) && (
+      {sanctioned && (
+        <section className="card static stack">
+          <h2>{t('approvals.title')}</h2>
+          <div className="banner blocked" role="alert">
+            {t('approvals.sanctionsBlocked')}
+          </div>
+        </section>
+      )}
+      {!sanctioned && (needsApproval || approvals.length > 0) && (
         <section className="card static stack">
           <h2>{t('approvals.title')}</h2>
           {needsApproval && !openApproval && (
@@ -57,9 +90,15 @@ export function DecisionsPanel(props: { caseId: string; abilities: CaseAbilities
                 value={approvalReason}
                 onChange={setApprovalReason}
               />
-              <button type="submit" disabled={approvalReason.trim().length < 10}>
-                {t('approvals.request')}
-              </button>
+              <div className="actions">
+                <button
+                  type="submit"
+                  className="primary"
+                  disabled={approvalReason.trim().length < 10}
+                >
+                  {t('approvals.request')}
+                </button>
+              </div>
             </form>
           )}
           {approvals.map((a) => (
@@ -87,12 +126,19 @@ export function DecisionsPanel(props: { caseId: string; abilities: CaseAbilities
                   label={t('approvals.decision')}
                   textLabel={t('approvals.justification')}
                   submit={t('approvals.decide')}
+                  confirmTitle={(decision) =>
+                    t('confirm.decideApproval', {
+                      decision: t(`approvals.decisions.${decision}`),
+                    })
+                  }
                   onSubmit={(decision, justification) =>
-                    run(() =>
-                      api('POST', `/cases/${caseId}/approvals/${a.id}/decide`, {
-                        decision,
-                        justification,
-                      }),
+                    run(
+                      () =>
+                        api('POST', `/cases/${caseId}/approvals/${a.id}/decide`, {
+                          decision,
+                          justification,
+                        }),
+                      t('toast.approvalDecided'),
                     )
                   }
                 />
@@ -126,12 +172,19 @@ export function DecisionsPanel(props: { caseId: string; abilities: CaseAbilities
                 label={t('escalations.resolution')}
                 textLabel={t('escalations.notes')}
                 submit={t('escalations.resolve')}
+                confirmTitle={(resolution) =>
+                  t('confirm.resolveEscalation', {
+                    resolution: t(`escalations.resolutions.${resolution}`),
+                  })
+                }
                 onSubmit={(resolution, notes) =>
-                  run(() =>
-                    api('POST', `/cases/${caseId}/escalations/${e.id}/resolve`, {
-                      resolution,
-                      notes,
-                    }),
+                  run(
+                    () =>
+                      api('POST', `/cases/${caseId}/escalations/${e.id}/resolve`, {
+                        resolution,
+                        notes,
+                      }),
+                    t('toast.escalationResolved'),
                   )
                 }
               />
@@ -146,13 +199,11 @@ export function DecisionsPanel(props: { caseId: string; abilities: CaseAbilities
             onChange={setEscalationReason}
             hint={t('escalations.raiseHint')}
           />
-          <button
-            type="submit"
-            className="secondary"
-            disabled={escalationReason.trim().length < 10}
-          >
-            {t('escalations.raise')}
-          </button>
+          <div className="actions">
+            <button type="submit" className="danger" disabled={escalationReason.trim().length < 10}>
+              {t('escalations.raise')}
+            </button>
+          </div>
         </form>
       </section>
     </>
@@ -166,13 +217,22 @@ function DecisionForm<T extends string>(props: {
   label: string;
   textLabel: string;
   submit: string;
-  onSubmit: (choice: T, text: string) => Promise<void>;
+  confirmTitle: (choice: T) => string;
+  onSubmit: (choice: T, text: string) => Promise<boolean>;
 }) {
+  const { t } = useTranslation();
+  const confirm = useConfirm();
   const [choice, setChoice] = useState<T | ''>('');
   const [text, setText] = useState('');
   async function submit(e: FormEvent) {
     e.preventDefault();
-    if (choice) await props.onSubmit(choice, text);
+    if (!choice) return;
+    const ok = await confirm({
+      title: props.confirmTitle(choice),
+      body: t('confirm.irreversible'),
+      confirmLabel: t('confirm.record'),
+    });
+    if (ok) await props.onSubmit(choice, text);
   }
   return (
     <form onSubmit={submit} className="stack">
@@ -186,9 +246,11 @@ function DecisionForm<T extends string>(props: {
         emptyLabel=""
       />
       <Field label={props.textLabel} name={`${props.name}-text`} value={text} onChange={setText} />
-      <button type="submit" disabled={!choice || text.trim().length < 10}>
-        {props.submit}
-      </button>
+      <div className="actions">
+        <button type="submit" className="primary" disabled={!choice || text.trim().length < 10}>
+          {props.submit}
+        </button>
+      </div>
     </form>
   );
 }

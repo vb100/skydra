@@ -194,3 +194,9 @@ export type OwnershipView = {
   } | null;
   fetchedAt: string;
 };
+
+/**
+ * Runs a case action, refreshes the case and reports the outcome as a toast; resolves to true
+ * when the action succeeded (callers reset their form only then).
+ */
+export type Run = (action: () => Promise<unknown>, success?: string) => Promise<boolean>;

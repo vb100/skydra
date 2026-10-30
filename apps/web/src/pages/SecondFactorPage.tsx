@@ -47,7 +47,7 @@ export function SecondFactorPage() {
           onChange={setValue}
         />
         <ErrorText message={error} />
-        <button type="submit" disabled={busy}>
+        <button type="submit" className="primary block" disabled={busy}>
           {t('secondFactor.submit')}
         </button>
         <button

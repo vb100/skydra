@@ -3,14 +3,15 @@ import { useQuery } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api';
-import { Field, Select } from '../../ui';
-import type { RiskFactor, RiskOverview } from './types';
-
-type Run = (action: () => Promise<unknown>) => Promise<void>;
+import { useConfirm } from '../../feedback';
+import { formatDate } from '../../format';
+import { Field, Hint, Select } from '../../ui';
+import type { RiskFactor, RiskOverview, Run } from './types';
 
 /** LT-RISK-01: the preliminary result from current data, the recorded assessment and history. */
 export function RiskPanel({ caseId, run }: { caseId: string; run: Run }) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const confirm = useConfirm();
   const risk = useQuery({
     queryKey: ['risk', caseId],
     queryFn: () => api<RiskOverview>('GET', `/cases/${caseId}/risk`),
@@ -22,18 +23,29 @@ export function RiskPanel({ caseId, run }: { caseId: string; run: Run }) {
   if (!r) return null;
   const { preview, current } = r;
   const differs = finalLevel !== '' && finalLevel !== preview.calculatedLevel;
-  const date = (v: string) => new Date(v).toLocaleDateString(i18n.language);
+  const date = formatDate;
 
   async function assess(e: FormEvent) {
     e.preventDefault();
-    await run(() =>
-      api('POST', `/cases/${caseId}/risk-assessments`, {
-        ...(finalLevel ? { finalLevel } : {}),
-        ...(differs ? { justification } : {}),
-      }),
+    const level = t(`riskLevels.${finalLevel || preview.calculatedLevel}`);
+    const ok = await confirm({
+      title: t('confirm.assessRisk', { level }),
+      body: t('confirm.irreversible'),
+      confirmLabel: t('confirm.record'),
+    });
+    if (!ok) return;
+    const done = await run(
+      () =>
+        api('POST', `/cases/${caseId}/risk-assessments`, {
+          ...(finalLevel ? { finalLevel } : {}),
+          ...(differs ? { justification } : {}),
+        }),
+      t('toast.riskAssessed'),
     );
-    setFinalLevel('');
-    setJustification('');
+    if (done) {
+      setFinalLevel('');
+      setJustification('');
+    }
   }
 
   return (
@@ -42,7 +54,11 @@ export function RiskPanel({ caseId, run }: { caseId: string; run: Run }) {
       <span className="muted">
         {t('risk.methodology', { code: r.ruleSet.code, version: r.ruleSet.version })}
       </span>
-      {r.ruleSet.isDemo && <p className="notice">{t('risk.demo')}</p>}
+      {r.ruleSet.isDemo && (
+        <Hint summary={t('common.demoData')}>
+          <p className="muted">{t('risk.demo')}</p>
+        </Hint>
+      )}
 
       <div className="match">
         <strong>
@@ -98,9 +114,15 @@ export function RiskPanel({ caseId, run }: { caseId: string; run: Run }) {
             <small className="muted">{t('risk.lowerHint')}</small>
           </>
         )}
-        <button type="submit" disabled={differs && justification.trim().length < 10}>
-          {t('risk.assess')}
-        </button>
+        <div className="actions">
+          <button
+            type="submit"
+            className={r.stale || !current ? 'primary' : undefined}
+            disabled={differs && justification.trim().length < 10}
+          >
+            {t('risk.assess')}
+          </button>
+        </div>
       </form>
 
       {r.history.length > 1 && (

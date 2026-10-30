@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { NavLink, useNavigate } from 'react-router';
 import { api, type Me, type Membership } from './api';
 import { useRefreshMe } from './session';
+import { ThemeToggle } from './theme';
 
 /** Top bar for signed-in pages: organization, navigation, the user and sign-out. */
 export function AppShell(props: {
@@ -45,7 +46,8 @@ export function AppShell(props: {
             {me.isPlatformAdmin && <NavLink to="/platform">{t('home.platform')}</NavLink>}
           </nav>
           <span className="topbar-user">{me.user.fullName}</span>
-          <button type="button" className="secondary small" onClick={() => void logout()}>
+          <ThemeToggle />
+          <button type="button" className="small" onClick={() => void logout()}>
             {t('common.logout')}
           </button>
         </div>

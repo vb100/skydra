@@ -3,32 +3,59 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../../api';
 import type { CaseParty, ChecklistEntry } from './types';
 
-/** What the case still needs; the compliance status is derived from the same list. */
-export function ChecklistPanel({ caseId, parties }: { caseId: string; parties: CaseParty[] }) {
+/** Items that stop the transaction rather than wait for the broker's next step. */
+const BLOCKING = new Set(['NO_CONFIRMED_SANCTIONS', 'APPROVAL_NOT_REJECTED', 'NO_OPEN_ESCALATION']);
+
+/**
+ * What the case still needs, written as instructions ("Review the potential matches"). The
+ * compliance status is derived from the same list, so the two never disagree.
+ */
+export function ChecklistPanel(props: {
+  caseId: string;
+  parties: CaseParty[];
+  complianceStatus: string;
+}) {
   const { t } = useTranslation();
   const checklist = useQuery({
-    queryKey: ['checklist', caseId],
-    queryFn: () => api<ChecklistEntry[]>('GET', `/cases/${caseId}/checklist`),
+    queryKey: ['checklist', props.caseId],
+    queryFn: () => api<ChecklistEntry[]>('GET', `/cases/${props.caseId}/checklist`),
   });
   if (!checklist.data) return null;
+
   const missing = checklist.data.filter((e) => !e.ok);
+  const blocking = missing.filter((e) => BLOCKING.has(e.item));
+  const todo = missing.filter((e) => !BLOCKING.has(e.item));
   const name = (id: string | null) =>
-    id ? (parties.find((p) => p.id === id)?.party.displayName ?? '') : null;
+    id ? (props.parties.find((p) => p.id === id)?.party.displayName ?? '') : null;
 
   return (
-    <section className="card static">
+    <section className="card static stack">
       <h2>{t('checklist.title')}</h2>
+      {blocking.length > 0 && (
+        <div className="banner blocked" role="alert">
+          <div>
+            <strong>{t('checklist.blocked')}</strong>
+            {blocking.map((e) => (
+              <div key={e.item}>{t(`checklist.todo.${e.item}`)}</div>
+            ))}
+          </div>
+        </div>
+      )}
       {missing.length === 0 ? (
-        <p>✓ {t('checklist.allDone')}</p>
+        <div className="banner ok">✓ {t('checklist.allDone')}</div>
       ) : (
-        <ul className="checklist">
-          {missing.map((e) => (
-            <li key={`${e.item}-${e.casePartyId ?? ''}`}>
-              {e.casePartyId && t('checklist.party', { name: name(e.casePartyId) })}
-              {t(`checklist.items.${e.item}`)}
-            </li>
-          ))}
-        </ul>
+        todo.length > 0 && (
+          <ul className="todo">
+            {todo.map((e) => (
+              <li key={`${e.item}-${e.casePartyId ?? ''}`}>
+                <span>
+                  {t(`checklist.todo.${e.item}`)}
+                  {e.casePartyId && <span className="who"> · {name(e.casePartyId)}</span>}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )
       )}
     </section>
   );

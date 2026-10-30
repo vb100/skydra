@@ -115,14 +115,16 @@ export function NextStepCard(props: {
           <ul className="todo">
             {remaining.map((e) => (
               <li key={`${e.item}-${e.casePartyId ?? ''}`}>
-                <button
-                  type="button"
-                  className="link"
-                  onClick={() => props.onGo(TAB_OF_ITEM[e.item], e.casePartyId)}
-                >
-                  {t(`checklist.todo.${e.item}`)}
-                </button>
-                {e.casePartyId && <span className="who"> · {name(e.casePartyId)}</span>}
+                <span>
+                  <button
+                    type="button"
+                    className="link"
+                    onClick={() => props.onGo(TAB_OF_ITEM[e.item], e.casePartyId)}
+                  >
+                    {t(`checklist.todo.${e.item}`)}
+                  </button>
+                  {e.casePartyId && <span className="who"> · {name(e.casePartyId)}</span>}
+                </span>
               </li>
             ))}
           </ul>

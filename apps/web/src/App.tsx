@@ -6,12 +6,14 @@ import { ActivatePage } from './pages/ActivatePage';
 import { CaseDetailPage } from './pages/cases/CaseDetailPage';
 import { CasesPage } from './pages/cases/CasesPage';
 import { NewCasePage } from './pages/cases/NewCasePage';
+import { DashboardPage } from './pages/DashboardPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { MembersPage } from './pages/MembersPage';
 import { PlatformPage } from './pages/PlatformPage';
 import { SecondFactorPage } from './pages/SecondFactorPage';
 import { SelectOrganizationPage } from './pages/SelectOrganizationPage';
+import { WorkPage } from './pages/WorkPage';
 import { caseWorker, useMe, useRefreshMe } from './session';
 import { AppShell } from './shell';
 import { Page } from './ui';
@@ -52,8 +54,18 @@ function SignedIn() {
   const cases = (element: ReactNode) => (canSeeCases ? element : <Navigate to="/" />);
   const canSeeMembers =
     !!active && (active.roles.includes('ORG_ADMIN') || active.roles.includes('MANAGER'));
+  // Whoever sees every case of the organization (access/policy.ts case.view_all).
+  const canSeeDashboard =
+    !!active?.roles.includes('MANAGER') ||
+    !!active?.permissions.some((p) => ['CASE_VIEW_ALL', 'APPROVER', 'AML_OFFICER'].includes(p));
   return (
-    <AppShell me={data} active={active} canSeeCases={canSeeCases} canSeeMembers={canSeeMembers}>
+    <AppShell
+      me={data}
+      active={active}
+      canSeeCases={canSeeCases}
+      canSeeDashboard={canSeeDashboard}
+      canSeeMembers={canSeeMembers}
+    >
       <Routes>
         <Route path="/select-organization" element={<SelectOrganizationPage />} />
         <Route path="/cases" element={cases(<CasesPage canCreate={canCreateCases} />)} />
@@ -62,6 +74,10 @@ function SignedIn() {
           element={canCreateCases ? <NewCasePage /> : <Navigate to="/cases" />}
         />
         <Route path="/cases/:id" element={cases(<CaseDetailPage abilities={abilities} />)} />
+        <Route
+          path="/dashboard"
+          element={canSeeDashboard ? <DashboardPage /> : <Navigate to="/" />}
+        />
         <Route
           path="/members"
           element={
@@ -83,6 +99,8 @@ function SignedIn() {
               <Navigate to="/select-organization" />
             ) : !data.activeOrganizationId && data.isPlatformAdmin ? (
               <Navigate to="/platform" />
+            ) : canSeeCases ? (
+              <WorkPage me={data} abilities={abilities} />
             ) : (
               <HomePage me={data} />
             )

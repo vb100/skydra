@@ -8,6 +8,7 @@ import { migrate } from '../database/migrator';
 import { type TenantContext, withTenant } from '../database/tenant';
 import { createTestDatabase, MIGRATIONS_DIR, type TestDatabase } from '../database/test-database';
 import { NotFoundError, RuleError } from '../domain-errors';
+import { listCases } from '../cases/cases';
 import { collectReport, exportCase, listExports } from './case-report';
 
 const keys = deriveKeys(LOCAL_DEVELOPMENT_KEY);
@@ -89,6 +90,33 @@ describe('demo agency and case export', () => {
       organizationId,
     });
     expect((await db.superuser.query('SELECT 1 FROM cases')).rowCount).toBe(9);
+  });
+
+  it('lists each case with its client and the next step the case page would show', async () => {
+    const list = await as(users.broker, listCases);
+    const byRef = (n: string) => list.find((c) => c.reference.endsWith(n))!;
+    expect(byRef('0001')).toMatchObject({ clientName: 'Jonas Pirkėjas', next: null });
+    expect(byRef('0003')).toMatchObject({
+      clientName: 'Rasa Skandalė',
+      next: { item: 'MATCHES_REVIEWED', partyName: 'Rasa Skandalė' },
+    });
+    expect(byRef('0002')).toMatchObject({
+      next: { item: 'EDD_APPROVED' },
+      openApprovalBy: users.broker.userId,
+      nextReviewOn: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+    });
+    expect(byRef('0008')).toMatchObject({
+      escalation: 'OPEN',
+      next: { item: 'NO_OPEN_ESCALATION' },
+    });
+    expect(byRef('0009').next).toMatchObject({ item: 'NO_CONFIRMED_SANCTIONS' });
+    expect(byRef('0004')).toMatchObject({
+      next: null,
+      amlApplicability: 'NOT_APPLICABLE_RENT_THRESHOLD',
+    });
+    expect(byRef('0007').partyNames).toEqual(
+      expect.arrayContaining(['UAB „Grandinė“', 'Petras Holdingas']),
+    );
   });
 
   it('exports a completed case as a PDF registered with its SHA-256', async () => {

@@ -37,6 +37,13 @@
    - Project IAM Admin;
    - Storage Admin;
    - Logs Viewer.
+
+   Patikrinti, kurias roles paskyra jau turi:
+   ```bash
+   gcloud projects get-iam-policy melodic-casing-501208-a3 --flatten='bindings[].members' \
+     --filter='bindings.members:vytautas.bielinskas@gmail.com' --format='value(bindings.role)'
+   ```
+   Jei trūksta Cloud SQL Admin, Terraform kurdamas `skydra-demo-pg` grąžina `Error 403: The client is not authorized to make this request., notAuthorized`.
 3. **Programos lokaliai:** veikiantis Docker (colima) ir `bq` (yra kartu su `gcloud`). Terraform diegti nereikia, nes jis paleidžiamas konteineryje.
 4. **Domenas `skydra.eu` patvirtintas** [Google Search Console](https://search.google.com/search-console) ta pačia Google paskyra. Search Console duoda TXT įrašą, kurį reikia įdėti Hostinger DNS nustatymuose. Patvirtinimas paprastai užtrunka kelias minutes. Kol domenas nepatvirtintas, galima diegti su run.app adresu (žr. 4 žingsnį).
 

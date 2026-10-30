@@ -325,9 +325,14 @@ resource "google_cloud_run_v2_job" "this" {
     }
   }
 
+  # deploy.sh applies the jobs alone (-target) before migrating, so everything the migration job
+  # needs at run time must be reachable from here: the database, its owner and the SQL client role.
   depends_on = [
     google_secret_manager_secret_version.this,
     google_secret_manager_secret_iam_member.jobs,
+    google_sql_database.skydra,
+    google_sql_user.migrator,
+    google_project_iam_member.sql_client,
   ]
 }
 

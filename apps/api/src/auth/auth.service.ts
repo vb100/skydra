@@ -361,10 +361,19 @@ export async function describeLink(deps: AuthDeps, token: string) {
   return { purpose: link.purpose, email: link.email, fullName: link.full_name };
 }
 
-/** Proposes a new TOTP secret for the link; the user scans it before completing. */
+/**
+ * The TOTP secret the user scans before completing. It is proposed once per link and returned
+ * again on every later start: reloading the page, or an e-mail/chat link scanner opening the link
+ * in a browser, must not replace the secret the user has already scanned. Whoever holds the link
+ * could complete it anyway, so returning the same secret again exposes nothing new.
+ */
 export async function startLink(deps: AuthDeps, token: string) {
   const link = await peekLink(deps, token);
   if (!link) throw new AuthError('invalid_link');
+  if (link.pending_totp_secret_encrypted) {
+    const secret = decrypt(deps.keys.totpEncryption, link.pending_totp_secret_encrypted);
+    return { otpauthUri: totpUri(secret, link.email), secret };
+  }
   const secret = newTotpSecret();
   const { rows } = await deps.pool.query<{ ok: boolean }>(
     'SELECT app.auth_set_link_totp($1, $2) AS ok',

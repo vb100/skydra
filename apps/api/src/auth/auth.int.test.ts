@@ -149,6 +149,31 @@ describe('authentication', () => {
       await expect(describeLink(deps, org.token)).rejects.toThrow('invalid_link');
     });
 
+    it('keeps the proposed secret when the link is opened again (reload, link scanners)', async () => {
+      const org = await newOrganization('AGENCY', 'reopen@example.lt');
+      const first = await startLink(deps, org.token);
+      const again = await startLink(deps, org.token);
+      expect(again).toEqual(first);
+      // The code from the secret scanned first still completes the activation.
+      const done = await completeLink(deps, {
+        token: org.token,
+        password: PASSWORD,
+        totpCode: currentTotpCode(first.secret),
+      });
+      expect(done.recoveryCodes).toHaveLength(10);
+    });
+
+    it('proposes a fresh secret for a newly issued link', async () => {
+      const org = await newOrganization('AGENCY', 'fresh@example.lt');
+      const first = await startLink(deps, org.token);
+      const { token } = await issueLink(
+        deps,
+        { userId: platformAdmin.userId, activeOrganizationId: null },
+        { userId: org.adminUserId, organizationId: org.organizationId, purpose: 'INVITE' },
+      );
+      expect((await startLink(deps, token)).secret).not.toBe(first.secret);
+    });
+
     it('requires a valid TOTP code from the proposed secret and a strong password', async () => {
       const org = await newOrganization('AGENCY', 'weak@example.lt');
       const { secret } = await startLink(deps, org.token);

@@ -60,10 +60,12 @@ jobs:
           docker build -t skydra-landing:ci apps/landing
           docker run -d --rm --name landing -p 8080:8080 skydra-landing:ci
           for i in $(seq 20); do curl -sf -o /dev/null localhost:8080/ && break; sleep 0.5; done
-          for page in / /aciu.html /registracija.html /vertinimas.html /fonts/fonts.css /js/planai.js; do
+          for page in / /aciu.html /registracija.html /vertinimas.html /fonts/fonts.css /css/site.css /js/site.js /favicon.svg; do
             curl -sf -o /dev/null "localhost:8080$page"
           done
           curl -sI localhost:8080/ | grep -qi '^content-security-policy:'
+          # Styles and scripts are files only, so the CSP needs no 'unsafe-inline'.
+          if grep -lE '<style|style=|<script>' apps/landing/site/*.html; then exit 1; fi
           test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: www.skydra.eu' localhost:8080/)" = 301
           docker stop landing
       - name: Terraform fmt and validate

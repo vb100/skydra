@@ -6,8 +6,12 @@
 (function () {
   var GA_MEASUREMENT_ID = ''; // e.g. 'G-XXXXXXXXXX', from the client's GA4 property
 
+  // The demonstration copy (Cloud Run service skydra-landing-preview) shows the banner exactly as
+  // it will work with GA4, but never loads anything after consent.
+  var DEMO = /^skydra-landing-preview-/.test(location.hostname);
+
   // Without analytics there is nothing to choose: hide the "Slapukų nustatymai" links.
-  if (!GA_MEASUREMENT_ID || !window.CookieConsent) {
+  if ((!GA_MEASUREMENT_ID && !DEMO) || !window.CookieConsent) {
     document.querySelectorAll('.cc-item').forEach(function (e) {
       e.hidden = true;
     });
@@ -21,6 +25,7 @@
   }
 
   function startAnalytics() {
+    if (DEMO) return;
     if (gaLoaded) {
       gtag('consent', 'update', { analytics_storage: 'granted' });
       return;

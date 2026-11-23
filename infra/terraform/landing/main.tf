@@ -31,6 +31,16 @@ variable "image" {
   type        = string
 }
 
+variable "preview" {
+  description = "Also run skydra-landing-preview: the same image with the cookie banner on and no analytics, for showing the client. Set to false to remove it."
+  type        = bool
+  default     = true
+}
+
+locals {
+  services = var.preview ? toset(["skydra-landing", "skydra-landing-preview"]) : toset(["skydra-landing"])
+}
+
 # Its own identity without any role: the default compute account has project-wide Editor.
 resource "google_service_account" "landing" {
   account_id   = "skydra-landing"
@@ -38,7 +48,8 @@ resource "google_service_account" "landing" {
 }
 
 resource "google_cloud_run_v2_service" "landing" {
-  name     = "skydra-landing"
+  for_each = local.services
+  name     = each.key
   location = var.region
   ingress  = "INGRESS_TRAFFIC_ALL"
   # Stateless: it can always be recreated from the image.
@@ -64,12 +75,27 @@ resource "google_cloud_run_v2_service" "landing" {
 }
 
 resource "google_cloud_run_v2_service_iam_member" "public" {
-  name     = google_cloud_run_v2_service.landing.name
+  for_each = local.services
+  name     = google_cloud_run_v2_service.landing[each.key].name
   location = var.region
   role     = "roles/run.invoker"
   member   = "allUsers"
 }
 
+# The existing service keeps its state address when the resource became a map.
+moved {
+  from = google_cloud_run_v2_service.landing
+  to   = google_cloud_run_v2_service.landing["skydra-landing"]
+}
+moved {
+  from = google_cloud_run_v2_service_iam_member.public
+  to   = google_cloud_run_v2_service_iam_member.public["skydra-landing"]
+}
+
 output "service_url" {
-  value = google_cloud_run_v2_service.landing.uri
+  value = google_cloud_run_v2_service.landing["skydra-landing"].uri
+}
+
+output "preview_url" {
+  value = var.preview ? google_cloud_run_v2_service.landing["skydra-landing-preview"].uri : null
 }

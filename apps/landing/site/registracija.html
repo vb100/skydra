@@ -5,32 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Registracija – SkyDra</title>
 <link rel="stylesheet" href="/fonts/fonts.css">
-<style>
-*{box-sizing:border-box}
-body{margin:0;min-height:100vh;background:#0B1220;color:#0B1220;font-family:'Inter',system-ui,sans-serif}
-.top{max-width:1240px;margin:0 auto;padding:22px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px}
-.logo{display:flex;align-items:center;gap:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:23px;color:#fff;text-decoration:none}
-.top a.back{color:#C7D0DD;text-decoration:none;font-size:15px}
-.wrap{max-width:1240px;margin:0 auto;padding:32px 24px 96px;display:flex;flex-wrap:wrap;gap:48px;align-items:flex-start}
-.intro{flex:1 1 380px;min-width:0;color:#fff;display:flex;flex-direction:column;gap:20px;padding-top:12px}
-.tag{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;letter-spacing:.1em;color:#6EE7B7}
-h1{margin:0;font-family:'Space Grotesk',sans-serif;font-size:48px;line-height:1.05;letter-spacing:-.02em}
-.intro p{margin:0;font-size:18px;line-height:1.6;color:#C7D0DD}
-.intro ul{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px;font-size:16px;color:#DCE3EC}
-.intro li{display:flex;gap:12px;align-items:flex-start}
-form{flex:1 1 440px;min-width:0;background:#fff;border-radius:22px;padding:36px;display:flex;flex-direction:column;gap:16px}
-form h2{margin:0 0 4px;font-family:'Space Grotesk',sans-serif;font-size:26px}
-.row{display:flex;flex-wrap:wrap;gap:16px}
-.f{flex:1 1 200px;min-width:0;display:flex;flex-direction:column;gap:6px}
-label{font-size:14px;font-weight:600}
-input,select{min-height:50px;padding:0 14px;border:1.5px solid #D5DBD6;border-radius:12px;font-size:16px;font-family:inherit;background:#fff;color:#0B1220;width:100%}
-input:focus,select:focus{outline:2px solid #047857;outline-offset:1px;border-color:#047857}
-.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.5;color:#4A5568}
-.chk input{min-height:auto;width:20px;height:20px;margin-top:1px;flex:none}
-button{min-height:54px;border:none;border-radius:12px;background:#047857;color:#fff;font-weight:700;font-size:17px;font-family:inherit;cursor:pointer}
-button:hover{background:#065F46}
-.note{margin:0;font-size:13px;color:#5B6577}
-</style>
+<meta name="theme-color" content="#0B1220">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/registracija.css">
 </head>
 <body>
 <header class="top">
@@ -53,7 +30,7 @@ button:hover{background:#065F46}
 <input type="hidden" name="_template" value="table">
 <input type="hidden" name="_next" value="https://skydra.eu/aciu.html">
 <input type="hidden" name="_autoresponse" value="Ačiū, kad užsiregistravote SkyDra! Gavome jūsų registraciją ir per 1 darbo dieną susisieksime dėl tolesnių žingsnių. Klausimai: info@skydra.eu, +370 605 03644. SkyDra komanda">
-<input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
+<input type="text" name="_honey" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
 <h2>Jūsų duomenys</h2>
 <div class="row">
 <div class="f"><label for="vardas">Vardas, pavardė</label><input id="vardas" name="Vardas, pavardė" required autocomplete="name"></div>

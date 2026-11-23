@@ -10,16 +10,26 @@ Statinė rinkodaros svetainė. Ją rodo nginx Cloud Run paslaugoje `skydra-landi
 | `vertinimas.html`    | nemokamas AML testas                                                                  |
 | `prisijungimas.html` | kol kas nenaudojamas; „Prisijungti“ veda į sistemos `/login`                          |
 
-## Kas pakeista kliento pateiktuose failuose
+## Struktūra ir pakeitimai, palyginti su kliento failais
 
-Pakeitimai tik techniniai, tekstai ir dizainas nekeisti:
+Pagrindinė versija nuo šiol yra šioje repozitorijoje. Klientas pakeitimus siunčia kaip tekstą arba užduotis, o ne kaip naujus HTML failus, kitaip būtų perrašyti toliau aprašyti pataisymai.
 
-- Google Fonts pakeisti savo serveryje laikomais šriftais (`site/fonts/`, SIL OFL licencija). Taip lankytojų IP adresai nepatenka pas Google, kartu tenkinama CSP.
-- `index.html` ir `vertinimas.html` įterpti skriptai perkelti į `site/js/`. Tai leidžia CSP drausti bet kokius kitus skriptus.
-- „Prisijungti“ veda į `https://skydra-demo-915954505621.europe-north1.run.app/login`.
-- Ištaisyta sugadinta žymė `<//span>`.
+- **Stiliai:** `css/site.css` (`index.html`) ir `css/<puslapis>.css` (kiti puslapiai). HTML'e nėra nei `<style>`, nei `style=""`, todėl CSP draudžia bet kokius įterptus stilius ir skriptus (`style-src 'self'`, `script-src 'self'`).
+- **Telefono versija:** taisyklės `@media (max-width: 760px)` ir `(max-width: 380px)`, planšetės versija `(max-width: 1023px)`. Telefone yra:
+  - meniu mygtukas;
+  - kainos rodomos po vieną planą su skirtukais;
+  - apatinė juosta su „Nemokamas AML testas“.
 
-Gavus naują kliento versiją, failą įkelkite į `site/` ir pakartokite šiuos keturis pakeitimus. Prettier šių failų neformatuoja, todėl palyginimas su kliento versija lieka tikslus.
+  Kompiuterio versija sutampa su kliento dizainu.
+
+- **Skriptai:**
+  - `js/site.js`: kainų laikotarpis ir planas, telefono meniu, apatinė juosta;
+  - `js/vertinimas.js`: AML testas.
+- **Kainų lentelė** parašyta vieną kartą. Metų ir mėnesio reikšmės, kurios skiriasi, pažymėtos `<span class="annual">` ir `<span class="monthly">`.
+- **Šriftai** laikomi savo serveryje (`fonts/`, SIL OFL licencija), Google Fonts nenaudojami.
+- **„Prisijungti“** veda į `https://skydra-demo-915954505621.europe-north1.run.app/login`.
+- **Skaičiuose** naudojami nelūžtantys tarpai (`15 000 €`), kad skaičius nebūtų perkirstas tarp eilučių.
+- **Kita:** `favicon.svg`, `theme-color`.
 
 ## Serveris
 

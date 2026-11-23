@@ -1,0 +1,17 @@
+body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#0B1220;color:#fff;font-family:'Inter',system-ui,sans-serif;padding:24px;box-sizing:border-box}
+.card{max-width:560px;width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:24px;padding:48px 40px;display:flex;flex-direction:column;gap:20px;box-sizing:border-box}
+h1{margin:0;font-family:'Space Grotesk',sans-serif;font-size:40px;line-height:1.1;letter-spacing:-0.02em}
+p{margin:0;font-size:17px;line-height:1.6;color:#C7D0DD}
+a.btn{align-self:flex-start;background:#34D399;color:#0B1220;text-decoration:none;font-weight:700;padding:15px 24px;border-radius:12px;min-height:44px;box-sizing:border-box;display:inline-flex;align-items:center}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:22px;color:#fff;text-decoration:none}
+small{color:#9AA6B8;font-size:14px}
+small a{color:#6EE7B7}
+
+/* Phones */
+@media (max-width:560px){
+body{padding:16px}
+.card{padding:32px 22px;border-radius:20px;gap:16px}
+h1{font-size:30px}
+p{font-size:16px}
+a.btn{align-self:stretch;justify-content:center}
+}

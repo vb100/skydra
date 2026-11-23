@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nemokamas AML testas NT brokeriams – SkyDra</title>
+<meta name="description" content="Per 3 minutes sužinokite, ar jūsų NT tarpininkavimo veikla atitinka pinigų plovimo prevencijos reikalavimus.">
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:#0B1220;color:#fff;font-family:'Inter',system-ui,sans-serif}
+a{color:#6EE7B7}
+.top{max-width:1100px;margin:0 auto;padding:22px 24px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:23px;color:#fff;text-decoration:none}
+.back{color:#C7D0DD;text-decoration:none;font-size:15px}
+main{max-width:760px;margin:0 auto;padding:24px 24px 96px}
+.tag{font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:600;letter-spacing:.1em;color:#6EE7B7}
+h1{margin:12px 0 16px;font-family:'Space Grotesk',sans-serif;font-size:44px;line-height:1.08;letter-spacing:-.02em}
+h2{font-family:'Space Grotesk',sans-serif}
+.lead{margin:0 0 28px;font-size:18px;line-height:1.6;color:#C7D0DD}
+.card{background:#fff;color:#0B1220;border-radius:22px;padding:34px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 26px;border:none;border-radius:12px;background:#047857;color:#fff;font-weight:700;font-size:16px;font-family:inherit;cursor:pointer;text-decoration:none}
+.btn:hover{background:#065F46}
+.btn.ghost{background:transparent;color:#0B1220;border:1.5px solid #C9D1CC}
+.btn.ghost:hover{background:#F5F6F3}
+.meta{display:flex;flex-wrap:wrap;gap:10px 24px;margin-top:22px;font-size:14px;color:#4A5568}
+.progress{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;font-size:14px;color:#5B6577;font-weight:600}
+.track{height:8px;border-radius:4px;background:#E2E6E1;overflow:hidden;margin-bottom:28px}
+.fill{height:100%;background:#047857;border-radius:4px;transition:width .3s}
+.q{margin:0 0 10px;font-family:'Space Grotesk',sans-serif;font-size:26px;line-height:1.25}
+.hint{margin:0 0 24px;font-size:15px;line-height:1.55;color:#4A5568}
+.nw{margin:-12px 0 24px;font-size:14px;line-height:1.5;color:#065F46;background:#F0FDF7;border-radius:10px;padding:10px 12px}
+.gap .n27{color:#065F46;font-size:13px}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{display:flex;align-items:center;gap:14px;min-height:58px;padding:0 18px;border:1.5px solid #D5DBD6;border-radius:14px;background:#fff;font-size:16px;font-weight:600;font-family:inherit;color:#0B1220;cursor:pointer;text-align:left}
+.opt:hover{border-color:#047857;background:#F0FDF7}
+.opt .k{width:28px;height:28px;border-radius:8px;background:#EEF1EE;display:flex;align-items:center;justify-content:center;font-size:13px;flex:none}
+.nav{display:flex;justify-content:space-between;margin-top:22px}
+.link{background:none;border:none;color:#4A5568;font-size:15px;font-family:inherit;cursor:pointer;padding:10px 0;min-height:44px}
+.score{display:flex;align-items:center;gap:24px;flex-wrap:wrap;margin-bottom:24px}
+.ring{width:132px;height:132px;flex:none}
+.lvl{display:inline-block;font-size:14px;font-weight:700;padding:6px 12px;border-radius:999px;margin-bottom:8px}
+.res h2{margin:0 0 6px;font-size:28px;line-height:1.2}
+.res p{margin:0;font-size:16px;line-height:1.6;color:#4A5568}
+.gaps{display:flex;flex-direction:column;gap:12px;margin:24px 0}
+.gap{border:1px solid #E2E6E1;border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:6px}
+.gap b{font-size:16px}
+.gap span{font-size:14px;line-height:1.55;color:#4A5568}
+.gap .sd{color:#047857;font-weight:600}
+.badge{font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;align-self:flex-start}
+.b0{background:#FEE2E2;color:#9B1C1C}.b1{background:#FEF3C7;color:#92400E}
+form{margin-top:8px;padding-top:24px;border-top:1px solid #E2E6E1;display:flex;flex-direction:column;gap:12px}
+form label{font-size:15px;font-weight:600}
+.frow{display:flex;flex-wrap:wrap;gap:10px}
+input[type=email]{flex:1 1 240px;min-width:0;min-height:52px;padding:0 14px;border:1.5px solid #D5DBD6;border-radius:12px;font-size:16px;font-family:inherit}
+.chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.5;color:#4A5568}
+.chk input{width:20px;height:20px;margin-top:1px;flex:none}
+.disc{margin:22px 0 0;font-size:13px;line-height:1.5;color:#9AA6B8}
+[hidden]{display:none!important}
+@media (max-width:560px){h1{font-size:34px}.card{padding:24px}.q{font-size:22px}}
+</style>
+</head>
+<body>
+<header class="top">
+<a class="logo" href="/"><svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#34D399"></rect><path d="M10 18l5 5 9-11" stroke="#0B1220" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>SkyDra</a>
+<a class="back" href="/">← Grįžti į pradžią</a>
+</header>
+<main>
+
+<section id="intro">
+<span class="tag">NEMOKAMAS AML TESTAS</span>
+<h1>Ar jūsų veikla atitinka pinigų plovimo prevencijos reikalavimus?</h1>
+<p class="lead">Atsakykite į 10 klausimų ir iš karto pamatysite savo pasirengimo lygį bei konkretų sąrašą, ką reikia sutvarkyti. Klausimai parengti pagal šiuo metu galiojantį Lietuvos Respublikos pinigų plovimo ir teroristų finansavimo prevencijos įstatymą (PPTFPĮ). Prie kiekvieno klausimo nurodyta, kas keisis nuo 2027 m. liepos 10 d., kai bus pradėtas taikyti ES AML reglamentas 2024/1624.</p>
+<div class="card">
+<button class="btn" id="start" type="button">Pradėti testą →</button>
+<div class="meta"><span>✓ Apie 3 minutės</span><span>✓ Rezultatas iš karto</span><span>✓ Registruotis nereikia</span></div>
+</div>
+</section>
+
+<section id="quiz" hidden>
+<div class="card">
+<div class="progress"><span id="qnum">1 iš 10</span><span id="qarea"></span></div>
+<div class="track"><div class="fill" id="fill" style="width:0"></div></div>
+<h2 class="q" id="qtext"></h2>
+<p class="hint" id="qhint"></p>
+<p class="nw" id="qnw"></p>
+<div class="opts" role="group" aria-label="Atsakymo variantai">
+<button class="opt" type="button" data-v="2"><span class="k">A</span>Taip</button>
+<button class="opt" type="button" data-v="1"><span class="k">B</span>Iš dalies arba nesu tikras</button>
+<button class="opt" type="button" data-v="0"><span class="k">C</span>Ne</button>
+</div>
+<div class="nav"><button class="link" id="prev" type="button">← Atgal</button></div>
+</div>
+</section>
+
+<section id="result" hidden>
+<span class="tag">JŪSŲ REZULTATAS</span>
+<div class="card res" style="margin-top:14px">
+<div class="score">
+<svg class="ring" viewBox="0 0 120 120" role="img" id="ringsvg" aria-label="">
+<circle cx="60" cy="60" r="52" fill="none" stroke="#E2E6E1" stroke-width="12"></circle>
+<circle id="arc" cx="60" cy="60" r="52" fill="none" stroke="#047857" stroke-width="12" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7" transform="rotate(-90 60 60)"></circle>
+<text id="pct" x="60" y="68" text-anchor="middle" font-family="Space Grotesk, sans-serif" font-size="30" font-weight="700" fill="#0B1220">0%</text>
+</svg>
+<div style="flex:1 1 260px;min-width:0">
+<span class="lvl" id="lvl"></span>
+<h2 id="rtitle"></h2>
+<p id="rtext"></p>
+</div>
+</div>
+<h3 style="margin:0;font-size:19px" id="gapsTitle">Ką reikia sutvarkyti</h3>
+<div class="gaps" id="gaps"></div>
+<div style="display:flex;flex-wrap:wrap;gap:10px">
+<a class="btn" href="registracija.html">Registruotis SkyDra</a>
+<button class="btn ghost" type="button" id="again">Atlikti testą iš naujo</button>
+</div>
+<form action="https://formsubmit.co/info@skydra.eu" method="POST" id="sendForm">
+<input type="hidden" name="_subject" value="AML testo rezultatas (skydra.eu)">
+<input type="hidden" name="_template" value="table">
+<input type="hidden" name="_next" value="https://skydra.eu/aciu.html">
+<input type="hidden" name="_autoresponse" value="Ačiū, kad atlikote SkyDra AML testą! Gavome jūsų rezultatą. Per 1 darbo dieną atsiųsime rekomendacijas, kaip ištaisyti spragas, ir vidaus kontrolės tvarkos šabloną. Klausimai: info@skydra.eu, +370 605 03644. SkyDra komanda">
+<input type="hidden" name="Rezultatas" id="resField">
+<input type="hidden" name="Spragos" id="gapField">
+<input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
+<label for="email">Gaukite rekomendacijas ir vidaus kontrolės tvarkos šabloną el. paštu</label>
+<div class="frow">
+<input id="email" type="email" name="email" required autocomplete="email" placeholder="vardas@agentura.lt">
+<button class="btn" type="submit">Siųsti</button>
+</div>
+<label class="chk"><input type="checkbox" name="Sutikimas" value="Taip" required>Sutinku, kad SkyDra tvarkytų mano el. pašto adresą ir testo rezultatą, kad galėtų atsiųsti rekomendacijas.</label>
+</form>
+</div>
+<p class="disc">Testas yra orientacinis ir nėra teisinė konsultacija. Jis parengtas pagal 2026 m. lapkritį galiojantį PPTFPĮ ir ES reglamentą 2024/1624. Galutinius reikalavimus jūsų veiklai nustato galiojantys teisės aktai ir priežiūros institucijų išaiškinimai.</p>
+</section>
+
+</main>
+<script src="/js/vertinimas.js"></script>
+</body>
+</html>

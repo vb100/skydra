@@ -1,0 +1,1097 @@
+<!doctype html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkyDra – AML atitiktis NT brokeriams</title>
+<meta name="description" content="SkyDra – AML atitikties platforma Lietuvos NT brokeriams: kliento patikros, AML programa, FNTT ataskaitos ir saugi duomenų bazė.">
+
+<link rel="stylesheet" href="/fonts/fonts.css">
+<style>
+body{margin:0;background:#0B1220}
+a{color:#047857}a:hover{color:#065F46}
+h1,h2,h3{font-family:'Space Grotesk','Inter',sans-serif}
+details summary{cursor:pointer;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details[open] .faq-plus{transform:rotate(45deg)}
+.sd-scene{opacity:0;animation:sdScene 16s infinite both}
+.sd-s2{animation-delay:4s}.sd-s3{animation-delay:8s}.sd-s4{animation-delay:12s}
+@keyframes sdScene{0%{opacity:0;transform:translateY(10px)}3%{opacity:1;transform:none}22%{opacity:1;transform:none}25%{opacity:0;transform:translateY(-10px)}100%{opacity:0}}
+.sd-btn{animation:sdPulse 16s infinite both}
+@keyframes sdPulse{0%,12%{transform:scale(1);box-shadow:0 0 0 0 rgba(52,211,153,0)}15%{transform:scale(.95)}17%{transform:scale(1);box-shadow:0 0 0 10px rgba(52,211,153,0.25)}22%,100%{box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+.sd-bar{width:0;animation:sdBar 16s infinite both;animation-delay:4s}
+@keyframes sdBar{0%{width:0}20%{width:100%}100%{width:100%}}
+.sd-scan{transform-origin:20px 20px;animation:sdScan 16s infinite both;animation-delay:4s}
+@keyframes sdScan{0%{opacity:0}5%{opacity:1}10%{opacity:.2}15%{opacity:1}22%{opacity:1}25%,100%{opacity:0}}
+.sd-tick{opacity:0;animation:sdTick 16s infinite both}
+.sd-t1{animation-delay:8.5s}.sd-t2{animation-delay:9.1s}.sd-t3{animation-delay:9.7s}.sd-t4{animation-delay:10.3s}.sd-t5{animation-delay:10.9s}
+@keyframes sdTick{0%{opacity:0;transform:translateX(-8px)}2%{opacity:1;transform:none}14%{opacity:1}17%,100%{opacity:0}}
+.sd-bar2{width:0;animation:sdBar2 16s infinite both;animation-delay:12.5s}
+@keyframes sdBar2{0%{width:0}12%{width:100%}100%{width:100%}}
+.sd-done{opacity:0;animation:sdDone 16s infinite both;animation-delay:14.2s}
+@keyframes sdDone{0%{opacity:0}2%{opacity:1}10%{opacity:1}11%,100%{opacity:0}}
+.sd-dot{animation:sdDot 16s infinite both}
+.sd-d2{animation-delay:4s}.sd-d3{animation-delay:8s}.sd-d4{animation-delay:12s}
+@keyframes sdDot{0%{background:#34D399}25%{background:#34D399}25.1%,100%{background:rgba(255,255,255,0.15)}}
+@media (prefers-reduced-motion: reduce){.sd-scene,.sd-tick,.sd-bar,.sd-bar2,.sd-done,.sd-dot,.sd-btn,.sd-scan{animation:none}.sd-s3,.sd-s3 .sd-tick{opacity:1}.sd-d3{background:#34D399}}
+
+</style>
+
+<style>html{scroll-behavior:smooth}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+<div style="font-family: 'Inter', system-ui, sans-serif; color: #0B1220; background: #F5F6F3">
+
+<section id="top" style="background: #0B1220; color: #FFFFFF; position: relative; overflow: hidden">
+<div aria-hidden="true" style="position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px); background-size: 56px 56px"></div>
+
+<nav aria-label="Pagrindinis meniu" style="position: relative; max-width: 1240px; margin: 0 auto; padding: 22px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px">
+<a href="#top" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #FFFFFF">
+<svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect width="34" height="34" rx="9" fill="#34D399"></rect><path d="M10 18l5 5 9-11" stroke="#0B1220" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 23px; letter-spacing: -0.01em">SkyDra</span>
+</a>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 28px; font-size: 15px; font-weight: 500">
+<a href="#rizika" style="color: #C7D0DD; text-decoration: none">Kodėl dabar</a>
+<a href="#reglamentas" style="color: #C7D0DD; text-decoration: none">ES reglamentas</a>
+<a href="#produktas" style="color: #C7D0DD; text-decoration: none">Produktas</a>
+<a href="#planai" style="color: #C7D0DD; text-decoration: none">Planai</a>
+<a href="#duk" style="color: #C7D0DD; text-decoration: none">DUK</a>
+<a href="https://skydra-demo-915954505621.europe-north1.run.app/login" style="background: #34D399; color: #0B1220; text-decoration: none; padding: 12px 20px; border-radius: 10px; font-weight: 700; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 8px"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>Prisijungti</a>
+</div>
+</nav>
+
+<div style="position: relative; max-width: 1240px; margin: 0 auto; padding: 72px 24px 112px; display: flex; flex-wrap: wrap; align-items: center; gap: 64px">
+<div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 28px">
+<span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 10px; border: 1px solid rgba(52,211,153,0.4); background: rgba(52,211,153,0.08); color: #6EE7B7; font-size: 14px; font-weight: 600; padding: 8px 14px; border-radius: 999px">
+<span aria-hidden="true" style="width: 8px; height: 8px; border-radius: 50%; background: #34D399"></span>ES AML reglamentas taikomas nuo 2027 m. liepos
+</span>
+<h1 style="margin: 0; font-size: 56px; line-height: 1.05; font-weight: 700; letter-spacing: -0.025em">NT brokeriams taikoma atsakomybė pagal pinigų plovimo prevencijos įstatymą. <span style="color: #34D399">Būkite pasiruošę.</span></h1>
+<p style="margin: 0; font-size: 20px; line-height: 1.55; color: #C7D0DD; max-width: 580px">Nuo 2027 m. liepos 10 d. – ir pagal naują ES AML reglamentą. SkyDra padeda tam pasiruošti: kliento patikros, AML programa ir FNTT ataskaitos vienoje vietoje.</p>
+<div style="display: flex; flex-wrap: wrap; gap: 12px">
+<a href="vertinimas.html" style="background: #34D399; color: #0B1220; text-decoration: none; padding: 17px 28px; border-radius: 12px; font-weight: 700; font-size: 17px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center; gap: 10px">Nemokamas AML testas
+<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></a>
+<a href="#planai" style="background: transparent; color: #FFFFFF; text-decoration: none; padding: 17px 28px; border-radius: 12px; font-weight: 600; font-size: 17px; border: 1.5px solid rgba(255,255,255,0.28); min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center">Planai nuo 29 €/mėn.</a>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px 28px; font-size: 14px; color: #9AA6B8">
+<span>✓ Pagal PPTFPĮ</span><span>✓ Duomenys ES serveriuose</span><span>✓ JANGIS ir JADIS patikros</span>
+</div>
+</div>
+
+<div style="flex: 1 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 14px; align-items: stretch">
+<div class="sd-demo" role="img" aria-label="Trumpa SkyDra demonstracija: sandorio sukūrimas, kliento duomenų pateikimas telefone, automatinės patikros ir FNTT paketo paruošimas" style="position: relative; height: 440px; background: #111A2E; border: 1px solid rgba(255,255,255,0.1); border-radius: 22px; box-shadow: 0 40px 100px rgba(0,0,0,0.5); overflow: hidden">
+<div style="display: flex; align-items: center; gap: 8px; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,0.08)">
+<span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #F87171"></span>
+<span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #FBBF24"></span>
+<span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 50%; background: #34D399"></span>
+<span style="margin-left: 10px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #9AA6B8">app.skydra.eu</span>
+</div>
+
+<div class="sd-scene sd-s1" style="position: absolute; left: 0; right: 0; top: 48px; bottom: 44px; padding: 28px; display: flex; flex-direction: column; gap: 16px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6EE7B7; letter-spacing: 0.08em">01 · NAUJAS SANDORIS</span>
+<div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="font-size: 13px; color: #9AA6B8">Objektas</span><span style="font-size: 14px; font-weight: 600">Butas, Žirmūnai</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="font-size: 13px; color: #9AA6B8">Klientas</span><span class="sd-type" style="font-size: 14px; font-weight: 600">Pirkėjas · fizinis asmuo</span></div>
+<div style="display: flex; justify-content: space-between; gap: 12px"><span style="font-size: 13px; color: #9AA6B8">Kaina</span><span style="font-size: 14px; font-weight: 600">185 000 €</span></div>
+</div>
+<span class="sd-btn" style="align-self: flex-start; background: #34D399; color: #0B1220; font-weight: 700; font-size: 14px; padding: 12px 18px; border-radius: 10px">Siųsti nuorodą klientui →</span>
+</div>
+
+<div class="sd-scene sd-s2" style="position: absolute; left: 0; right: 0; top: 48px; bottom: 44px; padding: 24px 28px; display: flex; gap: 24px; align-items: center; justify-content: center">
+<div style="width: 170px; height: 320px; border-radius: 28px; background: #0B1220; border: 2px solid rgba(255,255,255,0.18); padding: 16px 12px; display: flex; flex-direction: column; gap: 12px; flex: none">
+<span aria-hidden="true" style="align-self: center; width: 50px; height: 5px; border-radius: 3px; background: rgba(255,255,255,0.2)"></span>
+<div style="height: 88px; border-radius: 12px; border: 1.5px dashed rgba(110,231,183,0.6); display: flex; align-items: center; justify-content: center">
+<svg width="44" height="30" viewBox="0 0 44 30" aria-hidden="true"><rect x="1" y="1" width="42" height="28" rx="4" fill="none" stroke="#6EE7B7" stroke-width="2"></rect><circle cx="13" cy="13" r="5" fill="#6EE7B7"></circle><path d="M24 10h13M24 16h10M7 23h30" stroke="#6EE7B7" stroke-width="2" stroke-linecap="round"></path></svg>
+</div>
+<div style="height: 72px; border-radius: 12px; background: rgba(255,255,255,0.05); display: flex; align-items: center; justify-content: center">
+<svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15" r="7" fill="none" stroke="#C7D0DD" stroke-width="2"></circle><path d="M7 36c2-8 8-11 13-11s11 3 13 11" fill="none" stroke="#C7D0DD" stroke-width="2"></path><circle class="sd-scan" cx="20" cy="20" r="17" fill="none" stroke="#34D399" stroke-width="2"></circle></svg>
+</div>
+<div style="height: 8px; border-radius: 4px; background: rgba(255,255,255,0.1); overflow: hidden"><div class="sd-bar" style="height: 100%; background: #34D399; border-radius: 4px"></div></div>
+<span style="font-size: 11px; color: #9AA6B8; text-align: center">Dokumentas · veido patikra</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 160px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6EE7B7; letter-spacing: 0.08em">02 · KLIENTAS</span>
+<span style="font-size: 15px; line-height: 1.45; color: #DCE3EC">Duomenys pateikiami telefone</span>
+</div>
+</div>
+
+<div class="sd-scene sd-s3" style="position: absolute; left: 0; right: 0; top: 48px; bottom: 44px; padding: 28px; display: flex; flex-direction: column; gap: 12px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6EE7B7; letter-spacing: 0.08em">03 · PATIKROS</span>
+<div class="sd-tick sd-t1" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.05)"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#34D399"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#0B1220" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font-size: 14px">Tapatybė</span></div>
+<div class="sd-tick sd-t2" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.05)"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#34D399"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#0B1220" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font-size: 14px">PEP ir sankcijos</span></div>
+<div class="sd-tick sd-t3" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.05)"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#34D399"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#0B1220" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font-size: 14px">Lėšų kilmė</span></div>
+<div class="sd-tick sd-t4" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 12px; background: rgba(255,255,255,0.05)"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="#34D399"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#0B1220" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg><span style="font-size: 14px">Rizikos vertinimas</span></div>
+<span class="sd-tick sd-t5" style="align-self: flex-start; margin-top: 4px; background: rgba(52,211,153,0.15); color: #6EE7B7; font-size: 13px; font-weight: 700; padding: 7px 14px; border-radius: 999px">Žema rizika</span>
+</div>
+
+<div class="sd-scene sd-s4" style="position: absolute; left: 0; right: 0; top: 48px; bottom: 44px; padding: 28px; display: flex; flex-direction: column; gap: 16px; justify-content: center">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6EE7B7; letter-spacing: 0.08em">04 · FNTT PAKETAS</span>
+<div style="background: #FFFFFF; color: #0B1220; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; gap: 14px">
+<svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="#047857" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6"></path><path d="M12 12v6M9 15l3 3 3-3"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 15px; font-weight: 700">Kliento byla</span><span style="font-size: 13px; color: #5B6577">Dokumentai · rezultatai · veiksmų žurnalas</span></div>
+</div>
+<div style="height: 8px; border-radius: 4px; background: #E2E6E1; overflow: hidden"><div class="sd-bar2" style="height: 100%; background: #047857; border-radius: 4px"></div></div>
+<span class="sd-done" style="font-size: 14px; font-weight: 700; color: #047857">✓ Išsaugota</span>
+</div>
+</div>
+
+<div aria-hidden="true" style="position: absolute; left: 0; right: 0; bottom: 0; height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 18px; border-top: 1px solid rgba(255,255,255,0.08)">
+<span class="sd-dot sd-d1" style="height: 4px; flex: 1 1 0; border-radius: 2px; background: rgba(255,255,255,0.15)"></span>
+<span class="sd-dot sd-d2" style="height: 4px; flex: 1 1 0; border-radius: 2px; background: rgba(255,255,255,0.15)"></span>
+<span class="sd-dot sd-d3" style="height: 4px; flex: 1 1 0; border-radius: 2px; background: rgba(255,255,255,0.15)"></span>
+<span class="sd-dot sd-d4" style="height: 4px; flex: 1 1 0; border-radius: 2px; background: rgba(255,255,255,0.15)"></span>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<section id="rizika" style="background: #F5F6F3">
+<div style="max-width: 1240px; margin: 0 auto; padding: 104px 24px 96px; display: flex; flex-direction: column; gap: 48px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px">
+<div style="max-width: 720px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: #047857">NT SEKTORIUS</span>
+<h2 style="margin: 0; font-size: 48px; line-height: 1.08; letter-spacing: -0.02em">Remiantis FNTT duomenimis</h2>
+</div>
+<p style="margin: 0; max-width: 380px; font-size: 16px; line-height: 1.6; color: #4A5568">Skaičiai iš FNTT strateginės NT sektoriaus analizės ir patikrinimų.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px">
+<div style="background: #FFFFFF; border: 1px solid #E2E6E1; border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 56px; font-weight: 700; letter-spacing: -0.03em; line-height: 1">32 iš 42</span>
+<span style="font-size: 16px; line-height: 1.5; color: #4A5568">patikrintų NT įmonių ir agentūrų rasta pažeidimų</span>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E6E1; border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 56px; font-weight: 700; letter-spacing: -0.03em; line-height: 1">55 000 €+</span>
+<span style="font-size: 16px; line-height: 1.5; color: #4A5568">didžiausia jau skirta bauda NT sektoriaus įmonei</span>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E6E1; border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 56px; font-weight: 700; letter-spacing: -0.03em; line-height: 1">14</span>
+<span style="font-size: 16px; line-height: 1.5; color: #4A5568">NT brokerių pranešė FNTT apie paskirtą atsakingą darbuotoją</span>
+</div>
+<div style="background: #0B1220; color: #FFFFFF; border-radius: 18px; padding: 28px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 56px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; color: #FBBF24">1,1 mln. €</span>
+<span style="font-size: 16px; line-height: 1.5; color: #C7D0DD">didžiausia galima bauda už sistemingus ar pakartotinius pažeidimus</span>
+</div>
+</div>
+</div>
+</section>
+
+<section style="background: #F5F6F3">
+<div style="max-width: 1240px; margin: 0 auto; padding: 0 24px 104px; display: flex; flex-wrap: wrap; gap: 16px">
+<figure style="flex: 1 1 480px; min-width: 0; margin: 0; background: #ECFDF5; border-radius: 22px; padding: 44px; display: flex; flex-direction: column; gap: 24px; justify-content: space-between">
+<blockquote style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 32px; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em">„Dalis NT sektoriuje veikiančių įmonių ar brokerių net nežino, kad yra įpareigoti.“</blockquote>
+<figcaption style="display: flex; flex-direction: column; gap: 2px; font-size: 15px">
+<span style="font-weight: 700">Mindaugas Petrauskas</span>
+<span style="color: #4A5568">FNTT direktoriaus pavaduotojas</span>
+</figcaption>
+</figure>
+<figure style="flex: 1 1 480px; min-width: 0; margin: 0; background: #0B1220; color: #FFFFFF; border-radius: 22px; padding: 44px; display: flex; flex-direction: column; gap: 24px; justify-content: space-between">
+<blockquote style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 32px; line-height: 1.25; font-weight: 600; letter-spacing: -0.01em">„Laikas NT agentams rimtai imtis kovos su pinigų plovimu.“</blockquote>
+<figcaption style="display: flex; flex-direction: column; gap: 2px; font-size: 15px">
+<span style="font-weight: 700">Dr. Marcus Pleyer</span>
+<span style="color: #9AA6B8">FATF prezidentas (2020–2022)</span>
+</figcaption>
+</figure>
+</div>
+</section>
+
+<section id="reglamentas" style="background: #0B1220; color: #FFFFFF">
+<div style="max-width: 1240px; margin: 0 auto; padding: 104px 24px; display: flex; flex-direction: column; gap: 48px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px">
+<div style="max-width: 760px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: #6EE7B7">ES AML REGLAMENTAS</span>
+<h2 style="margin: 0; font-size: 48px; line-height: 1.08; letter-spacing: -0.02em">Nuo 2027 m. liepos 10 d. – vienos AML taisyklės visai Europai</h2>
+</div>
+<p style="margin: 0; max-width: 420px; font-size: 16px; line-height: 1.6; color: #C7D0DD">NT brokeriai lieka įpareigotaisiais subjektais. Institucijos tikėsis, kad politika, mokymai ir dokumentai bus parengti iki reglamento taikymo pradžios.</p>
+</div>
+<ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 14px">
+<li style="flex: 1 1 230px; min-width: 0; background: rgba(255,255,255,0.06); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: #6EE7B7">2024 m. liepos 9 d.</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.2">Įsigalioja ES AML paketas</span>
+<span style="font-size: 14px; line-height: 1.55; color: #C7D0DD">Reglamentas 2024/1624 (AMLR), direktyva 2024/1640 (AMLD6) ir ES kovos su pinigų plovimu institucija AMLA.</span>
+</li>
+<li style="flex: 1 1 230px; min-width: 0; background: rgba(255,255,255,0.06); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: #6EE7B7">2025 m. liepos 1 d.</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.2">Pradeda veikti AMLA</span>
+<span style="font-size: 14px; line-height: 1.55; color: #C7D0DD">Nauja ES institucija Frankfurte koordinuoja nacionalines priežiūros institucijas, tarp jų ir FNTT.</span>
+</li>
+<li style="flex: 1 1 230px; min-width: 0; background: #34D399; color: #0B1220; border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: #065F46">2027 m. liepos 10 d.</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.2">AMLR taikomas visoje ES</span>
+<span style="font-size: 14px; line-height: 1.55; color: #12372A">Vienodos taisyklės 27 valstybėse, ES grynųjų mokėjimų riba 10 000 €, perkelta AMLD6 direktyva.</span>
+</li>
+<li style="flex: 1 1 230px; min-width: 0; background: rgba(255,255,255,0.06); color: #FFFFFF; border: 1px solid rgba(255,255,255,0.1); border-radius: 18px; padding: 24px; display: flex; flex-direction: column; gap: 10px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; color: #6EE7B7">2029 m. liepos 10 d.</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700; line-height: 1.2">Bendra NT informacijos prieiga</span>
+<span style="font-size: 14px; line-height: 1.55; color: #C7D0DD">Institucijos gauna vieną prieigos tašką prie NT registrų duomenų: savininkai, sandoriai, suvaržymai.</span>
+</li>
+</ol>
+<div style="display: flex; flex-direction: column; gap: 24px">
+<h3 style="margin: 0; font-size: 26px">Kas keičiasi NT brokeriams</h3>
+<div style="display: flex; flex-wrap: wrap; gap: 28px 32px">
+<div style="flex: 1 1 300px; min-width: 0; display: flex; gap: 14px; align-items: flex-start">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="11" fill="#34D399"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#0B1220" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 17px; font-weight: 600">Vienodos taisyklės visoje ES</span><span style="font-size: 15px; line-height: 1.55; color: #C7D0DD">Reglamentas taikomas tiesiogiai, be nacionalinio perkėlimo, ir pakeičia dabartinius nacionalinius reikalavimus.</span></div>
+</div>
+<div style="flex: 1 1 300px; min-width: 0; display: flex; gap: 14px; align-items: flex-start">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="11" fill="#34D399"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#0B1220" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 17px; font-weight: 600">ES grynųjų riba – 10 000 €</span><span style="font-size: 15px; line-height: 1.55; color: #C7D0DD">Tai didžiausia leistina riba ES. Lietuvoje jau dabar galioja griežtesnė – 5 000 € pagal sandorį. Nuo 3 000 € grynųjų sandorio reikės nustatyti kliento tapatybę.</span></div>
+</div>
+<div style="flex: 1 1 300px; min-width: 0; display: flex; gap: 14px; align-items: flex-start">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="11" fill="#34D399"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#0B1220" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 17px; font-weight: 600">Rašytinė AML programa</span><span style="font-size: 15px; line-height: 1.55; color: #C7D0DD">Politika, procedūros ir veiklos rizikos vertinimas – raštu, patvirtinti vadovybės ir nuolat atnaujinami.</span></div>
+</div>
+<div style="flex: 1 1 300px; min-width: 0; display: flex; gap: 14px; align-items: flex-start">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="11" fill="#34D399"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#0B1220" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 17px; font-weight: 600">Kliento duomenų atnaujinimas</span><span style="font-size: 15px; line-height: 1.55; color: #C7D0DD">Kliento profilis atnaujinamas bent kas 5 metus, didelės rizikos klientų – kasmet.</span></div>
+</div>
+<div style="flex: 1 1 300px; min-width: 0; display: flex; gap: 14px; align-items: flex-start">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="11" fill="#34D399"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#0B1220" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 17px; font-weight: 600">Greitesni atsakymai institucijoms</span><span style="font-size: 15px; line-height: 1.55; color: #C7D0DD">Į finansinės žvalgybos padalinio (Lietuvoje – FNTT) užklausas reikės atsakyti per 5 darbo dienas.</span></div>
+</div>
+<div style="flex: 1 1 300px; min-width: 0; display: flex; gap: 14px; align-items: flex-start">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 2px"><circle cx="12" cy="12" r="11" fill="#34D399"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#0B1220" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 17px; font-weight: 600">Vienodi naudos gavėjo kriterijai</span><span style="font-size: 15px; line-height: 1.55; color: #C7D0DD">Naudos gavėjo apibrėžimas ir 25 % riba suvienodinami visoje ES.</span></div>
+</div>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 16px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 28px">
+<p style="margin: 0; font-size: 16px; color: #C7D0DD; max-width: 720px">SkyDra atnaujinama pagal AMLR, AMLA gaires ir Lietuvos teisės aktų pakeitimus – jums nereikia sekti kiekvieno pokyčio.</p>
+<a href="registracija.html" style="background: #34D399; color: #0B1220; text-decoration: none; padding: 15px 24px; border-radius: 12px; font-weight: 700; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center">Registruotis dabar</a>
+</div>
+</div>
+</section>
+
+<section style="background: #FFFFFF">
+<div style="max-width: 1240px; margin: 0 auto; padding: 104px 24px; display: flex; flex-direction: column; gap: 48px">
+<div style="max-width: 760px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: #047857">PASIRENGIMAS FNTT PATIKRINIMUI</span>
+<h2 style="margin: 0; font-size: 48px; line-height: 1.08; letter-spacing: -0.02em">Per FNTT patikrinimą institucijos prašo įrodymų. Ar juos turite?</h2>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 16px">
+<div style="flex: 1 1 440px; min-width: 0; border: 1px solid #F3D6D6; background: #FFF7F7; border-radius: 22px; padding: 36px; display: flex; flex-direction: column; gap: 18px">
+<h3 style="margin: 0; font-size: 24px; color: #9B1C1C">Be SkyDra</h3>
+<ul style="margin: 0; padding: 0 0 0 20px; display: flex; flex-direction: column; gap: 12px; font-size: 16px; line-height: 1.5; color: #4A1D1D">
+<li>Paso kopija kažkur el. pašte ar telefone</li>
+<li>Vidaus tvarka nukopijuota iš interneto prieš trejus metus</li>
+<li>Nėra įrodymo, kad tikrinote PEP ir sankcijas</li>
+<li>Apie atsakingą darbuotoją FNTT nepranešta</li>
+<li>Rizikos vertinimo nėra – tik „pažįstu klientą“</li>
+</ul>
+</div>
+<div style="flex: 1 1 440px; min-width: 0; border: 1px solid #B7EBD3; background: #F0FDF7; border-radius: 22px; padding: 36px; display: flex; flex-direction: column; gap: 18px">
+<h3 style="margin: 0; font-size: 24px; color: #065F46">Su SkyDra</h3>
+<ul style="margin: 0; padding: 0 0 0 20px; display: flex; flex-direction: column; gap: 12px; font-size: 16px; line-height: 1.5; color: #12372A">
+<li>Kiekvieno kliento byla su dokumentais vienoje vietoje</li>
+<li>Vidaus kontrolės tvarka ir rizikos vertinimas – atnaujinti ir patvirtinti</li>
+<li>PEP ir sankcijų patikra su data ir rezultatu</li>
+<li>Pranešimai FNTT paruošti iš bylos duomenų</li>
+<li>Visos bylos ir žurnalas – vienu eksportu</li>
+</ul>
+</div>
+</div>
+</div>
+</section>
+
+<section id="produktas" style="background: #F5F6F3">
+<div style="max-width: 1240px; margin: 0 auto; padding: 104px 24px; display: flex; flex-direction: column; gap: 48px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px">
+<div style="max-width: 680px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: #047857">PRODUKTAS</span>
+<h2 style="margin: 0; font-size: 48px; line-height: 1.08; letter-spacing: -0.02em">Viskas, ko reikia atitikčiai. Viena platforma.</h2>
+</div>
+<p style="margin: 0; max-width: 400px; font-size: 16px; line-height: 1.6; color: #4A5568">Sukurta Lietuvos NT rinkai: lietuvių kalba, Lietuvos registrai, FNTT reikalavimai.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(270px, 1fr)); gap: 16px">
+<div style="background: #FFFFFF; border: 1px solid #E2E6E1; border-radius: 20px; padding: 30px; display: flex; flex-direction: column; gap: 16px">
+<span aria-hidden="true" style="width: 48px; height: 48px; border-radius: 12px; background: #ECFDF5; display: flex; align-items: center; justify-content: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path><path d="M8 11l2 2 4-4"></path></svg></span>
+<h3 style="margin: 0; font-size: 21px">Kliento patikros</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #4A5568">Tapatybė, PEP ir sankcijos fiziniams asmenims. Įmonėms – dalyviai ir naudos gavėjai per JADIS ir JANGIS.</p>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E6E1; border-radius: 20px; padding: 30px; display: flex; flex-direction: column; gap: 16px">
+<span aria-hidden="true" style="width: 48px; height: 48px; border-radius: 12px; background: #ECFDF5; display: flex; align-items: center; justify-content: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"></path><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"></path></svg></span>
+<h3 style="margin: 0; font-size: 21px">Aiški patikros eiga</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #4A5568">Žingsnis po žingsnio pagal sandorio tipą. Klientas duomenis pateikia telefone, jūs nieko nepraleidžiate.</p>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E6E1; border-radius: 20px; padding: 30px; display: flex; flex-direction: column; gap: 16px">
+<span aria-hidden="true" style="width: 48px; height: 48px; border-radius: 12px; background: #ECFDF5; display: flex; align-items: center; justify-content: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"></path><path d="M14 3v6h6"></path><path d="M8 13h8M8 17h5"></path></svg></span>
+<h3 style="margin: 0; font-size: 21px">FNTT ataskaitos</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #4A5568">Vidaus kontrolės tvarka, rizikos vertinimas ir pranešimų ruošiniai: įtartinos operacijos, grynieji nuo 15 000 €, atsakingas darbuotojas.</p>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E2E6E1; border-radius: 20px; padding: 30px; display: flex; flex-direction: column; gap: 16px">
+<span aria-hidden="true" style="width: 48px; height: 48px; border-radius: 12px; background: #ECFDF5; display: flex; align-items: center; justify-content: center"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#047857" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg></span>
+<h3 style="margin: 0; font-size: 21px">Saugi duomenų bazė</h3>
+<p style="margin: 0; font-size: 15px; line-height: 1.6; color: #4A5568">Bylos ES serveriuose, užšifruotos ir saugomos visą įstatymo nustatytą laiką. Kiekvienas veiksmas – žurnale.</p>
+</div>
+</div>
+
+<div style="background: #0B1220; color: #FFFFFF; border-radius: 24px; padding: 48px; display: flex; flex-wrap: wrap; gap: 40px; align-items: center">
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: #6EE7B7">TRYS ŽINGSNIAI</span>
+<h3 style="margin: 0; font-size: 34px; line-height: 1.15">Nuo naujo kliento iki FNTT paruoštos bylos</h3>
+<p style="margin: 0; font-size: 16px; line-height: 1.6; color: #C7D0DD">Klientas duomenis pateikia patogiai savo telefone, o jūs matote, kuriame žingsnyje yra kiekvienas sandoris.</p>
+</div>
+<ol style="flex: 1 1 460px; min-width: 0; margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 14px">
+<li style="display: flex; gap: 18px; align-items: flex-start; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px">
+<span style="flex: none; font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #34D399; font-size: 15px">01</span>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 17px; font-weight: 600">Sukuriate sandorį</span><span style="font-size: 15px; color: #C7D0DD; line-height: 1.5">SkyDra parenka reikiamus žingsnius pagal sandorio tipą.</span></div>
+</li>
+<li style="display: flex; gap: 18px; align-items: flex-start; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px">
+<span style="flex: none; font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #34D399; font-size: 15px">02</span>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 17px; font-weight: 600">Klientas užpildo telefone</span><span style="font-size: 15px; color: #C7D0DD; line-height: 1.5">Nuoroda, dokumentai, lėšų kilmė – be popierių ir el. laiškų.</span></div>
+</li>
+<li style="display: flex; gap: 18px; align-items: flex-start; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 20px">
+<span style="flex: none; font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #34D399; font-size: 15px">03</span>
+<div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 17px; font-weight: 600">Byla paruošta</span><span style="font-size: 15px; color: #C7D0DD; line-height: 1.5">Rizikos lygis, rezultatai ir dokumentai išsaugoti FNTT patikrinimui.</span></div>
+</li>
+</ol>
+</div>
+</div>
+</section>
+
+<section id="planai" data-billing="annual" style="background: #FFFFFF">
+<div style="max-width: 1240px; margin: 0 auto; padding: 104px 24px; display: flex; flex-direction: column; gap: 44px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px">
+<div style="max-width: 660px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: #047857">PLANAI</span>
+<h2 style="margin: 0; font-size: 48px; line-height: 1.08; letter-spacing: -0.02em">Visi planai padengia visas įstatymo prievoles</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: #4A5568">Skiriasi tik vartotojų skaičius, įskaičiuotos patikros ir valdymo įrankiai. Kainos be PVM.</p>
+</div>
+<div role="group" aria-label="Atsiskaitymo laikotarpis" style="display: inline-flex; background: #EEF1EE; border-radius: 12px; padding: 4px; gap: 4px">
+<button type="button"  data-set="monthly" aria-pressed="false" style="border: none; border-radius: 9px; padding: 10px 16px; min-height: 44px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; background: transparent; color: #4A5568">Kas mėnesį</button>
+<button type="button"  data-set="annual" aria-pressed="true" style="border: none; border-radius: 9px; padding: 10px 16px; min-height: 44px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; background: #0B1220; color: #FFFFFF">Kasmet · 2 mėn. nemokamai</button>
+</div>
+</div>
+
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div style="overflow-x: auto; border: 1px solid #E2E6E1; border-radius: 20px">
+<div style="min-width: 820px">
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); background: #0B1220; color: #FFFFFF; align-items: stretch">
+<div style="padding: 24px; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px">
+<span style="font-size: 16px; font-weight: 700">Kas įeina</span>
+<span style="font-size: 13px; color: #9AA6B8">Kainos be PVM</span>
+</div>
+<div style="padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center">
+<span style="font-size: 16px; font-weight: 700; color: #FFFFFF">Individual</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1">290 €</span>
+<span style="font-size: 13px; font-weight: 500; color: #9AA6B8">/ metus</span>
+<span style="font-size: 12px; font-weight: 500; color: #9AA6B8; min-height: 32px">1 vartotojas · Atitinka 24,17 € per mėnesį</span>
+<a href="registracija.html" style="background: #FFFFFF; color: #0B1220; text-decoration: none; padding: 11px 18px; border-radius: 10px; font-weight: 700; font-size: 14px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center">Pradėti</a>
+</div>
+<div style="padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; background: #13203A">
+<span style="font-size: 16px; font-weight: 700; color: #34D399">Broker Plus</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1">990 €</span>
+<span style="font-size: 13px; font-weight: 500; color: #9AA6B8">/ metus</span>
+<span style="font-size: 12px; font-weight: 500; color: #9AA6B8; min-height: 32px">Iki 15 vartotojų · Atitinka 82,50 € per mėnesį</span>
+<a href="registracija.html" style="background: #34D399; color: #0B1220; text-decoration: none; padding: 11px 18px; border-radius: 10px; font-weight: 700; font-size: 14px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center">Pradėti</a>
+</div>
+<div style="padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center">
+<span style="font-size: 16px; font-weight: 700; color: #FFFFFF">Enterprise</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1">7 €</span>
+<span style="font-size: 13px; font-weight: 500; color: #9AA6B8">vartotojui / mėn.</span>
+<span style="font-size: 12px; font-weight: 500; color: #9AA6B8; min-height: 32px">Nuo 16 vartotojų · metinė sutartis</span>
+<a href="registracija.html" style="background: #FFFFFF; color: #0B1220; text-decoration: none; padding: 11px 18px; border-radius: 10px; font-weight: 700; font-size: 14px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center">Susisiekti</a>
+</div>
+</div>
+
+
+<div style="padding: 14px 24px; background: #F0F3EF; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #047857; border-top: 1px solid #E2E6E1">SAUGI DUOMENŲ BAZĖ</div>
+
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Klientų ir sandorių bylos ES serveriuose, užšifruotos</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Saugojimas visą įstatymo nustatytą laiką</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Veiksmų žurnalas: kas, kada, ką patikrino</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Prieigos teisės pagal rolę</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Kelių biurų struktūra</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+<div style="padding: 14px 24px; background: #F0F3EF; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #047857; border-top: 1px solid #E2E6E1">AML PROGRAMA IR FNTT DOKUMENTAI</div>
+
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">AML programa: vidaus kontrolės politika ir procedūros</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Veiklos (subjekto) rizikos vertinimas</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Kasmetinis programos atnaujinimas pagal teisės pokyčius</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Pranešimų FNTT ruošiniai</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Paketas FNTT patikrinimui vienu eksportu</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Viso tinklo</span></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Mėnesio atitikties ataskaita vadovui</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Pagal biurus</span></div>
+</div>
+
+
+
+<div style="padding: 14px 24px; background: #F0F3EF; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #047857; border-top: 1px solid #E2E6E1">PATIKROS EIGA</div>
+
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Žingsniai pagal sandorio tipą</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Nuoroda klientui užpildyti telefone</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Vadovo skydelis: kas tikrino, ko trūksta</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Įspėjimai apie praleistus žingsnius</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Brokeriui</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Ir vadovui</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Ir būstinei</span></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">CRM integracija, API, SSO</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+<div style="padding: 14px 24px; background: #F0F3EF; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #047857; border-top: 1px solid #E2E6E1">PATIKROS</div>
+
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Fizinių asmenų patikros</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>10 per mėn.</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>60 per mėn. agentūrai</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>6 per mėn. vartotojui</span></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Papildoma fizinio asmens patikra</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>1,50 €</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>1,00 €</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>0,80 €</span></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Įmonės patikra (JANGIS + JADIS)</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>7 €</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>5 per mėn., toliau 6 €</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>5 €</span></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Kreditų paketai, galiojantys 24 mėn.</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+<div style="padding: 14px 24px; background: #F0F3EF; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #047857; border-top: 1px solid #E2E6E1">PAGALBA IR MOKYMAI</div>
+
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">„Patikra už jus“: specialistas peržiūri bylą ir paruošia dokumentus</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>30 € už sandorį</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>30 € už sandorį</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>30 € už sandorį</span></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Palaikymas</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>El. paštu</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>El. paštu ir telefonu</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Vadybininkas, SLA</span></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">AML mokymai</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Vaizdo medžiaga</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Komandai kartą per metus</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Biurams, su apskaita</span></div>
+</div>
+
+
+</div>
+</div>
+<p style="margin: 0; font-size: 13px; color: #5B6577">Patikrų kreditų paketai galioja 24 mėnesius. Enterprise limitas skaičiuojamas visam tinklui per metus, todėl sezoniniai svyravimai neišnaudoja jo per anksti.</p>
+</div>
+</div>
+</section><section id="planai-m" data-billing="monthly" hidden style="background: #FFFFFF">
+<div style="max-width: 1240px; margin: 0 auto; padding: 104px 24px; display: flex; flex-direction: column; gap: 44px">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 24px">
+<div style="max-width: 660px; display: flex; flex-direction: column; gap: 14px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: #047857">PLANAI</span>
+<h2 style="margin: 0; font-size: 48px; line-height: 1.08; letter-spacing: -0.02em">Visi planai padengia visas įstatymo prievoles</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: #4A5568">Skiriasi tik vartotojų skaičius, įskaičiuotos patikros ir valdymo įrankiai. Kainos be PVM.</p>
+</div>
+<div role="group" aria-label="Atsiskaitymo laikotarpis" style="display: inline-flex; background: #EEF1EE; border-radius: 12px; padding: 4px; gap: 4px">
+<button type="button"  data-set="monthly" aria-pressed="true" style="border: none; border-radius: 9px; padding: 10px 16px; min-height: 44px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; background: #0B1220; color: #FFFFFF">Kas mėnesį</button>
+<button type="button"  data-set="annual" aria-pressed="false" style="border: none; border-radius: 9px; padding: 10px 16px; min-height: 44px; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer; background: transparent; color: #4A5568">Kasmet · 2 mėn. nemokamai</button>
+</div>
+</div>
+
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div style="overflow-x: auto; border: 1px solid #E2E6E1; border-radius: 20px">
+<div style="min-width: 820px">
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); background: #0B1220; color: #FFFFFF; align-items: stretch">
+<div style="padding: 24px; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px">
+<span style="font-size: 16px; font-weight: 700">Kas įeina</span>
+<span style="font-size: 13px; color: #9AA6B8">Kainos be PVM</span>
+</div>
+<div style="padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center">
+<span style="font-size: 16px; font-weight: 700; color: #FFFFFF">Individual</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1">29 €</span>
+<span style="font-size: 13px; font-weight: 500; color: #9AA6B8">/ mėn.</span>
+<span style="font-size: 12px; font-weight: 500; color: #9AA6B8; min-height: 32px">1 vartotojas · Mokant kasmet – 290 €</span>
+<a href="registracija.html" style="background: #FFFFFF; color: #0B1220; text-decoration: none; padding: 11px 18px; border-radius: 10px; font-weight: 700; font-size: 14px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center">Pradėti</a>
+</div>
+<div style="padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; background: #13203A">
+<span style="font-size: 16px; font-weight: 700; color: #34D399">Broker Plus</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1">99 €</span>
+<span style="font-size: 13px; font-weight: 500; color: #9AA6B8">/ mėn.</span>
+<span style="font-size: 12px; font-weight: 500; color: #9AA6B8; min-height: 32px">Iki 15 vartotojų · Mokant kasmet – 990 €</span>
+<a href="registracija.html" style="background: #34D399; color: #0B1220; text-decoration: none; padding: 11px 18px; border-radius: 10px; font-weight: 700; font-size: 14px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center">Pradėti</a>
+</div>
+<div style="padding: 24px 16px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center">
+<span style="font-size: 16px; font-weight: 700; color: #FFFFFF">Enterprise</span>
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1">7 €</span>
+<span style="font-size: 13px; font-weight: 500; color: #9AA6B8">vartotojui / mėn.</span>
+<span style="font-size: 12px; font-weight: 500; color: #9AA6B8; min-height: 32px">Nuo 16 vartotojų · metinė sutartis</span>
+<a href="registracija.html" style="background: #FFFFFF; color: #0B1220; text-decoration: none; padding: 11px 18px; border-radius: 10px; font-weight: 700; font-size: 14px; min-height: 44px; box-sizing: border-box; display: inline-flex; align-items: center">Susisiekti</a>
+</div>
+</div>
+
+
+<div style="padding: 14px 24px; background: #F0F3EF; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #047857; border-top: 1px solid #E2E6E1">SAUGI DUOMENŲ BAZĖ</div>
+
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Klientų ir sandorių bylos ES serveriuose, užšifruotos</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Saugojimas visą įstatymo nustatytą laiką</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Veiksmų žurnalas: kas, kada, ką patikrino</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Prieigos teisės pagal rolę</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Kelių biurų struktūra</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+<div style="padding: 14px 24px; background: #F0F3EF; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #047857; border-top: 1px solid #E2E6E1">AML PROGRAMA IR FNTT DOKUMENTAI</div>
+
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">AML programa: vidaus kontrolės politika ir procedūros</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>199 € atskirai</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>199 € atskirai</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Veiklos (subjekto) rizikos vertinimas</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>199 € atskirai</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>199 € atskirai</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Kasmetinis programos atnaujinimas pagal teisės pokyčius</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Pranešimų FNTT ruošiniai</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Paketas FNTT patikrinimui vienu eksportu</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Viso tinklo</span></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Mėnesio atitikties ataskaita vadovui</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Pagal biurus</span></div>
+</div>
+
+
+
+<div style="padding: 14px 24px; background: #F0F3EF; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #047857; border-top: 1px solid #E2E6E1">PATIKROS EIGA</div>
+
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Žingsniai pagal sandorio tipą</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Nuoroda klientui užpildyti telefone</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Vadovo skydelis: kas tikrino, ko trūksta</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Įspėjimai apie praleistus žingsnius</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Brokeriui</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Ir vadovui</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Ir būstinei</span></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">CRM integracija, API, SSO</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span aria-label="Neįeina" style="color: #A0AABA; font-size: 20px">–</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+<div style="padding: 14px 24px; background: #F0F3EF; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #047857; border-top: 1px solid #E2E6E1">PATIKROS</div>
+
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Fizinių asmenų patikros</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>10 per mėn.</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>60 per mėn. agentūrai</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>6 per mėn. vartotojui</span></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Papildoma fizinio asmens patikra</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>1,50 €</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>1,00 €</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>0,80 €</span></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Įmonės patikra (JANGIS + JADIS)</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>7 €</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>5 per mėn., toliau 6 €</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>5 €</span></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Kreditų paketai, galiojantys 24 mėn.</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><svg width="22" height="22" viewBox="0 0 24 24" role="img" aria-label="Įeina"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg></div>
+</div>
+
+
+
+<div style="padding: 14px 24px; background: #F0F3EF; font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: #047857; border-top: 1px solid #E2E6E1">PAGALBA IR MOKYMAI</div>
+
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">„Patikra už jus“: specialistas peržiūri bylą ir paruošia dokumentus</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>30 € už sandorį</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>30 € už sandorį</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>30 € už sandorį</span></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">Palaikymas</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>El. paštu</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>El. paštu ir telefonu</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Vadybininkas, SLA</span></div>
+</div>
+
+
+
+
+<div style="display: grid; grid-template-columns: minmax(0, 2.2fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid #EEF1EE; background: #FFFFFF">
+<div style="padding: 14px 24px; font-size: 15px; line-height: 1.4; display: flex; align-items: center">AML mokymai</div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Vaizdo medžiaga</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Komandai kartą per metus</span></div>
+<div style="padding: 14px 12px; display: flex; align-items: center; justify-content: center; text-align: center; font-size: 14px; line-height: 1.35; color: #2D3748"><span>Biurams, su apskaita</span></div>
+</div>
+
+
+</div>
+</div>
+<p style="margin: 0; font-size: 13px; color: #5B6577">Patikrų kreditų paketai galioja 24 mėnesius. Enterprise limitas skaičiuojamas visam tinklui per metus, todėl sezoniniai svyravimai neišnaudoja jo per anksti.</p>
+</div>
+</div>
+</section>
+
+<section style="background: #F5F6F3">
+<div style="max-width: 1240px; margin: 0 auto; padding: 104px 24px; display: flex; flex-wrap: wrap; gap: 56px">
+<div style="flex: 1 1 340px; min-width: 0; display: flex; flex-direction: column; gap: 16px">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: #047857">PAGAL PPTFPĮ</span>
+<h2 style="margin: 0; font-size: 44px; line-height: 1.1; letter-spacing: -0.02em">Ką privalote – ir kaip tai padengia SkyDra</h2>
+<p style="margin: 0; font-size: 17px; line-height: 1.6; color: #4A5568">Kiekvienas punktas įeina į visus planus. Nemokamas įsivertinimas parodys, ko jums dar trūksta.</p>
+</div>
+<div style="flex: 2 1 580px; min-width: 0; display: flex; flex-direction: column; background: #FFFFFF; border: 1px solid #E2E6E1; border-radius: 20px; overflow: hidden">
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 18px 26px; border-bottom: 1px solid #EEF1EE">
+<p style="margin: 0; flex: 1 1 220px; font-size: 16px; font-weight: 600; display: flex; gap: 10px; align-items: flex-start"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>Kliento tapatybės nustatymas</p>
+<p style="margin: 0; flex: 2 1 280px; font-size: 15px; line-height: 1.5; color: #4A5568">Fizinio asmens patikra su dokumentu, rezultatas – kliento byloje.</p>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 18px 26px; border-bottom: 1px solid #EEF1EE">
+<p style="margin: 0; flex: 1 1 220px; font-size: 16px; font-weight: 600; display: flex; gap: 10px; align-items: flex-start"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>Naudos gavėjų nustatymas</p>
+<p style="margin: 0; flex: 2 1 280px; font-size: 15px; line-height: 1.5; color: #4A5568">Įmonės dalyviai ir naudos gavėjai iš JADIS ir JANGIS.</p>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 18px 26px; border-bottom: 1px solid #EEF1EE">
+<p style="margin: 0; flex: 1 1 220px; font-size: 16px; font-weight: 600; display: flex; gap: 10px; align-items: flex-start"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>PEP ir sankcijų patikra</p>
+<p style="margin: 0; flex: 2 1 280px; font-size: 15px; line-height: 1.5; color: #4A5568">Automatiškai su kiekviena patikra, PEP atveju – papildomi klausimai.</p>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 18px 26px; border-bottom: 1px solid #EEF1EE">
+<p style="margin: 0; flex: 1 1 220px; font-size: 16px; font-weight: 600; display: flex; gap: 10px; align-items: flex-start"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>Kliento rizikos vertinimas</p>
+<p style="margin: 0; flex: 2 1 280px; font-size: 15px; line-height: 1.5; color: #4A5568">Klausimynas, kuris pats apskaičiuoja rizikos lygį.</p>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 18px 26px; border-bottom: 1px solid #EEF1EE">
+<p style="margin: 0; flex: 1 1 220px; font-size: 16px; font-weight: 600; display: flex; gap: 10px; align-items: flex-start"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>Vidaus kontrolės procedūros</p>
+<p style="margin: 0; flex: 2 1 280px; font-size: 15px; line-height: 1.5; color: #4A5568">Paruošta tvarka ir subjekto rizikos vertinimas pagal jūsų duomenis.</p>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 18px 26px; border-bottom: 1px solid #EEF1EE">
+<p style="margin: 0; flex: 1 1 220px; font-size: 16px; font-weight: 600; display: flex; gap: 10px; align-items: flex-start"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>Atsakingas darbuotojas</p>
+<p style="margin: 0; flex: 2 1 280px; font-size: 15px; line-height: 1.5; color: #4A5568">Pranešimo FNTT ruošinys ir priminimas.</p>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 18px 26px; border-bottom: 1px solid #EEF1EE">
+<p style="margin: 0; flex: 1 1 220px; font-size: 16px; font-weight: 600; display: flex; gap: 10px; align-items: flex-start"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>Pranešimai FNTT</p>
+<p style="margin: 0; flex: 2 1 280px; font-size: 15px; line-height: 1.5; color: #4A5568">Įtartinos operacijos ir grynieji nuo 15 000 € – ruošiniai iš bylos duomenų.</p>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px 24px; padding: 18px 26px; border-bottom: 1px solid #EEF1EE">
+<p style="margin: 0; flex: 1 1 220px; font-size: 16px; font-weight: 600; display: flex; gap: 10px; align-items: flex-start"><svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" style="flex: none; margin-top: 1px"><circle cx="12" cy="12" r="11" fill="#047857"></circle><path d="M7 12.5l3.2 3.2L17 9" stroke="#FFFFFF" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>Duomenų saugojimas</p>
+<p style="margin: 0; flex: 2 1 280px; font-size: 15px; line-height: 1.5; color: #4A5568">Saugi duomenų bazė ES serveriuose visą įstatymo nustatytą laiką.</p>
+</div>
+
+</div>
+</div>
+</section>
+
+<section id="duk" style="background: #FFFFFF">
+<div style="max-width: 880px; margin: 0 auto; padding: 104px 24px; display: flex; flex-direction: column; gap: 32px">
+<div style="display: flex; flex-direction: column; gap: 14px; text-align: center; align-items: center">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: #047857">DUK</span>
+<h2 style="margin: 0; font-size: 44px; line-height: 1.1; letter-spacing: -0.02em">Dažniausi klausimai</h2>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+
+<details style="border: 1px solid #E2E6E1; border-radius: 16px; padding: 0 24px; background: #FFFFFF">
+<summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 64px; font-size: 17px; font-weight: 600">Ar AML tikrai taikomas man, jei dirbu pagal individualią veiklą?<span class="faq-plus" aria-hidden="true" style="flex: none; font-size: 26px; font-weight: 400; color: #047857; transition: transform 0.2s">+</span></summary>
+<p style="margin: 0 0 22px; font-size: 16px; line-height: 1.6; color: #4A5568">Taip. PPTFPĮ NT agentus (brokerius) įvardija kaip įpareigotuosius subjektus, nepriklausomai nuo to, ar dirbate agentūroje, ar savarankiškai.</p>
+</details>
+
+<details style="border: 1px solid #E2E6E1; border-radius: 16px; padding: 0 24px; background: #FFFFFF">
+<summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 64px; font-size: 17px; font-weight: 600">Kiek laiko užtrunka viena kliento patikra?<span class="faq-plus" aria-hidden="true" style="flex: none; font-size: 26px; font-weight: 400; color: #047857; transition: transform 0.2s">+</span></summary>
+<p style="margin: 0 0 22px; font-size: 16px; line-height: 1.6; color: #4A5568">Jūsų pusėje – kelios minutės: sukuriate sandorį ir išsiunčiate nuorodą. Klientas duomenis pateikia savo telefone.</p>
+</details>
+
+<details style="border: 1px solid #E2E6E1; border-radius: 16px; padding: 0 24px; background: #FFFFFF">
+<summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 64px; font-size: 17px; font-weight: 600">Kur saugomi mano klientų duomenys?<span class="faq-plus" aria-hidden="true" style="flex: none; font-size: 26px; font-weight: 400; color: #047857; transition: transform 0.2s">+</span></summary>
+<p style="margin: 0 0 22px; font-size: 16px; line-height: 1.6; color: #4A5568">ES serveriuose, užšifruoti. Prieigą turi tik jūs ir jūsų nurodyti darbuotojai, kiekvienas veiksmas įrašomas į žurnalą.</p>
+</details>
+
+<details style="border: 1px solid #E2E6E1; border-radius: 16px; padding: 0 24px; background: #FFFFFF">
+<summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 64px; font-size: 17px; font-weight: 600">Ar man tikrai reikia AML programos?<span class="faq-plus" aria-hidden="true" style="flex: none; font-size: 26px; font-weight: 400; color: #047857; transition: transform 0.2s">+</span></summary>
+<p style="margin: 0 0 22px; font-size: 16px; line-height: 1.6; color: #4A5568">Taip. Kiekvienas įpareigotasis subjektas privalo turėti raštu įformintą vidaus kontrolės politiką, procedūras ir veiklos rizikos vertinimą, proporcingą jo dydžiui. Su metine prenumerata SkyDra ją paruošia ir kasmet atnaujina.</p>
+</details>
+
+<details style="border: 1px solid #E2E6E1; border-radius: 16px; padding: 0 24px; background: #FFFFFF">
+<summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 64px; font-size: 17px; font-weight: 600">Kaip veikia Enterprise patikrų limitas?<span class="faq-plus" aria-hidden="true" style="flex: none; font-size: 26px; font-weight: 400; color: #047857; transition: transform 0.2s">+</span></summary>
+<p style="margin: 0 0 22px; font-size: 16px; line-height: 1.6; color: #4A5568">Kiekvienas vartotojas prideda po 6 fizinių asmenų patikras per mėnesį į bendrą tinklo metinį limitą. Pasiekus 80 % gaunate įspėjimą, o viršijus – mokate po 0,80 € už patikrą arba įsigyjate paketą.</p>
+</details>
+
+<details style="border: 1px solid #E2E6E1; border-radius: 16px; padding: 0 24px; background: #FFFFFF">
+<summary style="display: flex; justify-content: space-between; align-items: center; gap: 16px; min-height: 64px; font-size: 17px; font-weight: 600">Kas pasikeis nuo 2027 m. liepos?<span class="faq-plus" aria-hidden="true" style="flex: none; font-size: 26px; font-weight: 400; color: #047857; transition: transform 0.2s">+</span></summary>
+<p style="margin: 0 0 22px; font-size: 16px; line-height: 1.6; color: #4A5568">Pradės galioti ES AML reglamentas 2024/1624, suvienodinantis reikalavimus visoje ES. SkyDra bus atnaujinta pagal jį.</p>
+</details>
+
+</div>
+</div>
+</section>
+
+<section id="pradeti" style="background: #0B1220; color: #FFFFFF; position: relative; overflow: hidden">
+<div aria-hidden="true" style="position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.045) 1px, transparent 1px); background-size: 56px 56px"></div>
+<div style="position: relative; max-width: 1240px; margin: 0 auto; padding: 104px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 48px">
+<div style="flex: 1 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 18px">
+<h2 style="margin: 0; font-size: 52px; line-height: 1.05; letter-spacing: -0.02em">Pasiruoškite laiku. <span style="color: #34D399">Padėsime.</span></h2>
+<p style="margin: 0; font-size: 18px; line-height: 1.6; color: #C7D0DD">Palikite el. paštą – per 1 darbo dieną susisieksime, atsakysime į klausimus ir parodysime, kaip SkyDra veiktų jūsų veikloje.</p>
+</div>
+<form action="https://formsubmit.co/info@skydra.eu" method="POST" style="flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 12px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 28px">
+<input type="hidden" name="_subject" value="Nauja konsultacijos užklausa (skydra.eu)">
+<input type="hidden" name="_template" value="table">
+<input type="hidden" name="_next" value="https://skydra.eu/aciu.html">
+<input type="hidden" name="_autoresponse" value="Ačiū, kad domitės SkyDra! Gavome jūsų užklausą ir per 1 darbo dieną susisieksime. Klausimai: info@skydra.eu, +370 605 03644. SkyDra komanda">
+<input type="text" name="_honey" style="display:none" tabindex="-1" autocomplete="off" aria-hidden="true">
+<label for="email" style="font-size: 15px; font-weight: 600">Darbo el. paštas</label>
+<input id="email" name="email" type="email" required autocomplete="email" placeholder="vardas@agentura.lt" style="min-height: 54px; padding: 0 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.2); background: #FFFFFF; color: #0B1220; font-size: 16px; font-family: inherit; box-sizing: border-box">
+<button type="submit" style="min-height: 54px; padding: 0 24px; border-radius: 12px; border: none; background: #34D399; color: #0B1220; font-weight: 700; font-size: 16px; font-family: inherit; cursor: pointer">Užsisakyti konsultaciją</button>
+<p style="margin: 0; font-size: 13px; color: #9AA6B8">Rašysime tik dėl konsultacijos. Atsisakyti galite bet kada.</p>
+</form>
+</div>
+</section>
+
+<footer style="background: #070C16; color: #9AA6B8">
+<div style="max-width: 1240px; margin: 0 auto; padding: 40px 24px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 16px; font-size: 14px">
+<span>© 2026 SkyDra · AML atitikties platforma NT brokeriams</span>
+<span><a href="mailto:info@skydra.eu" style="color: #C7D0DD">info@skydra.eu</a> · <a href="tel:+37060503644" style="color: #C7D0DD">+370 605 03644</a> · Vilnius</span>
+</div>
+<div style="max-width: 1240px; margin: 0 auto; padding: 0 24px 32px; font-size: 12px; line-height: 1.5; color: #7C889B">
+Šaltiniai: FNTT pranešimas „NT sektoriui teks keistis“ (patikrinimų ir baudų duomenys, M. Petrausko citata); AML Intelligence, FATF prezidento M. Pleyerio nuomonės straipsnis (2022). ES reglamento duomenys: Reglamentas (ES) 2024/1624, Direktyva (ES) 2024/1640, Reglamentas (ES) 2024/1620. Citatos išverstos iš anglų kalbos.
+</div>
+</footer>
+
+</div>
+
+<script src="/js/planai.js"></script>
+</body>
+</html>

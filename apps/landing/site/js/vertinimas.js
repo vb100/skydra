@@ -1,0 +1,39 @@
+var Q=[
+{a:'AML programa',q:'Ar turite raštu įformintą ir vadovo patvirtintą pinigų plovimo prevencijos vidaus politiką bei procedūras?',h:'PPTFPĮ įpareigotieji subjektai, tarp jų NT brokeriai, privalo turėti vidaus kontrolės procedūras.',nw:'Politika ir procedūros turės būti raštu, politika – patvirtinta vadovybės, ir nuolat atnaujinamos.',fix:'Parenkite ir patvirtinkite rašytinę AML politiką ir procedūras, proporcingas jūsų veiklos dydžiui.',sd:'SkyDra paruošia AML programą pagal jūsų duomenis ir kasmet ją atnaujina.'},
+{a:'Rizikos vertinimas',q:'Ar atliktas ir dokumentuotas jūsų veiklos pinigų plovimo rizikos vertinimas?',h:'Įvertinama, kokie klientai, sandoriai ir regionai jums kelia didžiausią riziką.',nw:'Veiklos rizikos vertinimas turės būti dokumentuotas ir atnaujinamas, ypač prieš pradedant naujas paslaugas.',fix:'Atlikite ir raštu įforminkite veiklos rizikos vertinimą, periodiškai jį peržiūrėkite.',sd:'SkyDra rizikos vertinimo šablonas užpildomas pagal jūsų veiklą.'},
+{a:'Atsakingas asmuo',q:'Ar paskirtas už pinigų plovimo prevenciją atsakingas asmuo ir ar apie jį pranešta FNTT?',h:'Savarankiškai dirbantis brokeris už prevenciją atsakingas pats.',nw:'Reglamentas detalizuoja atitikties funkciją: aiškiai paskirta atsakomybė vadovybės ir atitikties vadovo lygmeniu.',fix:'Paskirkite atsakingą asmenį ir apie jį informuokite FNTT.',sd:'SkyDra paruošia pranešimo FNTT ruošinį ir primena terminus.'},
+{a:'Kliento tapatybė',q:'Ar prieš sandorį nustatote ir patikrinate kliento tapatybę ir išsaugote patikros įrodymus?',h:'PPTFPĮ 9 straipsnis – kliento ir naudos gavėjo tapatybės nustatymas.',nw:'Tapatybės duomenų reikalavimai suvienodinami visoje ES.',fix:'Kiekvienam klientui nustatykite ir patikrinkite tapatybę bei išsaugokite patikros įrodymus.',sd:'SkyDra tapatybės patikra atliekama nuotoliu, rezultatas iš karto išsaugomas byloje.'},
+{a:'PEP ir sankcijos',q:'Ar tikrinate, ar klientas nėra politikoje dalyvaujantis asmuo (PEP) ir ar jam netaikomos tarptautinės sankcijos?',h:'PEP atveju taikoma sustiprinta kliento tapatybės nustatymo procedūra.',nw:'Tikslinių finansinių sankcijų įgyvendinimo ir vengimo rizika tampa privaloma rizikos valdymo dalimi.',fix:'Įveskite privalomą PEP ir tarptautinių sankcijų patikrą su data ir rezultatu.',sd:'SkyDra PEP ir sankcijų patikra vyksta automatiškai su kiekviena kliento patikra.'},
+{a:'Naudos gavėjai',q:'Kai klientas yra įmonė, ar nustatote jos dalyvius ir galutinius naudos gavėjus?',h:'Pavyzdžiui, per JANGIS ir JADIS registrus.',nw:'Naudos gavėjo apibrėžimas ir 25 % riba suvienodinami visoje ES.',fix:'Įmonių klientams nustatykite dalyvius ir naudos gavėjus bei išsaugokite registrų išrašus.',sd:'SkyDra įmonės patikra atliekama per JANGIS ir JADIS.'},
+{a:'Kliento rizika',q:'Ar įvertinate ir dokumentuojate kiekvieno kliento ir sandorio riziką?',h:'Didelės rizikos klientams taikoma sustiprinta patikra.',nw:'Kliento duomenys turės būti atnaujinami bent kas 5 metus, didelės rizikos klientų – kasmet.',fix:'Kiekvienam klientui įvertinkite riziką, didelės rizikos atvejais taikykite sustiprintą patikrą.',sd:'SkyDra rizikos klausimynas pats apskaičiuoja rizikos lygį ir primena atnaujinti duomenis.'},
+{a:'Pranešimai FNTT',q:'Ar žinote, kada ir kaip pranešti FNTT apie įtartinas operacijas ir apie grynaisiais atsiskaitomus sandorius nuo 15 000 €?',h:'Abi pareigos šiuo metu taikomos NT brokeriams pagal PPTFPĮ. Atskirai: pagal Atsiskaitymų grynaisiais pinigais ribojimo įstatymą grynaisiais pagal sandorį galima atsiskaityti ne daugiau kaip 5 000 €.',nw:'ES nustato didžiausią 10 000 € grynųjų mokėjimų ribą, tačiau Lietuvoje jau galioja griežtesnė 5 000 € riba. Į FNTT užklausas reikės atsakyti per 5 darbo dienas, pranešimų formos bus standartizuotos.',fix:'Nustatykite aiškią pranešimų FNTT tvarką: kas, kada ir kokia forma praneša.',sd:'SkyDra pranešimų ruošiniai užpildomi iš bylos duomenų.'},
+{a:'Duomenų saugojimas',q:'Ar patikrų duomenis ir dokumentus saugote saugiai ir visą įstatymo nustatytą laiką?',h:'Vienoje saugioje vietoje, o ne el. pašte ar telefone.',nw:'Reglamentas nustato vienodą saugojimo terminą visoje ES.',fix:'Laikykite visas patikrų bylas vienoje saugioje sistemoje su prieigos kontrole visą privalomą laiką.',sd:'SkyDra bylos saugomos ES serveriuose su veiksmų žurnalu.'},
+{a:'Mokymai',q:'Ar jūs ir jūsų darbuotojai per pastaruosius 12 mėnesių dalyvavote pinigų plovimo prevencijos mokymuose?',h:'Mokymai turi būti periodiški, o jų įrodymai – saugomi.',nw:'Darbuotojų supažindinimas su reikalavimais tampa atskira reglamento pareiga.',fix:'Organizuokite periodinius AML mokymus ir saugokite jų įrodymus.',sd:'SkyDra apima AML mokymų medžiagą ir jų apskaitą.'}
+];
+var ans=new Array(Q.length).fill(null),i=0;
+var $=function(id){return document.getElementById(id)};
+function show(id){['intro','quiz','result'].forEach(function(s){$(s).hidden=(s!==id)});window.scrollTo(0,0)}
+function render(){var q=Q[i];$('qnum').textContent=(i+1)+' iš '+Q.length;$('qarea').textContent=q.a;$('qtext').textContent=q.q;$('qhint').textContent=q.h;$('qnw').textContent='Nuo 2027 m. liepos 10 d.: '+q.nw;$('fill').style.width=(i/Q.length*100)+'%';$('prev').style.visibility=i===0?'hidden':'visible';
+document.querySelectorAll('.opt').forEach(function(b){var on=ans[i]!==null&&String(ans[i])===b.dataset.v;b.style.borderColor=on?'#047857':'';b.style.background=on?'#F0FDF7':''});}
+$('start').onclick=function(){i=0;show('quiz');render()};
+document.querySelectorAll('.opt').forEach(function(b){b.onclick=function(){ans[i]=+b.dataset.v;if(i<Q.length-1){i++;render()}else{finish()}}});
+$('prev').onclick=function(){if(i>0){i--;render()}};
+$('again').onclick=function(){ans.fill(null);i=0;show('quiz');render()};
+function finish(){
+var sum=ans.reduce(function(a,b){return a+b},0),pct=Math.round(sum/(Q.length*2)*100);
+var lvl,title,text,col,bg;
+if(pct>=85){lvl='Gerai pasiruošę';col='#065F46';bg='#D1FAE5';title='Jūsų pagrindai sutvarkyti';text='Didžioji dalis reikalavimų įgyvendinta. Svarbiausia – išlaikyti tvarką ir pasiruošti ES AML reglamentui, kuris taikomas nuo 2027 m. liepos 10 d.'}
+else if(pct>=50){lvl='Yra spragų';col='#92400E';bg='#FEF3C7';title='Dalis reikalavimų neįgyvendinta';text='Žemiau – sritys, kurias verta sutvarkyti artimiausiu metu. Daugumą jų galima išspręsti per kelias dienas.'}
+else{lvl='Reikia daug pasiruošimo';col='#9B1C1C';bg='#FEE2E2';title='Dauguma reikalavimų dar neįgyvendinta';text='Pradėkite nuo pagrindų: AML programos ir kliento patikrų. Toliau – sąrašas, ką ir kaip sutvarkyti.'}
+$('lvl').textContent=lvl;$('lvl').style.color=col;$('lvl').style.background=bg;$('rtitle').textContent=title;$('rtext').textContent=text;
+$('pct').textContent=pct+'%';$('ringsvg').setAttribute('aria-label','Pasirengimo lygis '+pct+' procentai');
+$('arc').style.stroke=pct>=85?'#047857':pct>=50?'#D97706':'#DC2626';
+$('arc').setAttribute('stroke-dashoffset',String(326.7*(1-pct/100)));
+var g=$('gaps');g.innerHTML='';var gl=[];
+Q.forEach(function(q,k){if(ans[k]<2){var d=document.createElement('div');d.className='gap';
+var bd=document.createElement('span');bd.className='badge '+(ans[k]===0?'b0':'b1');bd.textContent=ans[k]===0?'Neįgyvendinta':'Iš dalies';
+var b=document.createElement('b');b.textContent=q.a;var f=document.createElement('span');f.textContent=q.fix;var s=document.createElement('span');s.className='sd';s.textContent=q.sd;var n=document.createElement('span');n.className='n27';n.textContent='Nuo 2027 m. liepos 10 d.: '+q.nw;
+d.appendChild(bd);d.appendChild(b);d.appendChild(f);d.appendChild(n);d.appendChild(s);g.appendChild(d);gl.push(q.a+' ('+(ans[k]===0?'ne':'iš dalies')+')')}});
+$('gapsTitle').textContent=gl.length?'Ką reikia sutvarkyti ('+gl.length+')':'Spragų nenustatyta';
+$('resField').value=pct+'% – '+lvl;$('gapField').value=gl.join('; ')||'Nėra';
+$('fill').style.width='100%';show('result');}

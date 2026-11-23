@@ -2,3 +2,5 @@ pnpm-lock.yaml
 dist/
 coverage/
 docs/
+# Marketing site pages as supplied by the client; kept byte-for-byte as delivered.
+apps/landing/site/

@@ -8,6 +8,7 @@
 .vite
 docs
 infra
+apps/landing
 **/.env
 **/.env.*
 !**/.env.example

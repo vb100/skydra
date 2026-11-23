@@ -60,7 +60,7 @@ jobs:
           docker build -t skydra-landing:ci apps/landing
           docker run -d --rm --name landing -p 8080:8080 skydra-landing:ci
           for i in $(seq 20); do curl -sf -o /dev/null localhost:8080/ && break; sleep 0.5; done
-          for page in / /aciu.html /registracija.html /vertinimas.html /fonts/fonts.css /css/site.css /js/site.js /favicon.svg; do
+          for page in / /aciu.html /registracija.html /vertinimas.html /privatumas.html /fonts/fonts.css /css/site.css /js/site.js /js/consent.js /vendor/cookieconsent/cookieconsent.umd.js /favicon.svg; do
             curl -sf -o /dev/null "localhost:8080$page"
           done
           curl -sI localhost:8080/ | grep -qi '^content-security-policy:'

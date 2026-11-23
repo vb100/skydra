@@ -38,3 +38,6 @@ h1{font-size:34px;line-height:1.1}
 form{padding:24px 20px;border-radius:18px}
 form h2{font-size:22px}
 }
+
+/* Privacy and cookie links */
+.legal{max-width:1100px;margin:0 auto;padding:0 24px 32px;text-align:center;color:#9AA6B8;font-size:14px}

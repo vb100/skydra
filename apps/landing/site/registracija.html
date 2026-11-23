@@ -7,6 +7,8 @@
 <link rel="stylesheet" href="/fonts/fonts.css">
 <meta name="theme-color" content="#0B1220">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/vendor/cookieconsent/cookieconsent.css">
+<link rel="stylesheet" href="/css/consent.css">
 <link rel="stylesheet" href="/css/registracija.css">
 </head>
 <body>
@@ -53,10 +55,13 @@
 <option>1</option><option>2–5</option><option>6–15</option><option>16–50</option><option>Daugiau nei 50</option>
 </select></div>
 </div>
-<label class="chk"><input type="checkbox" name="Sutikimas" value="Taip" required>Sutinku, kad SkyDra tvarkytų mano pateiktus duomenis, kad galėtų su manimi susisiekti dėl registracijos.</label>
+<label class="chk"><input type="checkbox" name="Sutikimas" value="Taip" required>Sutinku, kad SkyDra tvarkytų mano pateiktus duomenis, kad galėtų su manimi susisiekti dėl registracijos. <a href="/privatumas.html" target="_blank" rel="noopener">Privatumo politika</a></label>
 <button type="submit">Registruotis</button>
 <p class="note">Mokėti dabar nereikia. Planą ir sąlygas aptarsime prieš pradedant.</p>
 </form>
 </main>
+<footer class="legal legal-links"><a href="/privatumas.html">Privatumo politika</a><span class="cc-item"> · <button type="button" data-cc="show-preferencesModal">Slapukų nustatymai</button></span></footer>
+<script src="/vendor/cookieconsent/cookieconsent.umd.js"></script>
+<script src="/js/consent.js"></script>
 </body>
 </html>

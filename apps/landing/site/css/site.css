@@ -1532,6 +1532,12 @@ details[open] .faq-plus {
   font-size: 13px;
   color: var(--on-dark-3);
 }
+.signup-form p a {
+  color: var(--on-dark-2);
+}
+.signup-form p a:hover {
+  color: #fff;
+}
 
 .footer {
   background: #070c16;

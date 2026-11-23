@@ -9,6 +9,7 @@ Statinė rinkodaros svetainė. Ją rodo nginx Cloud Run paslaugoje `skydra-landi
 | `registracija.html`  | registracija („Registruotis dabar“, „Pradėti“)                                        |
 | `vertinimas.html`    | nemokamas AML testas                                                                  |
 | `prisijungimas.html` | kol kas nenaudojamas; „Prisijungti“ veda į sistemos `/login`                          |
+| `privatumas.html`    | privatumo politika ir slapukai                                                        |
 
 ## Struktūra ir pakeitimai, palyginti su kliento failais
 
@@ -30,6 +31,17 @@ Pagrindinė versija nuo šiol yra šioje repozitorijoje. Klientas pakeitimus siu
 - **„Prisijungti“** veda į `https://skydra-demo-915954505621.europe-north1.run.app/login`.
 - **Skaičiuose** naudojami nelūžtantys tarpai (`15 000 €`), kad skaičius nebūtų perkirstas tarp eilučių.
 - **Kita:** `favicon.svg`, `theme-color`.
+
+## Privatumas, slapukai ir Google Analytics
+
+- **Privatumo politika:** `privatumas.html`. Geltonai pažymėtas vietas (`.todo`) turi užpildyti klientas: valdytojo duomenys, saugojimo terminai, FormSubmit sąlygos. Prieš skelbiant tekstą turi peržiūrėti teisininkas.
+- **Slapukų juosta:** [vanilla-cookieconsent](https://github.com/orestbida/cookieconsent) 3.3.0 (MIT), laikoma `vendor/cookieconsent/`. Nustatymai ir tekstai lietuviškai yra `js/consent.js`, išvaizda `css/consent.css`. Mygtukai „Priimti“ ir „Atmesti“ vienodo svorio. Pasirinkimas saugomas `cc_cookie` slapuke 6 mėn.
+- **Google Analytics 4:** įrašomas į `js/consent.js` (`GA_MEASUREMENT_ID = 'G-…'`).
+  - Kol ID tuščias, juosta nerodoma ir „Slapukų nustatymai“ nuorodos paslėptos, nes nebūtinų slapukų tada nėra.
+  - `gtag.js` atsisiunčiamas tik po sutikimo su „Analitika“. Google signalai ir reklamos personalizavimas išjungti, atšaukus sutikimą `_ga*` slapukai ištrinami.
+  - Juosta nerodoma robotams (`hideFromBots`), todėl automatiniuose testuose ją reikia įjungti.
+- **Pakeitus kategorijas ar slapukus,** padidinkite `revision` faile `js/consent.js`, kad visi lankytojai būtų paklausti iš naujo.
+- **GA4 nustatymai** (Admin → Data collection and modification → Data retention): saugojimo laikas **2 mėn.**, kaip nurodyta politikoje. Google signals išjungta.
 
 ## Serveris
 

@@ -8,6 +8,8 @@
 <link rel="stylesheet" href="/fonts/fonts.css">
 <meta name="theme-color" content="#0B1220">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/vendor/cookieconsent/cookieconsent.css">
+<link rel="stylesheet" href="/css/consent.css">
 <link rel="stylesheet" href="/css/vertinimas.css">
 </head>
 <body>
@@ -77,13 +79,16 @@
 <input id="email" type="email" name="email" required autocomplete="email" placeholder="vardas@agentura.lt">
 <button class="btn" type="submit">Siųsti</button>
 </div>
-<label class="chk"><input type="checkbox" name="Sutikimas" value="Taip" required>Sutinku, kad SkyDra tvarkytų mano el. pašto adresą ir testo rezultatą, kad galėtų atsiųsti rekomendacijas.</label>
+<label class="chk"><input type="checkbox" name="Sutikimas" value="Taip" required>Sutinku, kad SkyDra tvarkytų mano el. pašto adresą ir testo rezultatą, kad galėtų atsiųsti rekomendacijas. <a href="/privatumas.html" target="_blank" rel="noopener">Privatumo politika</a></label>
 </form>
 </div>
 <p class="disc">Testas yra orientacinis ir nėra teisinė konsultacija. Jis parengtas pagal 2026 m. lapkritį galiojantį PPTFPĮ ir ES reglamentą 2024/1624. Galutinius reikalavimus jūsų veiklai nustato galiojantys teisės aktai ir priežiūros institucijų išaiškinimai.</p>
 </section>
 
 </main>
+<footer class="legal legal-links"><a href="/privatumas.html">Privatumo politika</a><span class="cc-item"> · <button type="button" data-cc="show-preferencesModal">Slapukų nustatymai</button></span></footer>
+<script src="/vendor/cookieconsent/cookieconsent.umd.js"></script>
+<script src="/js/consent.js"></script>
 <script src="/js/vertinimas.js"></script>
 </body>
 </html>

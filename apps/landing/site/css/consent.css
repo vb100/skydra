@@ -1,0 +1,71 @@
+/* Cookie banner and preferences in the SkyDra palette (vanilla-cookieconsent 3 variables). */
+#cc-main {
+  --cc-font-family: 'Inter', system-ui, sans-serif;
+  --cc-bg: #ffffff;
+  --cc-primary-color: #0b1220;
+  --cc-secondary-color: #4a5568;
+  --cc-link-color: #047857;
+  --cc-modal-border-radius: 18px;
+  --cc-btn-border-radius: 10px;
+
+  --cc-btn-primary-bg: #0b1220;
+  --cc-btn-primary-color: #ffffff;
+  --cc-btn-primary-border-color: #0b1220;
+  --cc-btn-primary-hover-bg: #13203a;
+  --cc-btn-primary-hover-color: #ffffff;
+  --cc-btn-primary-hover-border-color: #13203a;
+
+  --cc-btn-secondary-bg: #eef1ee;
+  --cc-btn-secondary-color: #0b1220;
+  --cc-btn-secondary-border-color: #eef1ee;
+  --cc-btn-secondary-hover-bg: #e2e6e1;
+  --cc-btn-secondary-hover-color: #0b1220;
+  --cc-btn-secondary-hover-border-color: #e2e6e1;
+
+  --cc-separator-border-color: #e2e6e1;
+  --cc-toggle-on-bg: #047857;
+  --cc-toggle-off-bg: #a0aaba;
+  --cc-toggle-readonly-bg: #c9d1cc;
+  --cc-cookie-category-block-bg: #f5f6f3;
+  --cc-cookie-category-block-border: #f5f6f3;
+  --cc-cookie-category-block-hover-bg: #eef1ee;
+  --cc-cookie-category-block-hover-border: #eef1ee;
+  --cc-cookie-category-expanded-block-bg: #f5f6f3;
+  --cc-cookie-category-expanded-block-hover-bg: #eef1ee;
+  --cc-footer-bg: #f5f6f3;
+  --cc-footer-color: #4a5568;
+  --cc-footer-border-color: #e2e6e1;
+  --cc-overlay-bg: rgba(11, 18, 32, 0.6);
+}
+#cc-main .cm__title,
+#cc-main .pm__title {
+  font-family: 'Space Grotesk', 'Inter', sans-serif;
+}
+#cc-main .cm,
+#cc-main .pm {
+  box-shadow: 0 24px 60px rgba(11, 18, 32, 0.35);
+}
+#cc-main .cm__btn,
+#cc-main .pm__btn {
+  min-height: 44px;
+  font-weight: 700;
+}
+#cc-main .pm__badge {
+  background: #ecfdf5;
+  color: #065f46;
+}
+
+/* "Privatumo politika · Slapukų nustatymai" links on every page */
+.legal-links a,
+.legal-links button {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.legal-links button {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}

@@ -55,11 +55,22 @@ jobs:
             test -f dist/database/migrate.js &&
             ls migrations/*.sql >/dev/null &&
             node -e "require(\"argon2\"); require(\"pdfkit\")"'
+      - name: Landing image serves the pages with security headers
+        run: |
+          docker build -t skydra-landing:ci apps/landing
+          docker run -d --rm --name landing -p 8080:8080 skydra-landing:ci
+          for i in $(seq 20); do curl -sf -o /dev/null localhost:8080/ && break; sleep 0.5; done
+          for page in / /aciu.html /registracija.html /vertinimas.html /fonts/fonts.css /js/planai.js; do
+            curl -sf -o /dev/null "localhost:8080$page"
+          done
+          curl -sI localhost:8080/ | grep -qi '^content-security-policy:'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: www.skydra.eu' localhost:8080/)" = 301
+          docker stop landing
       - name: Terraform fmt and validate
         run: |
           tf() { docker run --rm -v "$PWD/infra/terraform:/w" -w "/w/$1" hashicorp/terraform:1.13 "${@:2}"; }
           tf . fmt -check -recursive
-          for stack in shared env; do
+          for stack in shared env landing; do
             tf "$stack" init -backend=false -input=false
             tf "$stack" validate
           done

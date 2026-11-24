@@ -414,7 +414,7 @@ export const lt = {
     ok: 'atlikta',
     missing: 'trūksta',
     attention: 'reikia dėmesio',
-    owners: 'Naudos gavėjai ({{count}})',
+    owners: 'Naudos gavėjai ir vadovas iš registrų ({{count}})',
   },
   history: {
     empty: 'Veiksmų dar nėra.',
@@ -533,6 +533,21 @@ export const lt = {
     failed: 'Patikra nepavyko – bandykite dar kartą.',
     matches: 'Galimi sutapimai: {{count}}',
     weakMatches: 'Silpni atitikmenys: {{count}}',
+    statuses: {
+      NOT_SCREENED: 'Netikrinta',
+      FAILED: 'Patikra nepavyko',
+      GREEN: 'Atitikmenų nerasta',
+      YELLOW: 'Reikia peržiūros',
+      ORANGE: 'PEP – sustiprintas tyrimas',
+      RED: 'Sankcijos – sandoris stabdomas',
+    },
+    lastAttemptFailed: 'Paskutinė pakartotinė patikra nepavyko – rodomas ankstesnis rezultatas.',
+    autoHint: 'Pridėtos šalys, naudos gavėjai ir įmonės vadovas patikrinami automatiškai.',
+    redTitle: 'Patvirtintas sankcijų atitikmuo – sandoris stabdomas',
+    redSteps:
+      'Nedelsdami informuokite AML atsakingą asmenį ir FNTT (pranešimas apie įtartiną operaciją). Kliento apie tai neinformuokite. Turtas ir lėšos negali būti perduoti, kol FNTT nepriims sprendimo.',
+    orangeHint:
+      'Patvirtintas PEP ar jo artimas asmuo: reikalingas sustiprintas tyrimas – lėšų ir turto kilmės paaiškinimas ir vadovybės patvirtinimas.',
     weakHint:
       'Atitikimo balas žemesnis už nustatytą slenkstį, todėl įvertinti neprivaloma. Peržiūrėkite, jei vardas, gimimo data ar šalis sutampa.',
     score: 'Atitikimas {{score}} %',
@@ -623,7 +638,7 @@ export const lt = {
     notDeclared: 'nedeklaruotas JANGIS',
     notComputed: 'nėra tarp akcininkų',
     linked: 'pridėtas prie bylos',
-    link: 'Pridėti naudos gavėjus prie bylos',
+    link: 'Pridėti naudos gavėjus ir vadovą prie bylos',
     discrepancy: 'Pagal akcininkus nustatyti naudos gavėjai nesutampa su deklaruotais JANGIS.',
     incomplete: 'Nuosavybės grandinės nepavyko atsekti iki fizinių asmenų.',
     resolveTitle: 'Neatitikimo sprendimas',
@@ -813,6 +828,7 @@ export const lt = {
     REPRESENTATIVE: 'Atstovas',
     PAYER: 'Mokėtojas',
     BENEFICIAL_OWNER: 'Naudos gavėjas',
+    DIRECTOR: 'Įmonės vadovas',
     OTHER: 'Kita',
   },
   roles: {

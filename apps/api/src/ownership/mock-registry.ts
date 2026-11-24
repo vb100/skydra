@@ -21,6 +21,7 @@ const P = {
   laura: person('Laura', 'Nedeklaruota', '1985-09-09', '48509090055'),
   tomas: person('Tomas', 'Vadovas', '1980-02-28', '38002280066'),
   karim: person('Karim', 'Al-Faris', '1971-04-04', 'AE710404', 'AE'),
+  darius: person('Darius', 'Samdomas', '1983-06-18', '38306180077'),
 };
 
 const lt = (code: string, rest: Omit<CompanyRecord, 'code' | 'country' | 'references'>) =>
@@ -103,6 +104,15 @@ export const MOCK_COMPANIES: Record<string, CompanyRecord> = {
       { kind: 'NATURAL', person: P.tomas, sharePercent: 20 },
     ],
     declaredUbos: [{ person: P.karim, basis: 'CONTROL', sharePercent: null }],
+  }),
+  // 5. A hired manager who owns nothing: screened as the director, not a beneficial owner.
+  'LT:300000005': lt('300000005', {
+    name: 'UAB „Samdomas vadovas“',
+    legalForm: 'UAB',
+    address: 'Pylimo g. 5, Vilnius',
+    manager: P.darius,
+    shareholders: [{ kind: 'NATURAL', person: P.jonas, sharePercent: 100 }],
+    declaredUbos: [{ person: P.jonas, basis: 'OWNERSHIP', sharePercent: 100 }],
   }),
 };
 

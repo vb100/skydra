@@ -15,7 +15,7 @@ import { AUTH_DEPS } from '../auth/auth.module-tokens';
 import type { AuthDeps } from '../auth/auth.service';
 import { withTenant } from '../database/tenant';
 import { SCREENING_PROVIDER, type ScreeningProvider } from '../screening/provider';
-import { listScreenings, reviewMatch, runScreening } from '../screening/screening';
+import { autoScreen, listScreenings, reviewMatch, runScreening } from '../screening/screening';
 import { CurrentPrincipal, OrganizationGuard, SessionGuard } from '../http/session';
 import {
   activateAml,
@@ -107,17 +107,28 @@ export class CasesController {
     @Body() body: unknown,
   ) {
     await this.run(principal, (c) => activateAml(c, id, body as never));
+    // Parties added while AML did not apply are screened now.
+    await autoScreen(this.deps.pool, this.context(principal), this.screening, id);
   }
 
+  /** Adds a party and screens it at once (sanctions, PEP and other lists). */
   @Post('cases/:id/parties')
-  addParty(
+  async addParty(
     @CurrentPrincipal() principal: Principal,
     @Param('id') id: string,
     @Body() body: unknown,
   ) {
-    return this.run(principal, (c) =>
+    const added = await this.run(principal, (c) =>
       addCaseParty(c, this.deps.keys, this.actor(principal), id, body as never),
     );
+    const screening = await autoScreen(
+      this.deps.pool,
+      this.context(principal),
+      this.screening,
+      id,
+      [added.casePartyId],
+    );
+    return { ...added, screening };
   }
 
   @Post('cases/:id/parties/:casePartyId')

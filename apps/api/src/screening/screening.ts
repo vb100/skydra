@@ -219,6 +219,32 @@ export async function runScreening(
   });
 }
 
+/**
+ * Screens parties right after they join a case (or after AML is activated), as the client
+ * specification requires. The joining itself is already committed: a check that cannot run here
+ * (AML does not apply, no provider configured, an unexpected error) is left for the broker's
+ * "Tikrinti" and never undoes the change. A provider outage is still recorded as a FAILED check.
+ */
+export async function autoScreen(
+  pool: Pool,
+  ctx: TenantContext,
+  provider: ScreeningProvider,
+  caseId: string,
+  casePartyIds?: readonly string[],
+): Promise<'SCREENED' | 'SKIPPED'> {
+  try {
+    if (!casePartyIds) await runScreening(pool, ctx, provider, caseId, {});
+    else
+      for (const casePartyId of casePartyIds)
+        await runScreening(pool, ctx, provider, caseId, { casePartyId });
+    return 'SCREENED';
+  } catch (error) {
+    if (!(error instanceof RuleError))
+      console.error('automatic screening failed', error instanceof Error ? error.message : error);
+    return 'SKIPPED';
+  }
+}
+
 /** All checks of a case, newest first, with their matches. */
 export async function listScreenings(
   client: PoolClient,

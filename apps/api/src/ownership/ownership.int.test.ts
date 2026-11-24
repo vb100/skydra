@@ -62,7 +62,8 @@ describe('ownership and beneficial owners', () => {
     fetchOwnership(app, ctx, keys, registry, caseId, casePartyId);
   const link = (caseId: string, snapshotId: string) =>
     as(broker, (c) => linkBeneficialOwners(c, keys, broker.organizationId, caseId, snapshotId));
-  const view = async (caseId: string) => (await as(broker, (c) => listOwnership(c, caseId)))[0]!;
+  const view = async (caseId: string) =>
+    (await as(broker, (c) => listOwnership(c, keys, broker.organizationId, caseId)))[0]!;
 
   beforeAll(async () => {
     db = await createTestDatabase();
@@ -215,6 +216,51 @@ describe('ownership and beneficial owners', () => {
     await expect(link(caseId, first.snapshotId)).rejects.toThrow(/newer registry data/);
   });
 
+  it('links a hired manager as director: screened, no CDD of their own, once', async () => {
+    const { caseId, casePartyId } = await companyCase('300000005');
+    const { snapshotId } = await fetch(caseId, casePartyId);
+    expect(await view(caseId)).toMatchObject({ managerLinked: false });
+
+    const linked = await link(caseId, snapshotId);
+    expect(linked.linked).toBe(2);
+    const parties = (await as(broker, (c) => getCase(c, keys, caseId))).parties;
+    const director = parties.find((p) => p.role === 'DIRECTOR')!;
+    expect(director).toMatchObject({
+      directorOf: casePartyId,
+      beneficialOwnerOf: null,
+      isOurClient: false,
+      party: { displayName: 'Darius Samdomas', personalCodeMasked: '•••••••0077' },
+    });
+    expect(linked.casePartyIds).toContain(director.id);
+    expect(await view(caseId)).toMatchObject({ managerLinked: true });
+
+    // Screening is required for the director; identity and CDD are not.
+    const items = (await as(broker, (c) => getChecklist(c, caseId)))
+      .filter((e) => !e.ok && e.casePartyId === director.id)
+      .map((e) => e.item);
+    expect(items).toEqual(['SCREENED']);
+
+    // Linking again adds nobody.
+    expect((await link(caseId, snapshotId)).linked).toBe(0);
+  });
+
+  it('does not add the manager twice when the manager is a beneficial owner', async () => {
+    const { caseId, casePartyId } = await companyCase('300000001');
+    const { snapshotId } = await fetch(caseId, casePartyId);
+    expect((await link(caseId, snapshotId)).linked).toBe(1);
+    const roles = (await as(broker, (c) => getCase(c, keys, caseId))).parties.map((p) => p.role);
+    expect(roles).not.toContain('DIRECTOR');
+    expect(await view(caseId)).toMatchObject({ managerLinked: true });
+  });
+
+  it('removing the company removes its beneficial owners and director', async () => {
+    const { caseId, casePartyId } = await companyCase('300000005');
+    const { snapshotId } = await fetch(caseId, casePartyId);
+    await link(caseId, snapshotId);
+    await as(broker, (c) => removeCaseParty(c, caseId, casePartyId));
+    expect((await as(broker, (c) => getCase(c, keys, caseId))).parties).toEqual([]);
+  });
+
   it('removing the company removes its beneficial owners', async () => {
     const { caseId, casePartyId } = await companyCase('300000002');
     const { snapshotId } = await fetch(caseId, casePartyId);
@@ -230,6 +276,15 @@ describe('ownership and beneficial owners', () => {
         addCaseParty(c, keys, actor(broker), caseId, {
           party: { partyType: 'NATURAL', firstName: 'Rankinis', lastName: 'UBO' },
           role: 'BENEFICIAL_OWNER',
+          isOurClient: false,
+        }),
+      ),
+    ).rejects.toThrow(/added from registry data/);
+    await expect(
+      as(broker, (c) =>
+        addCaseParty(c, keys, actor(broker), caseId, {
+          party: { partyType: 'NATURAL', firstName: 'Rankinis', lastName: 'Vadovas' },
+          role: 'DIRECTOR',
           isOurClient: false,
         }),
       ),
@@ -250,6 +305,25 @@ describe('ownership and beneficial owners', () => {
         ),
       ),
     ).rejects.toThrow(/natural person/);
+    // A director likewise, and only with its company link.
+    await expect(
+      as(broker, (c) =>
+        c.query(
+          `INSERT INTO case_parties (case_id, party_id, role, is_our_client, director_of, ubo_key)
+           VALUES ($1, $2, 'DIRECTOR', false, $3, 'x')`,
+          [caseId, rows[0]!.party_id, casePartyId],
+        ),
+      ),
+    ).rejects.toThrow(/natural person/);
+    await expect(
+      as(broker, (c) =>
+        c.query(
+          `INSERT INTO case_parties (case_id, party_id, role, is_our_client)
+           VALUES ($1, $2, 'DIRECTOR', false)`,
+          [caseId, rows[0]!.party_id],
+        ),
+      ),
+    ).rejects.toThrow(/case_parties_director_link/);
     await expect(
       as(broker, (c) =>
         c.query('UPDATE ownership_snapshots SET discrepancy = false WHERE case_id = $1', [caseId]),
@@ -284,6 +358,8 @@ describe('ownership and beneficial owners', () => {
     ).rejects.toBeInstanceOf(RuleError);
     await expect(fetch(caseId, casePartyId, colleague)).rejects.toBeInstanceOf(NotFoundError);
     await fetch(caseId, casePartyId);
-    expect(await as(colleague, (c) => listOwnership(c, caseId))).toEqual([]);
+    expect(
+      await as(colleague, (c) => listOwnership(c, keys, colleague.organizationId, caseId)),
+    ).toEqual([]);
   });
 });

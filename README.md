@@ -154,6 +154,9 @@ docker build -t skydra:local .   # lokaliai; Cloud Run atvaizdą kompiliuoja inf
   - Prod aplinkoje `MOCK` uždraustas. `MANUAL` kol kas aiškiai atsisako veikti.
 - **Ką siunčiame tiekėjui:** fiziniam asmeniui vardą, gimimo datą ir pilietybę; įmonei pavadinimą, įmonės kodą ir šalį. Asmens kodo – niekada.
 - **Stiprūs ir silpni atitikmenys:** atitikmuo, kurio balas siekia slenkstį (`OPENSANCTIONS_THRESHOLD`, numatytasis 0,7), yra stiprus ir turi būti įvertintas. Silpni rodomi suskleisti ir bylos nestabdo.
+- **Automatinis paleidimas:** šalis patikrinama iškart ją pridėjus, naudos gavėjai ir įmonės vadovas – iškart juos susiejus, o visos šalys – pritaikius AML procedūras nuomos bylai. Jei patikra negali vykti (AML netaikomas, tiekėjas nesukonfigūruotas), šalis vis tiek pridedama; tiekėjo gedimas užfiksuojamas kaip `FAILED`.
+- **Įmonės vadovas:** vadovas iš registrų susiejamas su įmone kaip šalis `DIRECTOR` (jei jis nėra ir naudos gavėjas) ir tikrinamas kaip naudos gavėjai; tapatybės nustatymo ir CDD jam netaikoma. Rankiniu būdu `DIRECTOR` ir `BENEFICIAL_OWNER` pridėti negalima.
+- **Spalvinė būsena kiekvienam asmeniui** (`screeningStatus`, `packages/shared`): žalia – atitikmenų nėra arba visi atmesti; geltona – laukia įvertinimo arba patvirtinta kita rizikos informacija; oranžinė – patvirtintas PEP (sustiprintas tyrimas); raudona – patvirtintos sankcijos (sandoris stabdomas, rodoma instrukcija pranešti FNTT ir neinformuoti kliento). Skaičiuojama iš paskutinės užbaigtos patikros; silpni atitikmenys neįskaičiuojami.
 - **Užklausų žurnalas:** kiekvienas tiekėjo bandymas (užklausa, atsakymas, HTTP kodas, SHA-256, trukmė) saugomas `screening_requests` lentelėje, kurią programa gali tik papildyti. Nepavykusi užklausa kartojama iki 3 kartų (serverio klaida, užklausų riba, laiko riba 15 s).
 - **Patikros eiga:**
   - Tiekėjas kviečiamas ne DB transakcijos metu, o rezultatai išsaugomi vienoje transakcijoje kartu su auditu.

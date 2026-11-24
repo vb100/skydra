@@ -1161,6 +1161,15 @@ dialog.confirm .actions {
   background: var(--surface-2);
   color: var(--muted);
 }
+/* Screening colours beyond yellow: orange for a confirmed PEP, red for confirmed sanctions. */
+.chip-pep {
+  background: color-mix(in srgb, var(--warn-soft) 55%, var(--danger-soft));
+  color: color-mix(in srgb, var(--warn) 55%, var(--danger));
+}
+.chip-blocked {
+  background: var(--danger);
+  color: #fff;
+}
 
 /* Risk gauge */
 .gauge {
@@ -2174,4 +2183,18 @@ button.link.center {
     flex: 1;
     color: var(--text);
   }
+}
+
+/* Screening: a person's name with their screening colour */
+.screening-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.stack-tight {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }

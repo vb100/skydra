@@ -61,9 +61,14 @@ export const PartyRole = z.enum([
   'PAYER',
   /** Natural person who owns or controls a legal-entity party (added from registry data). */
   'BENEFICIAL_OWNER',
+  /** Manager (vadovas) of a legal-entity party, from registry data; screened, no CDD of its own. */
+  'DIRECTOR',
   'OTHER',
 ]);
 export type PartyRole = z.infer<typeof PartyRole>;
+
+/** Roles added from registry data only, never entered by hand. */
+export const REGISTRY_ROLES: readonly PartyRole[] = ['BENEFICIAL_OWNER', 'DIRECTOR'];
 
 export const CddScope = z.enum(['FULL', 'RELIANCE']);
 export const CddStatus = z.enum(['NOT_STARTED', 'IN_PROGRESS', 'COMPLETED']);

@@ -1,22 +1,47 @@
-import type { ChecklistResult } from '@skydra/shared';
+import type { ChecklistResult, ScreeningStatus } from '@skydra/shared';
 import { useTranslation } from 'react-i18next';
 import { OwnershipPanel } from './OwnershipPanel';
 import { PartyKycPanel } from './PartyKycPanel';
 import type { CaseParty, IdentityVerification, OwnershipView, Run } from './types';
 
-type ChipState = 'ok' | 'attention' | 'missing';
+type ChipState = 'ok' | 'attention' | 'missing' | 'pep' | 'blocked';
 
-/** Status chips of a party from its checklist entries; a chip is shown only if it applies. */
-export function partyChips(casePartyId: string, checklist: readonly ChecklistResult[]) {
+/** The screening colour as a chip: green, yellow, orange (PEP), red (sanctions). */
+const SCREENING_CHIP: Record<ScreeningStatus, ChipState> = {
+  NOT_SCREENED: 'missing',
+  FAILED: 'attention',
+  GREEN: 'ok',
+  YELLOW: 'attention',
+  ORANGE: 'pep',
+  RED: 'blocked',
+};
+
+/**
+ * Status chips of a party from its checklist entries; a chip is shown only if it applies. The
+ * screening chip carries the person's screening colour when it is known.
+ */
+export function partyChips(
+  casePartyId: string,
+  checklist: readonly ChecklistResult[],
+  screening?: ScreeningStatus,
+) {
   const mine = checklist.filter((e) => e.casePartyId === casePartyId);
   const has = (item: ChecklistResult['item']) => mine.find((e) => e.item === item);
-  const chips: { key: string; state: ChipState }[] = [];
+  const chips: { key: string; state: ChipState; status?: ScreeningStatus }[] = [];
   const screened = has('SCREENED');
   if (screened)
-    chips.push({
-      key: 'screening',
-      state: !screened.ok ? 'missing' : has('MATCHES_REVIEWED')?.ok === false ? 'attention' : 'ok',
-    });
+    chips.push(
+      screening
+        ? { key: 'screening', state: SCREENING_CHIP[screening], status: screening }
+        : {
+            key: 'screening',
+            state: !screened.ok
+              ? 'missing'
+              : has('MATCHES_REVIEWED')?.ok === false
+                ? 'attention'
+                : 'ok',
+          },
+    );
   const fetched = has('OWNERSHIP_FETCHED');
   if (fetched)
     chips.push({
@@ -34,19 +59,42 @@ export function partyChips(casePartyId: string, checklist: readonly ChecklistRes
   return chips;
 }
 
-export function StatusChips(props: { casePartyId: string; checklist: readonly ChecklistResult[] }) {
+/** A person's screening colour as one chip with its label. */
+export function ScreeningBadge({ status }: { status: ScreeningStatus }) {
+  const { t } = useTranslation();
+  const state = SCREENING_CHIP[status];
+  return (
+    <span className={`chip chip-${state}`}>
+      <span aria-hidden="true">{MARK[state]}</span> {t(`screening.statuses.${status}`)}
+    </span>
+  );
+}
+
+const MARK: Record<ChipState, string> = {
+  ok: '✓',
+  attention: '!',
+  missing: '○',
+  pep: '!',
+  blocked: '■',
+};
+
+export function StatusChips(props: {
+  casePartyId: string;
+  checklist: readonly ChecklistResult[];
+  screening?: ScreeningStatus;
+}) {
   const { t } = useTranslation();
   return (
     <span className="chips">
-      {partyChips(props.casePartyId, props.checklist).map((c) => (
-        <span key={c.key} className={`chip chip-${c.state}`} title={t(`partyStatus.${c.state}`)}>
-          <span aria-hidden="true">
-            {c.state === 'ok' ? '✓' : c.state === 'attention' ? '!' : '○'}
-          </span>{' '}
-          {t(`partyStatus.${c.key}`)}
-          <span className="sr-only"> – {t(`partyStatus.${c.state}`)}</span>
-        </span>
-      ))}
+      {partyChips(props.casePartyId, props.checklist, props.screening).map((c) => {
+        const state = c.status ? t(`screening.statuses.${c.status}`) : t(`partyStatus.${c.state}`);
+        return (
+          <span key={c.key} className={`chip chip-${c.state}`} title={state}>
+            <span aria-hidden="true">{MARK[c.state]}</span> {t(`partyStatus.${c.key}`)}
+            <span className="sr-only"> – {state}</span>
+          </span>
+        );
+      })}
     </span>
   );
 }
@@ -76,6 +124,8 @@ export function PartyCard(props: {
   caseParty: CaseParty;
   owners: CaseParty[];
   checklist: readonly ChecklistResult[];
+  /** Screening colour of each case party, by case party id. */
+  screening: Partial<Record<string, ScreeningStatus>>;
   ownership: OwnershipView | undefined;
   verifications: IdentityVerification[];
   amlApplies: boolean;
@@ -109,7 +159,11 @@ export function PartyCard(props: {
             {cp.party.companyCode && ` · ${cp.party.companyCode}`}
           </span>
         </span>
-        <StatusChips casePartyId={cp.id} checklist={props.checklist} />
+        <StatusChips
+          casePartyId={cp.id}
+          checklist={props.checklist}
+          screening={props.screening[cp.id]}
+        />
         <span className="chevron" aria-hidden="true">
           ▾
         </span>
@@ -158,11 +212,16 @@ export function PartyCard(props: {
                 <span className="party-title">
                   <span>{o.party.displayName}</span>
                   <span className="muted">
-                    {o.party.personalCodeMasked}
+                    {t(`partyRoles.${o.role}`)}
+                    {o.party.personalCodeMasked && ` · ${o.party.personalCodeMasked}`}
                     {o.party.citizenships.length > 0 && ` · ${o.party.citizenships.join(', ')}`}
                   </span>
                 </span>
-                <StatusChips casePartyId={o.id} checklist={props.checklist} />
+                <StatusChips
+                  casePartyId={o.id}
+                  checklist={props.checklist}
+                  screening={props.screening[o.id]}
+                />
               </li>
             ))}
           </ul>

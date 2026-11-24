@@ -23,6 +23,7 @@ import { REGISTRY_PROVIDER, UnavailableRegistryProvider } from './ownership/regi
 import { PlatformController } from './platform/platform.controller';
 import { RiskController } from './risk/risk.controller';
 import { MockScreeningProvider } from './screening/mock-provider';
+import { OpenSanctionsProvider } from './screening/opensanctions-provider';
 import { SCREENING_PROVIDER, UnavailableScreeningProvider } from './screening/provider';
 
 @Module({})
@@ -52,12 +53,14 @@ export class AppModule {
           }),
         },
         {
-          // MOCK is refused in prod by loadConfig; Ondato and manual entry come later.
+          // MOCK is refused in prod by loadConfig; manual entry comes later.
           provide: SCREENING_PROVIDER,
           useValue:
             config.providers.screening === 'MOCK'
               ? new MockScreeningProvider()
-              : new UnavailableScreeningProvider(config.providers.screening),
+              : config.openSanctions
+                ? new OpenSanctionsProvider(config.openSanctions)
+                : new UnavailableScreeningProvider(config.providers.screening),
         },
         {
           // In-person verification needs no provider; remote verification uses this one.

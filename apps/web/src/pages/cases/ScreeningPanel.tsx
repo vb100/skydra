@@ -61,7 +61,9 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
                   <span className="muted">
                     {t('screening.lastCheck', {
                       date: date(check.requestedAt),
-                      provider: check.provider,
+                      provider: t(`screening.providers.${check.provider}`, {
+                        defaultValue: check.provider,
+                      }),
                     })}
                   </span>
                   {check.status === 'FAILED' && (
@@ -70,12 +72,7 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
                   {check.status === 'COMPLETED' && check.matches.length === 0 && (
                     <span>{t('screening.noMatches')}</span>
                   )}
-                  {check.matches.length > 0 && (
-                    <span>{t('screening.matches', { count: check.matches.length })}</span>
-                  )}
-                  {check.matches.map((m) => (
-                    <MatchView key={m.id} caseId={caseId} match={m} run={run} />
-                  ))}
+                  <Matches caseId={caseId} matches={check.matches} run={run} />
                 </>
               )}
               <div className="actions">
@@ -90,6 +87,33 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
     </section>
   );
 }
+
+/** Strong matches first, each to be reviewed; weak ones (below the threshold) folded. */
+function Matches(props: { caseId: string; matches: ScreeningMatch[]; run: Run }) {
+  const { t } = useTranslation();
+  const strong = props.matches.filter((m) => m.strength === 'STRONG');
+  const weak = props.matches.filter((m) => m.strength === 'WEAK');
+  return (
+    <>
+      {strong.length > 0 && <span>{t('screening.matches', { count: strong.length })}</span>}
+      {strong.map((m) => (
+        <MatchView key={m.id} caseId={props.caseId} match={m} run={props.run} />
+      ))}
+      {weak.length > 0 && (
+        <details className="disclosure">
+          <summary>{t('screening.weakMatches', { count: weak.length })}</summary>
+          <p className="muted">{t('screening.weakHint')}</p>
+          {weak.map((m) => (
+            <MatchView key={m.id} caseId={props.caseId} match={m} run={props.run} />
+          ))}
+        </details>
+      )}
+    </>
+  );
+}
+
+const isLink = (value: unknown): value is string =>
+  typeof value === 'string' && /^https:\/\//.test(value);
 
 function MatchView({ caseId, match, run }: { caseId: string; match: ScreeningMatch; run: Run }) {
   const { t } = useTranslation();
@@ -128,7 +152,14 @@ function MatchView({ caseId, match, run }: { caseId: string; match: ScreeningMat
       </strong>
       {details.map(([key, value]) => (
         <span key={key} className="muted">
-          {t(`screening.details.${key}`, { defaultValue: key })}: {String(value)}
+          {t(`screening.details.${key}`, { defaultValue: key })}:{' '}
+          {isLink(value) ? (
+            <a href={value} target="_blank" rel="noopener noreferrer">
+              {new URL(value).hostname}
+            </a>
+          ) : (
+            String(value)
+          )}
         </span>
       ))}
       <span>{t(`screening.reviewStatuses.${match.reviewStatus}`)}</span>

@@ -30,7 +30,9 @@ flowchart LR
     end
 
     subgraph Ext["Išoriniai tiekėjai (per adapterius)"]
-        ondato["Ondato<br/>PEP · sankcijos · adverse media<br/>stebėsena · registrai · IDV"]
+        osanc["OpenSanctions<br/>sankcijos · PEP · kiti sąrašai"]
+        media["Brave · GDELT<br/>neigiama informacija (vėliau)"]
+        dokobit["Dokobit · Registrų centras<br/>tapatybė · registrai (laukiama sutarčių)"]
         ai["DI dokumentų ištraukimas<br/>(ES regionas)"]
     end
 
@@ -47,8 +49,9 @@ flowchart LR
     worker --> av
     sched --> sql
     worker -->|"tik organizacijos su DPA"| bq
-    api -.->|"MOCK, kol nėra sutarties"| ondato
-    worker -.->|"MOCK"| ondato
+    api -->|"arba MOCK lokaliai ir demo"| osanc
+    worker -.->|"vėliau"| media
+    api -.->|"MOCK, kol nėra sutarčių"| dokobit
     worker -.->|"MOCK"| ai
     api --> obs
     worker --> obs

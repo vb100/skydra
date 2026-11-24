@@ -19,7 +19,7 @@ export type IdentityResult = {
 
 /**
  * Remote identity verification: a session the client completes on their own device. The result
- * arrives later (a webhook for Ondato); the MOCK adapter lets the broker simulate it.
+ * arrives later (a callback from Dokobit); the MOCK adapter lets the broker simulate it.
  */
 export interface IdentityProvider {
   readonly mode: ProviderMode;
@@ -52,7 +52,7 @@ export class MockIdentityProvider implements IdentityProvider {
   }
 }
 
-/** A configured provider without an adapter yet (Ondato): refuses instead of pretending. */
+/** A configured provider without an adapter yet (Dokobit): refuses instead of pretending. */
 export class UnavailableIdentityProvider implements IdentityProvider {
   constructor(readonly mode: ProviderMode) {}
 

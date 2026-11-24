@@ -20,7 +20,12 @@ import { NotFoundError, RuleError } from '../domain-errors';
 import { addMember } from '../organization/members';
 import { createOrganization, withPlatform } from '../platform/platform';
 import { MockScreeningProvider } from './mock-provider';
-import { type ScreeningProvider, UnavailableScreeningProvider } from './provider';
+import {
+  type ProviderExchange,
+  ProviderError,
+  type ScreeningProvider,
+  UnavailableScreeningProvider,
+} from './provider';
 import { listScreenings, reviewMatch, runScreening } from './screening';
 
 const keys = deriveKeys(LOCAL_DEVELOPMENT_KEY);
@@ -245,7 +250,7 @@ describe('screening', () => {
   it('a provider failure is recorded as a failed check; an unavailable provider stores nothing', async () => {
     const { caseId } = await caseWith('Tomas Klaidingas');
     const failing: ScreeningProvider = {
-      mode: 'ONDATO',
+      mode: 'OPENSANCTIONS',
       screen: () => Promise.reject(new Error('timeout')),
     };
     const result = await screen(caseId, failing);
@@ -253,10 +258,148 @@ describe('screening', () => {
     const [check] = await as(broker, (c) => listScreenings(c, caseId));
     expect(check).toMatchObject({ status: 'FAILED', error: 'provider_error', matchCount: null });
 
-    await expect(screen(caseId, new UnavailableScreeningProvider('ONDATO'))).rejects.toBeInstanceOf(
-      RuleError,
-    );
+    await expect(
+      screen(caseId, new UnavailableScreeningProvider('OPENSANCTIONS')),
+    ).rejects.toBeInstanceOf(RuleError);
     expect(await as(broker, (c) => listScreenings(c, caseId))).toHaveLength(1);
+  });
+
+  const exchange = (attempt: number, over: Partial<ProviderExchange> = {}): ProviderExchange => ({
+    attempt,
+    request: { url: '/match/default', body: { queries: { q: { schema: 'Person' } } } },
+    response: { responses: { q: { status: 200, results: [] } } },
+    httpStatus: 200,
+    responseSha256: 'a'.repeat(64),
+    error: null,
+    durationMs: 120,
+    sentAt: new Date(),
+    ...over,
+  });
+
+  it('only strong matches must be reviewed; weak ones are listed after them', async () => {
+    const { caseId } = await caseWith('Rūta Panaši');
+    const provider: ScreeningProvider = {
+      mode: 'OPENSANCTIONS',
+      screen: () =>
+        Promise.resolve({
+          reference: null,
+          matches: [
+            {
+              externalId: 'w1',
+              name: 'Rūta Panašioji',
+              score: 61,
+              strength: 'WEAK',
+              categories: ['PEP'],
+              details: {},
+            },
+            {
+              externalId: 's1',
+              name: 'Rūta Panaši',
+              score: 91,
+              strength: 'STRONG',
+              categories: ['PEP'],
+              details: {},
+            },
+          ],
+          exchanges: [exchange(1)],
+        }),
+    };
+    expect((await screen(caseId, provider)).complianceStatus).toBe('REVIEW_REQUIRED');
+    const [check] = await as(broker, (c) => listScreenings(c, caseId));
+    expect(check!.matches.map((m) => [m.externalId, m.strength])).toEqual([
+      ['s1', 'STRONG'],
+      ['w1', 'WEAK'],
+    ]);
+
+    const strong = check!.matches[0]!;
+    const { complianceStatus } = await as(broker, (c) =>
+      reviewMatch(c, caseId, strong.id, {
+        decision: 'FALSE_POSITIVE',
+        justification: 'Kita gimimo data ir pilietybė',
+      }),
+    );
+    // The weak match is still open, yet nothing waits for it.
+    expect(complianceStatus).toBe('IN_PROGRESS');
+
+    const weakOnly: ScreeningProvider = {
+      mode: 'OPENSANCTIONS',
+      screen: () =>
+        Promise.resolve({
+          reference: null,
+          matches: [
+            {
+              externalId: 'w2',
+              name: 'R. Panaši',
+              score: 55,
+              strength: 'WEAK',
+              categories: ['SANCTIONS'],
+              details: {},
+            },
+          ],
+        }),
+    };
+    expect((await screen(caseId, weakOnly)).complianceStatus).toBe('IN_PROGRESS');
+  });
+
+  it('keeps every provider exchange, also of a failed call, and never changes them', async () => {
+    const { caseId } = await caseWith('Linas Kartojamas');
+    const provider: ScreeningProvider = {
+      mode: 'OPENSANCTIONS',
+      screen: () =>
+        Promise.reject(
+          new ProviderError('OpenSanctions: HTTP 503', [
+            exchange(1, { httpStatus: 503, error: 'HTTP 503', response: { detail: 'busy' } }),
+            exchange(2, {
+              httpStatus: null,
+              error: 'timeout',
+              response: null,
+              responseSha256: null,
+            }),
+          ]),
+        ),
+    };
+    await screen(caseId, provider);
+    const [check] = await as(broker, (c) => listScreenings(c, caseId));
+    expect(check).toMatchObject({ status: 'FAILED', matchCount: null });
+
+    const rows = await as(
+      broker,
+      async (c) =>
+        (
+          await c.query<{
+            attempt: number;
+            http_status: number | null;
+            error: string;
+            response: unknown;
+          }>(
+            'SELECT attempt, http_status, error, response FROM screening_requests WHERE check_id = $1 ORDER BY attempt',
+            [check!.id],
+          )
+        ).rows,
+    );
+    expect(rows).toEqual([
+      { attempt: 1, http_status: 503, error: 'HTTP 503', response: { detail: 'busy' } },
+      { attempt: 2, http_status: null, error: 'timeout', response: null },
+    ]);
+
+    await expect(
+      as(broker, (c) =>
+        c.query("UPDATE screening_requests SET error = 'x' WHERE check_id = $1", [check!.id]),
+      ),
+    ).rejects.toThrow(/permission denied/);
+    await expect(
+      as(broker, (c) => c.query('DELETE FROM screening_requests WHERE check_id = $1', [check!.id])),
+    ).rejects.toThrow(/permission denied/);
+    // A finished check takes no further exchanges.
+    await expect(
+      as(broker, (c) =>
+        c.query(
+          `INSERT INTO screening_requests (check_id, provider, attempt, request, duration_ms, sent_at)
+           VALUES ($1, 'OPENSANCTIONS', 3, '{}', 1, now())`,
+          [check!.id],
+        ),
+      ),
+    ).rejects.toThrow(/pending check/);
   });
 
   it('results and status are evidence: not editable, not deletable, not settable', async () => {

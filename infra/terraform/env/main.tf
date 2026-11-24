@@ -145,6 +145,26 @@ resource "google_secret_manager_secret_version" "this" {
   secret_data = each.value
 }
 
+# Third-party API keys: Terraform creates the secret but never holds its value, so the key stays
+# out of the Terraform state. Add it with `gcloud secrets versions add` (docs/integrations), then
+# switch the integration on; the service reads the key only while it is on.
+resource "google_secret_manager_secret" "opensanctions" {
+  secret_id = "${local.name}-opensanctions-api-key"
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_iam_member" "opensanctions" {
+  secret_id = google_secret_manager_secret.opensanctions.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.service.email}"
+}
+
 resource "google_service_account" "service" {
   account_id   = "${local.name}-run"
   display_name = "SkyDra ${var.env}: application service"
@@ -233,6 +253,25 @@ resource "google_cloud_run_v2_service" "app" {
           }
         }
       }
+      dynamic "env" {
+        for_each = var.integrations.screening == "OPENSANCTIONS" ? [1] : []
+        content {
+          name = "OPENSANCTIONS_API_KEY"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.opensanctions.secret_id
+              version = "latest"
+            }
+          }
+        }
+      }
+      dynamic "env" {
+        for_each = var.integrations.screening == "OPENSANCTIONS" ? [1] : []
+        content {
+          name  = "OPENSANCTIONS_THRESHOLD"
+          value = tostring(var.screening_threshold)
+        }
+      }
       volume_mounts {
         name       = "cloudsql"
         mount_path = "/cloudsql"
@@ -251,6 +290,7 @@ resource "google_cloud_run_v2_service" "app" {
   depends_on = [
     google_secret_manager_secret_version.this,
     google_secret_manager_secret_iam_member.service,
+    google_secret_manager_secret_iam_member.opensanctions,
   ]
 }
 

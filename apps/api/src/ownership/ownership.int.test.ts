@@ -277,7 +277,7 @@ describe('ownership and beneficial owners', () => {
         app,
         broker,
         keys,
-        new UnavailableRegistryProvider('ONDATO'),
+        new UnavailableRegistryProvider('REGISTRU_CENTRAS'),
         caseId,
         casePartyId,
       ),

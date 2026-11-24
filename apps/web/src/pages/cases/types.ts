@@ -74,6 +74,8 @@ export type ScreeningMatch = {
   id: string;
   name: string;
   score: string | null;
+  /** STRONG must be reviewed; WEAK (below the provider's threshold) is shown folded. */
+  strength: 'STRONG' | 'WEAK';
   categories: string[];
   details: Record<string, unknown>;
   reviewStatus: 'OPEN' | 'FALSE_POSITIVE' | 'TRUE_POSITIVE';

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-/** What a potential match was found in. Mirrors the provider's datasets (Ondato: SAN, PEP, RCA, AM…). */
+/** What a potential match was found in (from OpenSanctions topics: sanction, role.pep, role.rca…). */
 export const MatchCategory = z.enum([
   'SANCTIONS',
   'PEP',
@@ -9,6 +9,10 @@ export const MatchCategory = z.enum([
   'OTHER_LIST',
 ]);
 export type MatchCategory = z.infer<typeof MatchCategory>;
+
+/** STRONG: the provider counts it as a match (score at or above the threshold); WEAK: below. */
+export const MatchStrength = z.enum(['STRONG', 'WEAK']);
+export type MatchStrength = z.infer<typeof MatchStrength>;
 
 export const ReviewStatus = z.enum(['OPEN', 'FALSE_POSITIVE', 'TRUE_POSITIVE']);
 export type ReviewStatus = z.infer<typeof ReviewStatus>;

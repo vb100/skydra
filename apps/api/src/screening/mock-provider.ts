@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import type { MatchCategory } from '@skydra/shared';
+import type { MatchCategory, MatchStrength } from '@skydra/shared';
 import type {
   ProviderMatch,
   ProviderResult,
@@ -12,7 +12,12 @@ import type {
  * Deterministic, so demos and tests can show each outcome: a name containing one of the markers
  * below produces that kind of potential match; any other name produces none.
  */
-export const MOCK_MARKERS: { marker: string; category: MatchCategory; details: object }[] = [
+export const MOCK_MARKERS: {
+  marker: string;
+  category: MatchCategory;
+  strength?: MatchStrength;
+  details: object;
+}[] = [
   {
     marker: 'sankcij',
     category: 'SANCTIONS',
@@ -33,6 +38,13 @@ export const MOCK_MARKERS: { marker: string; category: MatchCategory; details: o
     category: 'ADVERSE_MEDIA',
     details: { summary: 'Neigiama informacija žiniasklaidoje (imitacija)' },
   },
+  {
+    // Below the threshold: shown folded, no review required.
+    marker: 'panas',
+    category: 'PEP',
+    strength: 'WEAK',
+    details: { position: 'Savivaldybės tarybos narys (imitacija)', country: 'LT' },
+  },
 ];
 
 const fold = (s: string) =>
@@ -50,7 +62,8 @@ export class MockScreeningProvider implements ScreeningProvider {
       (m, i) => ({
         externalId: `mock-${m.category.toLowerCase()}-${i + 1}`,
         name: subject.name,
-        score: m.category === 'ADVERSE_MEDIA' ? 80 : 95,
+        score: m.strength === 'WEAK' ? 62 : m.category === 'ADVERSE_MEDIA' ? 80 : 95,
+        strength: m.strength ?? 'STRONG',
         categories: [m.category],
         details: {
           ...m.details,

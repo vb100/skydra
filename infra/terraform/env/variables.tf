@@ -33,13 +33,33 @@ variable "domain" {
 }
 
 variable "integrations" {
-  description = "External integrations. MOCK is refused by the application when env is prod."
+  description = "External integrations: screening MOCK | MANUAL | OPENSANCTIONS, identity MOCK | MANUAL | DOKOBIT, registry MOCK | MANUAL | REGISTRU_CENTRAS. MOCK is refused by the application when env is prod."
   type = object({
     screening = string
     identity  = string
     registry  = string
   })
   default = { screening = "MOCK", identity = "MOCK", registry = "MOCK" }
+
+  validation {
+    condition = (
+      contains(["MOCK", "MANUAL", "OPENSANCTIONS"], var.integrations.screening)
+      && contains(["MOCK", "MANUAL", "DOKOBIT"], var.integrations.identity)
+      && contains(["MOCK", "MANUAL", "REGISTRU_CENTRAS"], var.integrations.registry)
+    )
+    error_message = "Unknown provider code for screening, identity or registry."
+  }
+}
+
+variable "screening_threshold" {
+  description = "OpenSanctions score (0.5–0.99) from which a result is a strong match that must be reviewed."
+  type        = number
+  default     = 0.7
+
+  validation {
+    condition     = var.screening_threshold >= 0.5 && var.screening_threshold <= 0.99
+    error_message = "screening_threshold must be between 0.5 and 0.99."
+  }
 }
 
 variable "db_tier" {

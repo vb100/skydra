@@ -68,6 +68,19 @@ describe('loadConfig', () => {
     ).toThrow(/OPENSANCTIONS_THRESHOLD/);
   });
 
+  it('searches the media only alongside OpenSanctions, Brave with a key, GDELT when enabled', () => {
+    const media = { BRAVE_API_KEY: 'brave-key', GDELT_ENABLED: 'true' };
+    // Simulated screening never calls real media services.
+    expect(loadConfig({ ...base, ...media }).adverseMedia).toEqual({ brave: null, gdelt: null });
+    const os = { ...base, SCREENING_PROVIDER: 'OPENSANCTIONS', OPENSANCTIONS_API_KEY: 'k' };
+    expect(loadConfig(os).adverseMedia).toEqual({ brave: null, gdelt: null });
+    expect(loadConfig({ ...os, ...media }).adverseMedia).toEqual({
+      brave: { apiKey: 'brave-key', baseUrl: 'https://api.search.brave.com/res/v1' },
+      gdelt: { baseUrl: 'https://api.gdeltproject.org' },
+    });
+    expect(() => loadConfig({ ...os, GDELT_ENABLED: 'yes' })).toThrow(/GDELT_ENABLED/);
+  });
+
   it('accepts each provider code only for its own integration', () => {
     expect(() => loadConfig({ ...base, SCREENING_PROVIDER: 'ONDATO' })).toThrow(
       /SCREENING_PROVIDER/,

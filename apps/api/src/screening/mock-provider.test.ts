@@ -20,6 +20,7 @@ describe('mock screening provider', () => {
     const result = await mock.screen(subject('Ona POLITIKĖ-Skandalė'));
     expect(result.matches.map((m) => m.categories)).toEqual([['PEP'], ['ADVERSE_MEDIA']]);
     expect(result.matches[0]!.details).toMatchObject({ simulated: true });
+    expect(result.matches[1]).toMatchObject({ score: null, details: { kind: 'article' } });
     expect(result.reference).toMatch(/^mock-/);
   });
 });

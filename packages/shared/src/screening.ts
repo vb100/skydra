@@ -14,7 +14,8 @@ export type MatchCategory = z.infer<typeof MatchCategory>;
 export const MatchStrength = z.enum(['STRONG', 'WEAK']);
 export type MatchStrength = z.infer<typeof MatchStrength>;
 
-export const ReviewStatus = z.enum(['OPEN', 'FALSE_POSITIVE', 'TRUE_POSITIVE']);
+/** NOT_RELEVANT applies to adverse-media articles only (e.g. a namesake's unrelated news). */
+export const ReviewStatus = z.enum(['OPEN', 'FALSE_POSITIVE', 'TRUE_POSITIVE', 'NOT_RELEVANT']);
 export type ReviewStatus = z.infer<typeof ReviewStatus>;
 
 export const RunScreeningInput = z.object({
@@ -24,7 +25,7 @@ export const RunScreeningInput = z.object({
 export type RunScreeningInput = z.input<typeof RunScreeningInput>;
 
 export const ReviewMatchInput = z.object({
-  decision: z.enum(['FALSE_POSITIVE', 'TRUE_POSITIVE']),
+  decision: z.enum(['FALSE_POSITIVE', 'TRUE_POSITIVE', 'NOT_RELEVANT']),
   /** Why the broker concluded so, e.g. a different date of birth. Kept as evidence. */
   justification: z.string().trim().min(10).max(4000),
 });

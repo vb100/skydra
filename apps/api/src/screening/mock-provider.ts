@@ -34,11 +34,6 @@ export const MOCK_MARKERS: {
     details: { relation: 'Šeimos narys (imitacija)' },
   },
   {
-    marker: 'skandal',
-    category: 'ADVERSE_MEDIA',
-    details: { summary: 'Neigiama informacija žiniasklaidoje (imitacija)' },
-  },
-  {
     // Below the threshold: shown folded, no review required.
     marker: 'panas',
     category: 'PEP',
@@ -53,6 +48,32 @@ const fold = (s: string) =>
     .replace(/\p{Diacritic}/gu, '')
     .toLowerCase();
 
+/** A name containing this produces a simulated adverse-media article. */
+export const MOCK_ARTICLE_MARKER = 'skandal';
+
+/** Shaped like a Brave or GDELT result (see adverse-media/articles.ts). */
+function mockArticle(subject: ScreeningSubject): ProviderMatch {
+  const title = `${subject.name}: įtarimai dėl sukčiavimo (imitacija)`;
+  return {
+    externalId: 'naujienos.example.com/imitacija/straipsnis',
+    name: title,
+    score: null,
+    strength: 'STRONG',
+    categories: ['ADVERSE_MEDIA'],
+    details: {
+      kind: 'article',
+      title,
+      sourceUrl: 'https://example.com/imitacija/straipsnis',
+      domain: 'naujienos.example.com',
+      publishedAt: '2026-10-15T08:00:00.000Z',
+      snippet: `Prokuratūra pradėjo ikiteisminį tyrimą: ${subject.name} įtariamas sukčiavimu ir pinigų plovimu. Tai imituotas straipsnis demonstracijai.`,
+      source: 'Imitacija',
+      terms: [subject.name, 'sukčiavim', 'pinigų plovim', 'įtariam'],
+      simulated: true,
+    },
+  };
+}
+
 export class MockScreeningProvider implements ScreeningProvider {
   readonly mode = 'MOCK' as const;
 
@@ -62,7 +83,7 @@ export class MockScreeningProvider implements ScreeningProvider {
       (m, i) => ({
         externalId: `mock-${m.category.toLowerCase()}-${i + 1}`,
         name: subject.name,
-        score: m.strength === 'WEAK' ? 62 : m.category === 'ADVERSE_MEDIA' ? 80 : 95,
+        score: m.strength === 'WEAK' ? 62 : 95,
         strength: m.strength ?? 'STRONG',
         categories: [m.category],
         details: {
@@ -73,6 +94,7 @@ export class MockScreeningProvider implements ScreeningProvider {
         },
       }),
     );
+    if (name.includes(MOCK_ARTICLE_MARKER)) matches.push(mockArticle(subject));
     return Promise.resolve({ reference: `mock-${randomUUID()}`, matches });
   }
 }

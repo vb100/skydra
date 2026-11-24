@@ -62,6 +62,15 @@ variable "screening_threshold" {
   }
 }
 
+variable "adverse_media" {
+  description = "Adverse-media sources searched with OpenSanctions: Brave Search (needs its key in Secret Manager) and GDELT (no key; only once the client's DPIA covers it)."
+  type = object({
+    brave = bool
+    gdelt = bool
+  })
+  default = { brave = false, gdelt = false }
+}
+
 variable "db_tier" {
   description = "Cloud SQL machine type (Enterprise edition)."
   type        = string

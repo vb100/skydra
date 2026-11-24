@@ -26,6 +26,15 @@ const EnvSchema = z.object({
   OPENSANCTIONS_URL: z.url().default('https://api.opensanctions.org'),
   // Score (0–1) from which a result counts as a match that must be reviewed; below it, a weak one.
   OPENSANCTIONS_THRESHOLD: z.coerce.number().min(0.5).max(0.99).default(0.7),
+  // Adverse media, searched together with OpenSanctions. Brave is on when its key is set.
+  BRAVE_API_KEY: z.string().min(1).optional(),
+  BRAVE_URL: z.url().default('https://api.search.brave.com/res/v1'),
+  // GDELT needs no key; it stays off until the client's DPIA covers it.
+  GDELT_ENABLED: z
+    .enum(['true', 'false'])
+    .default('false')
+    .transform((v) => v === 'true'),
+  GDELT_URL: z.url().default('https://api.gdeltproject.org'),
 });
 
 export type AppConfig = {
@@ -42,6 +51,11 @@ export type AppConfig = {
   };
   /** Set when screening uses OpenSanctions. */
   openSanctions: { apiKey: string; baseUrl: string; threshold: number } | null;
+  /** Media sources searched with OpenSanctions; both null otherwise (never with MOCK). */
+  adverseMedia: {
+    brave: { apiKey: string; baseUrl: string } | null;
+    gdelt: { baseUrl: string } | null;
+  };
 };
 
 /** The key published in .env.example for local development. Never acceptable elsewhere. */
@@ -77,6 +91,7 @@ export function loadConfig(source: NodeJS.ProcessEnv): AppConfig {
       registry: e.REGISTRY_PROVIDER,
     },
     openSanctions: null,
+    adverseMedia: { brave: null, gdelt: null },
   };
 
   if (config.providers.screening === 'OPENSANCTIONS') {
@@ -88,6 +103,12 @@ export function loadConfig(source: NodeJS.ProcessEnv): AppConfig {
       apiKey: e.OPENSANCTIONS_API_KEY,
       baseUrl: e.OPENSANCTIONS_URL.replace(/\/+$/, ''),
       threshold: e.OPENSANCTIONS_THRESHOLD,
+    };
+    config.adverseMedia = {
+      brave: e.BRAVE_API_KEY
+        ? { apiKey: e.BRAVE_API_KEY, baseUrl: e.BRAVE_URL.replace(/\/+$/, '') }
+        : null,
+      gdelt: e.GDELT_ENABLED ? { baseUrl: e.GDELT_URL.replace(/\/+$/, '') } : null,
     };
   }
 

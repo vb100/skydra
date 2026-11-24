@@ -1,10 +1,10 @@
 import { type HealthResponse, screeningStatus } from '@skydra/shared';
 import { useQuery } from '@tanstack/react-query';
-import { type FormEvent, useState } from 'react';
+import { type FormEvent, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../api';
 import { useConfirm } from '../../feedback';
-import { formatDateTime } from '../../format';
+import { formatDate, formatDateTime } from '../../format';
 import { Field, Hint, Select } from '../../ui';
 import { ScreeningBadge } from './PartyCard';
 import type { CaseParty, Run, ScreeningCheck, ScreeningMatch } from './types';
@@ -84,9 +84,9 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
                   <span className="muted">
                     {t('screening.lastCheck', {
                       date: date(check.requestedAt),
-                      provider: t(`screening.providers.${check.provider}`, {
-                        defaultValue: check.provider,
-                      }),
+                      provider: (check.sources.length ? check.sources : [check.provider])
+                        .map((p) => t(`screening.providers.${p}`, { defaultValue: p }))
+                        .join(', '),
                     })}
                   </span>
                   {check.status === 'FAILED' && status === 'FAILED' && (
@@ -138,18 +138,78 @@ function Matches(props: { caseId: string; matches: ScreeningMatch[]; run: Run })
 const isLink = (value: unknown): value is string =>
   typeof value === 'string' && /^https:\/\//.test(value);
 
+const str = (value: unknown) => (typeof value === 'string' && value ? value : null);
+
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** The snippet with the name forms and risk words marked (case-insensitive, word starts). */
+export function highlight(text: string, terms: readonly string[]): ReactNode[] {
+  const usable = terms.filter((term) => term.trim().length >= 3);
+  if (usable.length === 0) return [text];
+  const pattern = new RegExp(
+    `(${[...usable]
+      .sort((a, b) => b.length - a.length)
+      .map(escapeRegExp)
+      .join('|')})`,
+    'giu',
+  );
+  return text
+    .split(pattern)
+    .map((part, i) => (i % 2 === 1 ? <mark key={i}>{part}</mark> : part))
+    .filter((part) => part !== '');
+}
+
+/** A news or web article found about the person: link, where and when, and the snippet. */
+function ArticleHead({ match }: { match: ScreeningMatch }) {
+  const { t } = useTranslation();
+  const d = match.details;
+  const url = isLink(d.sourceUrl) ? d.sourceUrl : null;
+  const title = str(d.title) ?? match.name;
+  const snippet = str(d.snippet);
+  const terms = Array.isArray(d.terms)
+    ? d.terms.filter((x): x is string => typeof x === 'string')
+    : [];
+  const published = str(d.publishedAt);
+  return (
+    <>
+      <strong>
+        {t('matchCategories.ADVERSE_MEDIA')} ·{' '}
+        {url ? (
+          <a href={url} target="_blank" rel="noopener noreferrer">
+            {title}
+          </a>
+        ) : (
+          title
+        )}
+      </strong>
+      <span className="muted">
+        {[str(d.domain), published && formatDate(published)].filter(Boolean).join(' · ')}
+        {str(d.source) && ` · ${t('screening.article.foundIn', { source: d.source })}`}
+      </span>
+      {snippet && <p className="article-snippet">{highlight(snippet, terms)}</p>}
+    </>
+  );
+}
+
+const LIST_DECISIONS = ['FALSE_POSITIVE', 'TRUE_POSITIVE'] as const;
+const ARTICLE_DECISIONS = ['TRUE_POSITIVE', 'FALSE_POSITIVE', 'NOT_RELEVANT'] as const;
+type Decision = (typeof ARTICLE_DECISIONS)[number];
+
 function MatchView({ caseId, match, run }: { caseId: string; match: ScreeningMatch; run: Run }) {
   const { t } = useTranslation();
   const confirm = useConfirm();
-  const [decision, setDecision] = useState<'FALSE_POSITIVE' | 'TRUE_POSITIVE' | ''>('');
+  const [decision, setDecision] = useState<Decision | ''>('');
   const [justification, setJustification] = useState('');
+  const article = match.details.kind === 'article';
+  const decisionKey = article ? 'screening.articleDecisions' : 'screening.decisions';
+  const statusKey = article ? 'screening.articleStatuses' : 'screening.reviewStatuses';
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!decision) return;
     const ok = await confirm({
       title: t('confirm.reviewMatch'),
-      body: `${t(`screening.decisions.${decision}`)}. ${t('confirm.irreversible')}`,
+      body: `${t(`${decisionKey}.${decision}`)}. ${t('confirm.irreversible')}`,
       confirmLabel: t('confirm.record'),
     });
     if (!ok) return;
@@ -169,30 +229,37 @@ function MatchView({ caseId, match, run }: { caseId: string; match: ScreeningMat
 
   return (
     <div className="match">
-      <strong>
-        {match.categories.map((c) => t(`matchCategories.${c}`)).join(', ')} · {match.name}
-        {match.score && ` · ${t('screening.score', { score: Number(match.score) })}`}
-      </strong>
-      {details.map(([key, value]) => (
-        <span key={key} className="muted">
-          {t(`screening.details.${key}`, { defaultValue: key })}:{' '}
-          {isLink(value) ? (
-            <a href={value} target="_blank" rel="noopener noreferrer">
-              {new URL(value).hostname}
-            </a>
-          ) : (
-            String(value)
-          )}
-        </span>
-      ))}
-      <span>{t(`screening.reviewStatuses.${match.reviewStatus}`)}</span>
+      {article ? (
+        <ArticleHead match={match} />
+      ) : (
+        <>
+          <strong>
+            {match.categories.map((c) => t(`matchCategories.${c}`)).join(', ')} · {match.name}
+            {match.score && ` · ${t('screening.score', { score: Number(match.score) })}`}
+          </strong>
+          {details.map(([key, value]) => (
+            <span key={key} className="muted">
+              {t(`screening.details.${key}`, { defaultValue: key })}:{' '}
+              {isLink(value) ? (
+                <a href={value} target="_blank" rel="noopener noreferrer">
+                  {new URL(value).hostname}
+                </a>
+              ) : (
+                String(value)
+              )}
+            </span>
+          ))}
+        </>
+      )}
+      <span>{t(`${statusKey}.${match.reviewStatus}`)}</span>
       {match.reviewStatus === 'OPEN' ? (
         <form onSubmit={submit} className="stack">
+          {article && <p className="muted">{t('screening.article.hint')}</p>}
           <Select
             label={t('screening.decision')}
             name={`decision-${match.id}`}
-            options={['FALSE_POSITIVE', 'TRUE_POSITIVE'] as const}
-            optionLabel={(v) => t(`screening.decisions.${v}`)}
+            options={article ? ARTICLE_DECISIONS : LIST_DECISIONS}
+            optionLabel={(v) => t(`${decisionKey}.${v}`)}
             value={decision}
             onChange={setDecision}
             emptyLabel=""

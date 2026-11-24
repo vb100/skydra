@@ -16,7 +16,7 @@
 1. **AML pareigos nepriklauso nuo plano.** Planai riboja tik organizacijos valdymo funkcijas. Privaloma patikra niekada neblokuojama dėl limito.
 2. **Taisyklės yra duomenys, ne kodas.** Rizikos taisyklės, tvirtinimo matrica, peržiūrų intervalai, sutapimo slenksčiai, UBO ribos ir saugojimo terminai versijuojami ir susiejami su šalimi bei galiojimo laikotarpiu.
 3. **Teisinis režimas fiksuojamas kiekviename įraše.** Kiekviena patikra ir kiekvienas vertinimas žino, pagal kurį režimą atliktas: PPTFPĮ iki 2027-07-10, AMLR nuo tos dienos.
-4. **Tiekėjai keičiami be eigos pakeitimų.** Patikros, tapatybės patikra, registrai ir dokumentų ištraukimas veikia per vidines sąsajas su adapteriais: `MOCK`, `MANUAL` ir tikrais tiekėjais – `OPENSANCTIONS` (sankcijos, PEP), `DOKOBIT` (tapatybė), `REGISTRU_CENTRAS` (registrai), vėliau žiniasklaidos paieška (Brave, GDELT).
+4. **Tiekėjai keičiami be eigos pakeitimų.** Patikros, tapatybės patikra, registrai ir dokumentų ištraukimas veikia per vidines sąsajas su adapteriais: `MOCK`, `MANUAL` ir tikrais tiekėjais – `OPENSANCTIONS` (sankcijos, PEP), `DOKOBIT` (tapatybė), `REGISTRU_CENTRAS` (registrai), žiniasklaidos paieška – `BRAVE` ir `GDELT` (kartu su OpenSanctions).
 5. **Imitacija produkcijoje neįmanoma.** Jei `APP_ENV=prod`, o kuris nors adapteris yra `MOCK`, aplikacija nepasileidžia.
 6. **Istorija neperrašoma.** Audit trail, sprendimai ir užbaigti vertinimai tik papildomi. Pataisa visada yra naujas įrašas su nuoroda į ankstesnį.
 7. **Duomenys tik ES.** Produkcija veikia europe-north1 regione, atsarginės kopijos irgi lieka ES.
@@ -225,6 +225,7 @@ skydra/
 | GCP apmokėjimo įjungimas | klientas | diegimą į demo ir prod, seno turinio išvalymą |
 | Papildomos IAM teisės: Cloud SQL, Pub/Sub, Scheduler, Monitoring, Logging konfigūravimas, Compute (LB / Cloud Armor), KMS, Workload Identity Pools | klientas / vartotojas | Terraform paleidimą |
 | OpenSanctions licencija rodyti rezultatus brokeriams; API raktas | klientas | OpenSanctions naudojimą gamyboje |
+| Brave Search API raktas ir sąlygos rezultatams saugoti; DPIA Brave ir GDELT | klientas | žiniasklaidos paiešką gamyboje |
 | Dokobit ir Registrų centro sutartys, duomenų formatas | klientas | tapatybės ir registrų adapterius |
 | LT-RISK-01 veiksnių lentelė | klientas (AML konsultantas) | rizikos taisyklių turinį (ne variklį) |
 | Užpildyti JADIS ir JANGIS išrašai, JANGIS išrašų struktūros | klientas | ištraukimo testus |

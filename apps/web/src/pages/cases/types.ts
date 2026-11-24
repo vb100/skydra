@@ -80,7 +80,8 @@ export type ScreeningMatch = {
   strength: 'STRONG' | 'WEAK';
   categories: string[];
   details: Record<string, unknown>;
-  reviewStatus: 'OPEN' | 'FALSE_POSITIVE' | 'TRUE_POSITIVE';
+  /** NOT_RELEVANT: an article about the person that is no risk (articles only). */
+  reviewStatus: 'OPEN' | 'FALSE_POSITIVE' | 'TRUE_POSITIVE' | 'NOT_RELEVANT';
   reviewJustification: string | null;
   reviewedAt: string | null;
 };
@@ -89,6 +90,8 @@ export type ScreeningCheck = {
   id: string;
   casePartyId: string;
   provider: string;
+  /** Every source searched (OPENSANCTIONS, BRAVE, GDELT…); empty for older checks. */
+  sources: string[];
   status: 'PENDING' | 'COMPLETED' | 'FAILED';
   matchCount: number | null;
   requestedAt: string;

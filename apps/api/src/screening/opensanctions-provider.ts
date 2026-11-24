@@ -1,8 +1,7 @@
-import { createHash } from 'node:crypto';
 import type { MatchCategory } from '@skydra/shared';
 import { z } from 'zod';
+import { callWithRetry, type HttpOptions } from './http-exchange';
 import {
-  type ProviderExchange,
   ProviderError,
   type ProviderMatch,
   type ProviderResult,
@@ -17,18 +16,13 @@ import {
  * Only what the check needs is sent: name, birth date and nationality for a person; name,
  * company code and jurisdiction for a company. The personal code never is.
  */
-export type OpenSanctionsOptions = {
+export type OpenSanctionsOptions = HttpOptions & {
   apiKey: string;
   baseUrl: string;
   /** Score (0–1) from which the API reports `match: true`; those become STRONG matches. */
   threshold: number;
   dataset?: string;
   limit?: number;
-  attempts?: number;
-  timeoutMs?: number;
-  /** Injected in tests. */
-  fetch?: typeof fetch;
-  sleep?: (ms: number) => Promise<void>;
 };
 
 const QUERY_ID = 'q';
@@ -143,18 +137,11 @@ export function matchOf(r: Result): ProviderMatch {
   };
 }
 
-/** Worth another attempt: no answer, rate limited, or a server-side failure. */
-const retryable = (status: number | null) => status === null || status === 429 || status >= 500;
-
 export class OpenSanctionsProvider implements ScreeningProvider {
   readonly mode = 'OPENSANCTIONS' as const;
-  private readonly fetchImpl: typeof fetch;
-  private readonly sleep: (ms: number) => Promise<void>;
+  readonly sources = ['OPENSANCTIONS'] as const;
 
-  constructor(private readonly options: OpenSanctionsOptions) {
-    this.fetchImpl = options.fetch ?? fetch;
-    this.sleep = options.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
-  }
+  constructor(private readonly options: OpenSanctionsOptions) {}
 
   async screen(subject: ScreeningSubject): Promise<ProviderResult> {
     const { baseUrl, apiKey, threshold } = this.options;
@@ -164,69 +151,33 @@ export class OpenSanctionsProvider implements ScreeningProvider {
       threshold: String(threshold),
       limit: String(this.options.limit ?? 10),
     });
-    const url = `${baseUrl}/match/${encodeURIComponent(dataset)}?${params}`;
     const body = queryFor(subject);
-    const attempts = this.options.attempts ?? 3;
-    const exchanges: ProviderExchange[] = [];
+    const outcome = await callWithRetry(
+      {
+        provider: 'OPENSANCTIONS',
+        url: `${baseUrl}/match/${encodeURIComponent(dataset)}?${params}`,
+        method: 'POST',
+        headers: {
+          Authorization: `ApiKey ${apiKey}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body,
+        logged: { url: `/match/${dataset}?${params}`, body },
+      },
+      this.options,
+    );
+    const { exchanges } = outcome;
+    if (!outcome.ok) throw new ProviderError(`OpenSanctions: ${outcome.error}`, exchanges);
 
-    for (let attempt = 1; attempt <= attempts; attempt++) {
-      if (attempt > 1) await this.sleep(500 * 2 ** (attempt - 2)); // 0.5 s, then 1 s
-      const sentAt = new Date();
-      const started = performance.now();
-      let status: number | null = null;
-      let text: string | null = null;
-      let error: string | null = null;
-      try {
-        const res = await this.fetchImpl(url, {
-          method: 'POST',
-          headers: {
-            Authorization: `ApiKey ${apiKey}`,
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-          body: JSON.stringify(body),
-          signal: AbortSignal.timeout(this.options.timeoutMs ?? 15_000),
-        });
-        status = res.status;
-        text = await res.text();
-        if (!res.ok) error = `HTTP ${res.status}`;
-      } catch (e) {
-        error = e instanceof Error && e.name === 'TimeoutError' ? 'timeout' : 'network error';
-      }
-
-      let parsedJson: unknown = null;
-      if (text !== null) {
-        try {
-          parsedJson = JSON.parse(text);
-        } catch {
-          parsedJson = { unparsed: text.slice(0, 10_000) };
-          error ??= 'invalid JSON';
-        }
-      }
-      const exchange: ProviderExchange = {
-        attempt,
-        request: { url: `/match/${dataset}?${params}`, body },
-        response: text === null ? null : parsedJson,
-        httpStatus: status,
-        responseSha256: text === null ? null : createHash('sha256').update(text).digest('hex'),
-        error,
-        durationMs: Math.round(performance.now() - started),
-        sentAt,
-      };
-      exchanges.push(exchange);
-
-      if (!error) {
-        const parsed = MatchResponse.safeParse(parsedJson);
-        const answer = parsed.success ? parsed.data.responses[QUERY_ID] : undefined;
-        if (answer && answer.status === 200)
-          return { reference: null, matches: answer.results.map(matchOf), exchanges };
-        exchange.error = parsed.success
-          ? `query status ${answer?.status ?? 'missing'}`
-          : 'unexpected response';
-        throw new ProviderError(`OpenSanctions: ${exchange.error}`, exchanges);
-      }
-      if (!retryable(status)) break;
-    }
-    throw new ProviderError(`OpenSanctions: ${exchanges.at(-1)?.error}`, exchanges);
+    const parsed = MatchResponse.safeParse(outcome.json);
+    const answer = parsed.success ? parsed.data.responses[QUERY_ID] : undefined;
+    if (answer && answer.status === 200)
+      return { reference: null, matches: answer.results.map(matchOf), exchanges };
+    const error = parsed.success
+      ? `query status ${answer?.status ?? 'missing'}`
+      : 'unexpected response';
+    exchanges.at(-1)!.error = error;
+    throw new ProviderError(`OpenSanctions: ${error}`, exchanges);
   }
 }

@@ -410,6 +410,25 @@ a.card strong {
   border-radius: var(--radius-sm);
   background: var(--surface);
 }
+
+.article-snippet {
+  margin: 0;
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.article-snippet mark {
+  /* No padding: a stem is often marked inside a word ("sukčiavim|u"). */
+  padding: 0;
+  border-radius: 2px;
+  background: var(--warn-soft);
+  color: inherit;
+  font-weight: 600;
+}
+
+.match a {
+  overflow-wrap: anywhere;
+}
 .notice {
   padding: 12px var(--space-3);
   border: 1px solid var(--border);

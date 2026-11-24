@@ -165,6 +165,24 @@ resource "google_secret_manager_secret_iam_member" "opensanctions" {
   member    = "serviceAccount:${google_service_account.service.email}"
 }
 
+# Brave Search API key (adverse media), added the same way and read only while Brave is on.
+resource "google_secret_manager_secret" "brave" {
+  secret_id = "${local.name}-brave-api-key"
+  replication {
+    user_managed {
+      replicas {
+        location = var.region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_iam_member" "brave" {
+  secret_id = google_secret_manager_secret.brave.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.service.email}"
+}
+
 resource "google_service_account" "service" {
   account_id   = "${local.name}-run"
   display_name = "SkyDra ${var.env}: application service"
@@ -272,6 +290,26 @@ resource "google_cloud_run_v2_service" "app" {
           value = tostring(var.screening_threshold)
         }
       }
+      # Adverse media is searched together with OpenSanctions only.
+      dynamic "env" {
+        for_each = var.integrations.screening == "OPENSANCTIONS" && var.adverse_media.brave ? [1] : []
+        content {
+          name = "BRAVE_API_KEY"
+          value_source {
+            secret_key_ref {
+              secret  = google_secret_manager_secret.brave.secret_id
+              version = "latest"
+            }
+          }
+        }
+      }
+      dynamic "env" {
+        for_each = var.integrations.screening == "OPENSANCTIONS" && var.adverse_media.gdelt ? [1] : []
+        content {
+          name  = "GDELT_ENABLED"
+          value = "true"
+        }
+      }
       volume_mounts {
         name       = "cloudsql"
         mount_path = "/cloudsql"
@@ -291,6 +329,7 @@ resource "google_cloud_run_v2_service" "app" {
     google_secret_manager_secret_version.this,
     google_secret_manager_secret_iam_member.service,
     google_secret_manager_secret_iam_member.opensanctions,
+    google_secret_manager_secret_iam_member.brave,
   ]
 }
 

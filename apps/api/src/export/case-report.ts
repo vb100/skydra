@@ -274,12 +274,29 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
   }
   for (const s of d.screenings) {
     const who = c.parties.find((x) => x.id === s.casePartyId)?.party.displayName ?? '';
+    const sources = (s.sources.length ? s.sources : [s.provider])
+      .map((x) => label(lt.screening.providers, x))
+      .join(', ');
     p(
-      `${who}: ${s.provider} · ${date(s.completedAt ?? s.requestedAt)} · ` +
+      `${who}: ${sources} · ${date(s.completedAt ?? s.requestedAt)} · ` +
         (s.status === 'COMPLETED' ? `sutapimų: ${s.matchCount}` : 'patikra nepavyko'),
       { indent: 10 },
     );
-    for (const m of s.matches)
+    for (const m of s.matches) {
+      if (m.details.kind === 'article') {
+        // The article itself is the evidence: its address and date, as the broker reviewed it.
+        const published = typeof m.details.publishedAt === 'string' ? m.details.publishedAt : null;
+        p(
+          `${label(lt.matchCategories, 'ADVERSE_MEDIA')} · ${m.name}` +
+            `${published ? ` · ${day(published)}` : ''}` +
+            ` · ${label(lt.screening.articleStatuses, m.reviewStatus)}` +
+            `${m.reviewJustification ? ` – ${m.reviewJustification}` : ''}`,
+          { indent: 18 },
+        );
+        if (typeof m.details.sourceUrl === 'string')
+          p(m.details.sourceUrl, { indent: 26, muted: true });
+        continue;
+      }
       p(
         `${m.categories.map((x) => label(lt.matchCategories, x)).join(', ')} · ${m.name}` +
           `${m.score ? ` · ${Number(m.score)} %` : ''}` +
@@ -288,6 +305,7 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
           `${m.reviewJustification ? ` – ${m.reviewJustification}` : ''}`,
         { indent: 18 },
       );
+    }
   }
 
   const n = (k: number) => (d.ownership.length > 0 ? k + 1 : k);

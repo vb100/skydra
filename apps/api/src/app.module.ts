@@ -24,6 +24,7 @@ import { PlatformController } from './platform/platform.controller';
 import { RiskController } from './risk/risk.controller';
 import { MockScreeningProvider } from './screening/mock-provider';
 import { OpenSanctionsProvider } from './screening/opensanctions-provider';
+import { withMedia } from './screening/adverse-media';
 import { SCREENING_PROVIDER, UnavailableScreeningProvider } from './screening/provider';
 
 @Module({})
@@ -59,7 +60,7 @@ export class AppModule {
             config.providers.screening === 'MOCK'
               ? new MockScreeningProvider()
               : config.openSanctions
-                ? new OpenSanctionsProvider(config.openSanctions)
+                ? withMedia(new OpenSanctionsProvider(config.openSanctions), config.adverseMedia)
                 : new UnavailableScreeningProvider(config.providers.screening),
         },
         {

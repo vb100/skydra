@@ -521,13 +521,15 @@ export const lt = {
     runAll: 'Atlikti patikras visoms šalims',
     run: 'Tikrinti',
     simulatedHint:
-      'Patikros imituojamos. Pavardė su „Sankcij“ – sankcijos, „Politik“ – PEP, „Artimas“ – PEP artimas asmuo, „Skandal“ – neigiama informacija, „Panaš“ – silpnas PEP atitikmuo; kitos – sutapimų nėra.',
+      'Patikros imituojamos. Pavardė su „Sankcij“ – sankcijos, „Politik“ – PEP, „Artimas“ – PEP artimas asmuo, „Skandal“ – neigiamas straipsnis žiniasklaidoje, „Panaš“ – silpnas PEP atitikmuo; kitos – sutapimų nėra.',
     notScreened: 'Dar netikrinta',
     lastCheck: 'Paskutinė patikra: {{date}} ({{provider}})',
     providers: {
       MOCK: 'imitacija',
       MANUAL: 'įvesta rankiniu būdu',
       OPENSANCTIONS: 'OpenSanctions',
+      BRAVE: 'Brave Search',
+      GDELT: 'GDELT',
     },
     noMatches: 'Sutapimų nerasta.',
     failed: 'Patikra nepavyko – bandykite dar kartą.',
@@ -557,6 +559,15 @@ export const lt = {
       FALSE_POSITIVE: 'Ne tas pats asmuo (klaidingas sutapimas)',
       TRUE_POSITIVE: 'Patvirtinta – tas pats asmuo',
     },
+    articleDecisions: {
+      TRUE_POSITIVE: 'Apie šį asmenį – neigiama informacija',
+      FALSE_POSITIVE: 'Apie kitą asmenį (bendrapavardis)',
+      NOT_RELEVANT: 'Apie šį asmenį, bet neaktualu rizikai',
+    },
+    article: {
+      foundIn: 'Rasta: {{source}}',
+      hint: 'Atidarykite straipsnį ir įvertinkite, ar jis apie šį asmenį ir ar susijęs su pinigų plovimu, sukčiavimu, korupcija ar kitais nusikaltimais.',
+    },
     justification: 'Pagrindimas (bent 10 simbolių)',
     submitReview: 'Išsaugoti sprendimą',
     reviewFinal: 'Sprendimo pakeisti nebus galima.',
@@ -564,6 +575,13 @@ export const lt = {
       OPEN: 'Laukia įvertinimo',
       FALSE_POSITIVE: 'Klaidingas sutapimas',
       TRUE_POSITIVE: 'Patvirtintas sutapimas',
+      NOT_RELEVANT: 'Neaktualu',
+    },
+    articleStatuses: {
+      OPEN: 'Laukia įvertinimo',
+      FALSE_POSITIVE: 'Apie kitą asmenį',
+      TRUE_POSITIVE: 'Patvirtinta neigiama informacija',
+      NOT_RELEVANT: 'Neaktualu',
     },
     reviewedBy: 'Įvertino {{date}}: {{justification}}',
     details: {

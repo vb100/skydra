@@ -26,6 +26,12 @@ describe('screeningStatus', () => {
       screeningStatus([done(match({ reviewStatus: 'FALSE_POSITIVE', categories: ['SANCTIONS'] }))])
         .status,
     ).toBe('GREEN');
+    // An article about the person that is no risk.
+    expect(
+      screeningStatus([
+        done(match({ reviewStatus: 'NOT_RELEVANT', categories: ['ADVERSE_MEDIA'] })),
+      ]).status,
+    ).toBe('GREEN');
   });
 
   it('is YELLOW while a strong match awaits review, or for confirmed adverse media / other lists', () => {

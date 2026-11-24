@@ -28,6 +28,7 @@ import {
 } from './provider';
 import { screeningStatus } from '@skydra/shared';
 import { autoScreen, listScreenings, reviewMatch, runScreening } from './screening';
+import { type MediaSource, WithAdverseMedia } from './adverse-media';
 
 const keys = deriveKeys(LOCAL_DEVELOPMENT_KEY);
 const mock = new MockScreeningProvider();
@@ -437,6 +438,143 @@ describe('screening', () => {
         ),
       ),
     ).rejects.toThrow(/pending check/);
+  });
+
+  it('an article is reviewed with its own decisions; the sources searched are recorded', async () => {
+    const { caseId, casePartyId } = await caseWith('Jonas Straipsnelis');
+    await completeCdd(caseId, casePartyId);
+    const lists: ScreeningProvider = {
+      mode: 'OPENSANCTIONS',
+      sources: ['OPENSANCTIONS'],
+      screen: () =>
+        Promise.resolve({
+          reference: null,
+          matches: [
+            {
+              externalId: 'NK-pep',
+              name: 'Jonas Straipsnelis',
+              score: 88,
+              strength: 'STRONG',
+              categories: ['PEP'],
+              details: {},
+            },
+          ],
+          exchanges: [exchange(1, { provider: 'OPENSANCTIONS' })],
+        }),
+    };
+    const brave: MediaSource = {
+      code: 'BRAVE',
+      search: () =>
+        Promise.resolve({
+          articles: [
+            {
+              url: 'https://www.lrt.lt/naujienos/1',
+              title: 'Jonas Straipsnelis laimėjo konkursą',
+              snippet: 'Jonas Straipsnelis apdovanotas',
+              domain: 'lrt.lt',
+              publishedAt: '2026-10-01T10:00:00.000Z',
+              source: 'BRAVE',
+            },
+          ],
+          exchanges: [exchange(1, { provider: 'BRAVE', request: { url: '/news/search?q=x' } })],
+        }),
+    };
+    await screen(caseId, new WithAdverseMedia(lists, [brave]));
+
+    const [check] = await as(broker, (c) => listScreenings(c, caseId));
+    expect(check).toMatchObject({
+      provider: 'OPENSANCTIONS',
+      sources: ['OPENSANCTIONS', 'BRAVE'],
+      matchCount: 2,
+    });
+    const pep = check!.matches.find((m) => m.categories.includes('PEP'))!;
+    const article = check!.matches.find((m) => m.categories.includes('ADVERSE_MEDIA'))!;
+    expect(article).toMatchObject({
+      externalId: 'lrt.lt/naujienos/1',
+      strength: 'STRONG',
+      score: null,
+      details: { kind: 'article', sourceUrl: 'https://www.lrt.lt/naujienos/1', source: 'Brave' },
+    });
+    const { rows: sent } = await db.superuser.query<{ provider: string }>(
+      'SELECT provider FROM screening_requests WHERE check_id = $1 ORDER BY provider',
+      [check!.id],
+    );
+    expect(sent.map((r) => r.provider)).toEqual(['BRAVE', 'OPENSANCTIONS']);
+
+    // "Not relevant" is for articles only, in the API and in the database.
+    await expect(
+      as(broker, (c) =>
+        reviewMatch(c, caseId, pep.id, {
+          decision: 'NOT_RELEVANT',
+          justification: 'Straipsnis neaktualus rizikai',
+        }),
+      ),
+    ).rejects.toBeInstanceOf(RuleError);
+    await expect(
+      as(broker, (c) =>
+        c.query(
+          `UPDATE screening_matches SET review_status = 'NOT_RELEVANT',
+                  review_justification = 'Neaktualu rizikai' WHERE id = $1`,
+          [pep.id],
+        ),
+      ),
+    ).rejects.toThrow(/not_relevant_article/);
+
+    await as(broker, (c) =>
+      reviewMatch(c, caseId, article.id, {
+        decision: 'NOT_RELEVANT',
+        justification: 'Apie šį asmenį, bet tai apdovanojimas, ne rizika',
+      }),
+    );
+    await as(broker, (c) =>
+      reviewMatch(c, caseId, pep.id, {
+        decision: 'FALSE_POSITIVE',
+        justification: 'Kita gimimo data nei PEP sąraše',
+      }),
+    );
+    const [after] = await as(broker, (c) => listScreenings(c, caseId));
+    expect(screeningStatus([after!]).status).toBe('GREEN');
+    expect((await as(broker, (c) => assessRisk(c, caseId, {}))).complianceStatus).toBe('COMPLETED');
+  });
+
+  it('a check that fails in one source is FAILED, with every source attempt kept', async () => {
+    const { caseId } = await caseWith('Ona Nepasiekiama');
+    const lists: ScreeningProvider = {
+      mode: 'OPENSANCTIONS',
+      screen: () =>
+        Promise.resolve({
+          reference: null,
+          matches: [],
+          exchanges: [exchange(1, { provider: 'OPENSANCTIONS' })],
+        }),
+    };
+    const gdelt: MediaSource = {
+      code: 'GDELT',
+      search: () =>
+        Promise.reject(
+          new ProviderError('GDELT: timeout', [
+            exchange(1, {
+              provider: 'GDELT',
+              httpStatus: null,
+              error: 'timeout',
+              response: null,
+              responseSha256: null,
+            }),
+          ]),
+        ),
+    };
+    await screen(caseId, new WithAdverseMedia(lists, [gdelt]));
+    const [check] = await as(broker, (c) => listScreenings(c, caseId));
+    expect(check).toMatchObject({ status: 'FAILED', sources: ['OPENSANCTIONS', 'GDELT'] });
+    expect(check!.matches).toEqual([]);
+    const { rows } = await db.superuser.query<{ provider: string; error: string | null }>(
+      'SELECT provider, error FROM screening_requests WHERE check_id = $1 ORDER BY provider',
+      [check!.id],
+    );
+    expect(rows).toEqual([
+      { provider: 'GDELT', error: 'timeout' },
+      { provider: 'OPENSANCTIONS', error: null },
+    ]);
   });
 
   it('results and status are evidence: not editable, not deletable, not settable', async () => {

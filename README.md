@@ -149,8 +149,9 @@ docker build -t skydra:local .   # lokaliai; Cloud Run atvaizdą kompiliuoja inf
 
 - **Tiekėjai:**
   - Visi tiekėjai jungiami per `ScreeningProvider` sąsają (`SCREENING_PROVIDER`).
-  - `MOCK` (lokaliai ir demo) imituoja rezultatus. Pavardė su „Sankcij“ grąžina sankcijas, „Politik“ – PEP, „Artimas“ – PEP artimą asmenį, „Skandal“ – neigiamą informaciją, „Panaš“ – silpną PEP atitikmenį; kitais atvejais sutapimų nėra.
+  - `MOCK` (lokaliai ir demo) imituoja rezultatus. Pavardė su „Sankcij“ grąžina sankcijas, „Politik“ – PEP, „Artimas“ – PEP artimą asmenį, „Skandal“ – neigiamą straipsnį žiniasklaidoje, „Panaš“ – silpną PEP atitikmenį; kitais atvejais sutapimų nėra.
   - `OPENSANCTIONS`: tikra sankcijų, PEP ir kitų rizikos sąrašų patikra per OpenSanctions API (`docs/integrations/opensanctions.md`). Reikia `OPENSANCTIONS_API_KEY`.
+  - **Neigiama informacija žiniasklaidoje** ieškoma kartu su OpenSanctions toje pačioje patikroje (`docs/integrations/adverse-media.md`): Brave Search, kai nustatytas `BRAVE_API_KEY`, ir GDELT, kai `GDELT_ENABLED=true`. Rasti straipsniai yra `ADVERSE_MEDIA` atitikmenys. Brokeris kiekvieną įvertina: „apie šį asmenį“, „apie kitą asmenį“ arba „neaktualu“, visada su komentaru. Jei bent vienas šaltinis nepasiekiamas, visa patikra yra `FAILED`.
   - Prod aplinkoje `MOCK` uždraustas. `MANUAL` kol kas aiškiai atsisako veikti.
 - **Ką siunčiame tiekėjui:** fiziniam asmeniui vardą, gimimo datą ir pilietybę; įmonei pavadinimą, įmonės kodą ir šalį. Asmens kodo – niekada.
 - **Stiprūs ir silpni atitikmenys:** atitikmuo, kurio balas siekia slenkstį (`OPENSANCTIONS_THRESHOLD`, numatytasis 0,7), yra stiprus ir turi būti įvertintas. Silpni rodomi suskleisti ir bylos nestabdo.

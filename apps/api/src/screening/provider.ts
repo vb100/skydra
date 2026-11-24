@@ -25,6 +25,8 @@ export type ProviderMatch = {
 
 /** One HTTP attempt as kept in screening_requests: what was sent and what came back. */
 export type ProviderExchange = {
+  /** The source answering (OPENSANCTIONS, BRAVE, GDELT); the check's provider when absent. */
+  provider?: string;
   attempt: number;
   /** The request body; credentials are never part of it. */
   request: unknown;
@@ -60,6 +62,8 @@ export class ProviderError extends Error {
  */
 export interface ScreeningProvider {
   readonly mode: ScreeningProviderMode;
+  /** Every source a check searches, recorded with it (e.g. OPENSANCTIONS and BRAVE). */
+  readonly sources?: readonly string[];
   screen(subject: ScreeningSubject): Promise<ProviderResult>;
 }
 

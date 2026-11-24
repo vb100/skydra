@@ -32,6 +32,8 @@ export type ScreeningCheck = {
   casePartyId: string;
   partyId: string;
   provider: string;
+  /** Every source searched (e.g. OPENSANCTIONS, BRAVE); empty for checks before 0014. */
+  sources: string[];
   status: 'PENDING' | 'COMPLETED' | 'FAILED';
   subject: ScreeningSubject;
   matchCount: number | null;
@@ -137,20 +139,22 @@ export async function runScreening(
     }
   }
 
+  const sources = [...(provider.sources ?? [provider.mode])];
   return withTenant(pool, ctx, async (client) => {
     const checkIds: string[] = [];
     try {
       for (const { target, result, error, exchanges } of outcomes) {
         const { rows } = await client.query<{ id: string }>(
-          `INSERT INTO screening_checks (case_id, case_party_id, party_id, provider, status,
-                                         subject, provider_reference)
-           VALUES ($1, $2, $3, $4, 'PENDING', $5, $6)
+          `INSERT INTO screening_checks (case_id, case_party_id, party_id, provider, sources,
+                                         status, subject, provider_reference)
+           VALUES ($1, $2, $3, $4, $5, 'PENDING', $6, $7)
            RETURNING id`,
           [
             id,
             target.casePartyId,
             target.partyId,
             provider.mode,
+            sources,
             JSON.stringify(target.subject),
             result?.reference ?? null,
           ],
@@ -164,7 +168,7 @@ export async function runScreening(
              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
             [
               checkId,
-              provider.mode,
+              x.provider ?? provider.mode,
               x.attempt,
               JSON.stringify(x.request),
               x.response === null ? null : JSON.stringify(x.response),
@@ -204,6 +208,7 @@ export async function runScreening(
             checkId,
             casePartyId: target.casePartyId,
             provider: provider.mode,
+            sources,
             status: result ? 'COMPLETED' : 'FAILED',
             matchCount: result?.matches.length ?? null,
             strongMatches: result?.matches.filter((m) => m.strength === 'STRONG').length ?? null,
@@ -252,7 +257,8 @@ export async function listScreenings(
 ): Promise<ScreeningCheck[]> {
   const id = z.uuid().parse(caseId);
   const { rows } = await client.query<ScreeningCheck>(
-    `SELECT s.id, s.case_party_id AS "casePartyId", s.party_id AS "partyId", s.provider, s.status,
+    `SELECT s.id, s.case_party_id AS "casePartyId", s.party_id AS "partyId", s.provider,
+            s.sources, s.status,
             s.subject, s.match_count AS "matchCount", s.error, s.legal_regime AS "legalRegime",
             s.requested_by AS "requestedBy", s.requested_at AS "requestedAt",
             s.completed_at AS "completedAt",
@@ -276,8 +282,9 @@ export async function listScreenings(
 
 /**
  * Records the broker's decision on a potential match: not the same person (false positive) or
- * confirmed. The justification is mandatory and the decision final; a later check produces new
- * matches to review.
+ * confirmed; an article may also be not relevant (about the person, but no risk). The
+ * justification is mandatory and the decision final; a later check produces new matches to
+ * review.
  */
 export async function reviewMatch(
   client: PoolClient,
@@ -298,6 +305,8 @@ export async function reviewMatch(
   if (!found[0]) throw new NotFoundError('match not found');
   if (found[0].review_status !== 'OPEN')
     throw new RuleError('this match has already been reviewed');
+  if (decision === 'NOT_RELEVANT' && !found[0].categories.includes('ADVERSE_MEDIA'))
+    throw new RuleError('only an article can be marked not relevant');
 
   await client.query(
     `UPDATE screening_matches SET review_status = $2, review_justification = $3 WHERE id = $1`,

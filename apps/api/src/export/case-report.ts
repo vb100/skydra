@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { lt } from '@skydra/shared';
+import { lt, type PartyRole, REGISTRY_ROLES, screeningStatus } from '@skydra/shared';
 import PDFDocument from 'pdfkit';
 import type { PoolClient } from 'pg';
 import { z } from 'zod';
@@ -43,8 +43,8 @@ export async function collectReport(
 ): Promise<CaseReportData> {
   const id = z.uuid().parse(caseId);
   const caseFile = await getCase(client, keys, id);
-  const { rows: who } = await client.query<{ organization: string; user: string }>(
-    `SELECT o.name AS organization, u.full_name AS user
+  const { rows: who } = await client.query<{ id: string; organization: string; user: string }>(
+    `SELECT o.id, o.name AS organization, u.full_name AS user
        FROM organizations o, users u
       WHERE o.id = app.current_organization_id() AND u.id = app.current_user_id()`,
   );
@@ -63,7 +63,7 @@ export async function collectReport(
     checklist: await getChecklist(client, id),
     screenings: await listScreenings(client, id),
     identity: await listIdentityVerifications(client, keys, id),
-    ownership: await listOwnership(client, id),
+    ownership: await listOwnership(client, keys, who[0]?.id ?? '', id),
     risk: await riskOverview(client, id),
     decisions: await listDecisions(client, id),
     audit,
@@ -187,7 +187,7 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
         .join(' · '),
       { indent: 10 },
     );
-    if (cp.role !== 'BENEFICIAL_OWNER') {
+    if (!REGISTRY_ROLES.includes(cp.role as PartyRole)) {
       const kyc = cp.kyc as Record<string, unknown>;
       p(
         `CDD: ${label(lt.parties.cddScopes, cp.cddScope)} · ${label(lt.parties.cddStatuses, cp.cddStatus)}` +
@@ -264,11 +264,20 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
 
   h2(`${d.ownership.length > 0 ? 5 : 4}. Sankcijų, PEP ir neigiamos informacijos patikros`);
   if (d.screenings.length === 0) p('Patikrų nėra.', { muted: true });
+  for (const cp of c.parties) {
+    const own = d.screenings.filter((s) => s.casePartyId === cp.id);
+    if (own.length === 0) continue;
+    p(
+      `${cp.party.displayName} (${label(lt.partyRoles, cp.role)}): ` +
+        label(lt.screening.statuses, screeningStatus(own).status),
+    );
+  }
   for (const s of d.screenings) {
     const who = c.parties.find((x) => x.id === s.casePartyId)?.party.displayName ?? '';
     p(
       `${who}: ${s.provider} · ${date(s.completedAt ?? s.requestedAt)} · ` +
         (s.status === 'COMPLETED' ? `sutapimų: ${s.matchCount}` : 'patikra nepavyko'),
+      { indent: 10 },
     );
     for (const m of s.matches)
       p(
@@ -277,7 +286,7 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
           `${m.strength === 'WEAK' ? ' · silpnas (žemiau slenksčio)' : ''}` +
           ` · ${label(lt.screening.reviewStatuses, m.reviewStatus)}` +
           `${m.reviewJustification ? ` – ${m.reviewJustification}` : ''}`,
-        { indent: 14 },
+        { indent: 18 },
       );
   }
 

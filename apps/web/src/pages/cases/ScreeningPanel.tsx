@@ -1,4 +1,4 @@
-import type { HealthResponse } from '@skydra/shared';
+import { type HealthResponse, screeningStatus } from '@skydra/shared';
 import { useQuery } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import { api } from '../../api';
 import { useConfirm } from '../../feedback';
 import { formatDateTime } from '../../format';
 import { Field, Hint, Select } from '../../ui';
+import { ScreeningBadge } from './PartyCard';
 import type { CaseParty, Run, ScreeningCheck, ScreeningMatch } from './types';
 
 /** Sanctions / PEP / adverse-media checks of the case parties and the broker's review. */
@@ -41,6 +42,7 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
           </button>
         )}
       </div>
+      <p className="muted">{t('screening.autoHint')}</p>
       {health.data?.simulatedProviders && (
         <Hint summary={t('common.demoData')}>
           <p className="muted">{t('screening.simulatedHint')}</p>
@@ -49,11 +51,32 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
       <ul className="list">
         {parties.map((cp) => {
           const check = latest(cp.id);
+          const own = checks.data?.filter((c) => c.casePartyId === cp.id) ?? [];
+          const { status, lastAttemptFailed } = screeningStatus(own);
           return (
             <li key={cp.id} className="card static">
-              <strong>
-                {t(`partyRoles.${cp.role}`)}: {cp.party.displayName}
-              </strong>
+              <span className="screening-head">
+                <strong>
+                  {t(`partyRoles.${cp.role}`)}: {cp.party.displayName}
+                </strong>
+                <ScreeningBadge status={status} />
+              </span>
+              {status === 'RED' && (
+                <div className="banner blocked" role="alert">
+                  <div className="stack-tight">
+                    <strong>{t('screening.redTitle')}</strong>
+                    <span>{t('screening.redSteps')}</span>
+                  </div>
+                </div>
+              )}
+              {status === 'ORANGE' && (
+                <div className="banner warn" role="status">
+                  {t('screening.orangeHint')}
+                </div>
+              )}
+              {lastAttemptFailed && check?.status === 'FAILED' && status !== 'FAILED' && (
+                <span className="error">{t('screening.lastAttemptFailed')}</span>
+              )}
               {!check ? (
                 <span className="muted">{t('screening.notScreened')}</span>
               ) : (
@@ -66,7 +89,7 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
                       }),
                     })}
                   </span>
-                  {check.status === 'FAILED' && (
+                  {check.status === 'FAILED' && status === 'FAILED' && (
                     <span className="error">{t('screening.failed')}</span>
                   )}
                   {check.status === 'COMPLETED' && check.matches.length === 0 && (

@@ -1,4 +1,4 @@
-import { PartyRole } from '@skydra/shared';
+import { PartyRole, REGISTRY_ROLES } from '@skydra/shared';
 import { useQuery } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -205,7 +205,7 @@ export function AddPartyForm({ caseId, onAdded }: { caseId: string; onAdded: () 
       <Select
         label={t('parties.role')}
         name="role"
-        options={PartyRole.options.filter((r) => r !== 'BENEFICIAL_OWNER')}
+        options={PartyRole.options.filter((r) => !REGISTRY_ROLES.includes(r))}
         optionLabel={(v) => t(`partyRoles.${v}`)}
         value={role}
         onChange={setRole}

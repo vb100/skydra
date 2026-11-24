@@ -337,6 +337,8 @@ describe('HTTP API: authentication, CSRF and guards', () => {
         },
       });
       expect(party.statusCode).toBe(201);
+      // The new party is screened at once.
+      expect(party.json().screening).toBe('SCREENED');
 
       const detail = await call('GET', `/api/cases/${id}`, { cookie: broker1 });
       expect(detail.json()).toMatchObject({
@@ -353,12 +355,15 @@ describe('HTTP API: authentication, CSRF and guards', () => {
       });
       expect(activate.statusCode).toBe(422);
 
-      // Screening with the simulated provider; CDD is not finished yet.
+      // Screening again with the simulated provider; CDD is not finished yet.
       const screened = await call('POST', `/api/cases/${id}/screenings`, { cookie: broker1 });
       expect(screened.statusCode).toBe(201);
       expect(screened.json().complianceStatus).toBe('IN_PROGRESS');
       const checks = (await call('GET', `/api/cases/${id}/screenings`, { cookie: broker1 })).json();
-      expect(checks).toMatchObject([{ provider: 'MOCK', status: 'COMPLETED', matchCount: 0 }]);
+      expect(checks).toMatchObject([
+        { provider: 'MOCK', status: 'COMPLETED', matchCount: 0 },
+        { provider: 'MOCK', status: 'COMPLETED', matchCount: 0 },
+      ]);
       expect(
         (await call('POST', `/api/cases/${id}/screenings`, { cookie: broker2 })).statusCode,
       ).toBe(404);

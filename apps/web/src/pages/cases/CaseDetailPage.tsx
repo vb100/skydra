@@ -1,4 +1,11 @@
-import { CaseStage, type CaseStep, caseSteps, type HealthResponse } from '@skydra/shared';
+import {
+  CaseStage,
+  type CaseStep,
+  caseSteps,
+  type HealthResponse,
+  type ScreeningStatus,
+  screeningStatus,
+} from '@skydra/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -27,6 +34,7 @@ import type {
   IdentityVerification,
   OwnershipView,
   Run,
+  ScreeningCheck,
 } from './types';
 
 const TABS: CaseTab[] = ['overview', 'parties', 'screening', 'risk', 'decisions', 'history'];
@@ -81,6 +89,10 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
     queryKey: ['ownership', id],
     queryFn: () => api<OwnershipView[]>('GET', `/cases/${id}/ownership`),
   });
+  const screenings = useQuery({
+    queryKey: ['screenings', id],
+    queryFn: () => api<ScreeningCheck[]>('GET', `/cases/${id}/screenings`),
+  });
   const health = useQuery({
     queryKey: ['health'],
     queryFn: () => api<HealthResponse>('GET', '/health'),
@@ -126,7 +138,8 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
     setParams(next === 'overview' ? {} : { tab: next }, { replace: true });
     if (next === 'parties' && !casePartyId && detail.data?.parties.length === 0) setAdding(true);
     if (casePartyId) {
-      const company = detail.data?.parties.find((p) => p.id === casePartyId)?.beneficialOwnerOf;
+      const linked = detail.data?.parties.find((p) => p.id === casePartyId);
+      const company = linked?.beneficialOwnerOf ?? linked?.directorOf;
       setExpanded((all) => new Set(all).add(company ?? casePartyId));
     }
     // After the tab has rendered, bring the target into view.
@@ -156,9 +169,19 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
   const simulated = !!health.data?.simulatedProviders;
   const list = checklist.data ?? [];
   const steps = caseSteps(list);
-  const topParties = c.parties.filter((p) => !p.beneficialOwnerOf);
-  const ownersOf = (companyId: string) =>
-    c.parties.filter((p) => p.beneficialOwnerOf === companyId);
+  const topParties = c.parties.filter((p) => !p.beneficialOwnerOf && !p.directorOf);
+  // Each person's screening colour from their checks (newest first, as the API returns them).
+  const screening: Partial<Record<string, ScreeningStatus>> = Object.fromEntries(
+    c.parties.map((p) => [
+      p.id,
+      screeningStatus((screenings.data ?? []).filter((x) => x.casePartyId === p.id)).status,
+    ]),
+  );
+  // Registry-linked people of a company: its director first, then its beneficial owners.
+  const ownersOf = (companyId: string) => [
+    ...c.parties.filter((p) => p.directorOf === companyId),
+    ...c.parties.filter((p) => p.beneficialOwnerOf === companyId),
+  ];
   const client = topParties.find((p) => p.isOurClient) ?? topParties[0];
   const visibleTabs = amlApplies
     ? TABS
@@ -311,7 +334,7 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
                 <strong>{p.party.displayName}</strong>
                 <span className="muted">{t(`partyRoles.${p.role}`)}</span>
               </span>
-              <StatusChips casePartyId={p.id} checklist={list} />
+              <StatusChips casePartyId={p.id} checklist={list} screening={screening[p.id]} />
             </button>
           </li>
         ))}
@@ -352,6 +375,7 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
             caseParty={p}
             owners={ownersOf(p.id)}
             checklist={list}
+            screening={screening}
             ownership={ownership.data?.find((o) => o.casePartyId === p.id)}
             verifications={(verifications.data ?? []).filter((v) => v.casePartyId === p.id)}
             amlApplies={amlApplies}

@@ -29,3 +29,54 @@ export const ReviewMatchInput = z.object({
   justification: z.string().trim().min(10).max(4000),
 });
 export type ReviewMatchInput = z.input<typeof ReviewMatchInput>;
+
+/**
+ * A person's screening outcome at a glance (client specification, 2026-11-24):
+ *   GREEN   screened, nothing left: no strong match, or every strong match ruled out;
+ *   YELLOW  a strong match awaits review, or confirmed adverse media / another risk list;
+ *   ORANGE  confirmed PEP or PEP associate: enhanced due diligence;
+ *   RED     confirmed sanctions: the transaction stops, report to the FIU;
+ *   FAILED  the provider could not be reached and no earlier result exists;
+ *   NOT_SCREENED.
+ * Taken from the latest completed check, as the case checklist does. Weak matches do not count.
+ */
+export const ScreeningStatus = z.enum([
+  'NOT_SCREENED',
+  'FAILED',
+  'GREEN',
+  'YELLOW',
+  'ORANGE',
+  'RED',
+]);
+export type ScreeningStatus = z.infer<typeof ScreeningStatus>;
+
+type CheckSummary = {
+  status: 'PENDING' | 'COMPLETED' | 'FAILED';
+  matches: { strength: MatchStrength; reviewStatus: ReviewStatus; categories: readonly string[] }[];
+};
+
+/** `checks` of one person, newest first. `lastAttemptFailed` flags a failed re-check. */
+export function screeningStatus(checks: readonly CheckSummary[]): {
+  status: ScreeningStatus;
+  lastAttemptFailed: boolean;
+} {
+  const lastAttemptFailed = checks[0]?.status === 'FAILED';
+  const completed = checks.find((c) => c.status === 'COMPLETED');
+  if (!completed)
+    return {
+      status: checks.some((c) => c.status === 'FAILED') ? 'FAILED' : 'NOT_SCREENED',
+      lastAttemptFailed,
+    };
+  const confirmed = completed.matches.filter((m) => m.reviewStatus === 'TRUE_POSITIVE');
+  const has = (...categories: string[]) =>
+    confirmed.some((m) => m.categories.some((c) => categories.includes(c)));
+  const status: ScreeningStatus = has('SANCTIONS')
+    ? 'RED'
+    : has('PEP', 'PEP_ASSOCIATE')
+      ? 'ORANGE'
+      : confirmed.length > 0 ||
+          completed.matches.some((m) => m.strength === 'STRONG' && m.reviewStatus === 'OPEN')
+        ? 'YELLOW'
+        : 'GREEN';
+  return { status, lastAttemptFailed };
+}

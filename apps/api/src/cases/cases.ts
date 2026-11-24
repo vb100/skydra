@@ -5,6 +5,7 @@ import {
   nextStep,
   AddCasePartyInput,
   CreateCaseInput,
+  REGISTRY_ROLES,
   UpdateCaseInput,
   UpdateCasePartyInput,
 } from '@skydra/shared';
@@ -69,6 +70,8 @@ export type CaseParty = {
   addedAt: string;
   /** For a beneficial owner: the case party of the legal entity owned or controlled. */
   beneficialOwnerOf: string | null;
+  /** For a director: the case party of the legal entity managed. */
+  directorOf: string | null;
   party: Party;
 };
 
@@ -88,6 +91,7 @@ const SUMMARY = `
            WHERE ra.case_id = c.id ORDER BY ra.assessed_at DESC LIMIT 1) AS "nextReviewOn",
          (SELECT p.display_name FROM case_parties cp JOIN parties p ON p.id = cp.party_id
            WHERE cp.case_id = c.id AND cp.removed_at IS NULL AND cp.beneficial_owner_of IS NULL
+             AND cp.director_of IS NULL
            ORDER BY cp.is_our_client DESC, cp.added_at LIMIT 1) AS "clientName",
          ARRAY(SELECT p.display_name FROM case_parties cp JOIN parties p ON p.id = cp.party_id
                 WHERE cp.case_id = c.id AND cp.removed_at IS NULL
@@ -197,7 +201,7 @@ export async function getCase(
     `SELECT id, party_id AS "partyId", role, is_our_client AS "isOurClient",
             represented_by_other_broker AS "representedByOtherBroker", cdd_scope AS "cddScope",
             reliance, cdd_status AS "cddStatus", kyc, added_at AS "addedAt",
-            beneficial_owner_of AS "beneficialOwnerOf"
+            beneficial_owner_of AS "beneficialOwnerOf", director_of AS "directorOf"
        FROM case_parties WHERE case_id = $1 AND removed_at IS NULL ORDER BY added_at`,
     [id],
   );
@@ -370,8 +374,8 @@ export async function addCaseParty(
 ): Promise<{ casePartyId: string; partyId: string }> {
   const id = z.uuid().parse(caseId);
   const i = AddCasePartyInput.parse(input);
-  if (i.role === 'BENEFICIAL_OWNER')
-    throw new RuleError('beneficial owners are added from registry data');
+  if (REGISTRY_ROLES.includes(i.role))
+    throw new RuleError('beneficial owners and directors are added from registry data');
   await assertCaseVisible(client, id);
 
   let partyId: string;
@@ -484,13 +488,15 @@ export async function removeCaseParty(
     ids,
   );
   if (!rows[0]) throw new NotFoundError('case party not found');
-  // A legal entity's beneficial owners leave the case with it.
-  const { rows: owners } = await client.query<{ id: string }>(
+  // A legal entity's beneficial owners and director leave the case with it.
+  const { rows: linked } = await client.query<{ id: string; role: string }>(
     `UPDATE case_parties SET removed_at = now()
-      WHERE beneficial_owner_of = $1 AND removed_at IS NULL
-      RETURNING id`,
+      WHERE (beneficial_owner_of = $1 OR director_of = $1) AND removed_at IS NULL
+      RETURNING id, role`,
     [ids[0]],
   );
+  const owners = linked.filter((l) => l.role === 'BENEFICIAL_OWNER');
+  const directors = linked.filter((l) => l.role === 'DIRECTOR');
   await recordAudit(client, {
     action: 'case_party.removed',
     entityType: 'case',
@@ -500,6 +506,7 @@ export async function removeCaseParty(
       partyId: rows[0].party_id,
       role: rows[0].role,
       beneficialOwnerLinks: owners.map((o) => o.id),
+      ...(directors.length ? { directorLinks: directors.map((d) => d.id) } : {}),
     },
   });
   await refreshCompliance(client, ids[1]!);

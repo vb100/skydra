@@ -50,6 +50,8 @@ export type CaseParty = {
   reliance: { entityName: string; entityCode?: string | null } | null;
   cddStatus: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
   beneficialOwnerOf: string | null;
+  /** For a director: the case party of the legal entity managed. */
+  directorOf: string | null;
   kyc: {
     purpose?: string | null;
     sourceOfFunds?: string | null;
@@ -210,6 +212,8 @@ export type OwnershipView = {
     declared: boolean;
     linked: boolean;
   }[];
+  /** Null without a manager; true when linked as director or as a linked UBO. */
+  managerLinked: boolean | null;
   incomplete: boolean;
   discrepancy: boolean;
   resolution: {

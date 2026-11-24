@@ -52,6 +52,7 @@ export function OwnershipPanel(props: {
               {t('ownership.manager', {
                 name: `${o.company.manager.firstName} ${o.company.manager.lastName}`,
               })}
+              {o.managerLinked && ` · ${t('ownership.linked')}`}
             </span>
           )}
           <span className="muted">
@@ -104,7 +105,7 @@ export function OwnershipPanel(props: {
             ))}
 
           <div className="actions">
-            {o.ubos.some((u) => !u.linked) && (
+            {(o.ubos.some((u) => !u.linked) || o.managerLinked === false) && (
               <button
                 type="button"
                 className="primary"

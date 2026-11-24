@@ -7,7 +7,7 @@ import { refreshCompliance } from '../cases/cases';
 import { findOrCreateParty, maskPersonalCode, type PartyKeys } from '../cases/parties';
 import { type TenantContext, withTenant } from '../database/tenant';
 import { NotFoundError, RuleError, translateDbError } from '../domain-errors';
-import { analyseOwnership, type OwnershipAnalysis, type UboCandidate } from './analysis';
+import { analyseOwnership, type OwnershipAnalysis, personKey, type UboCandidate } from './analysis';
 import type { CompanyRecord, RegistryPerson, RegistryProvider } from './registry-provider';
 
 /** At most this many companies are fetched for one ownership chain. */
@@ -30,6 +30,8 @@ export type OwnershipView = {
   };
   analysis: Pick<OwnershipAnalysis, 'thresholdPercent' | 'tree' | 'depth' | 'issues'>;
   ubos: (Omit<StoredUbo, 'person'> & { person: PublicPerson; linked: boolean })[];
+  /** Null without a manager; true when the manager is linked as director or as a linked UBO. */
+  managerLinked: boolean | null;
   incomplete: boolean;
   discrepancy: boolean;
   resolution: {
@@ -221,12 +223,22 @@ async function latestSnapshots(client: PoolClient, caseId: string): Promise<Snap
 }
 
 /** The latest registry data of each legal entity in the case, with UBO link status. */
-export async function listOwnership(client: PoolClient, caseId: string): Promise<OwnershipView[]> {
+export async function listOwnership(
+  client: PoolClient,
+  keys: PartyKeys,
+  organizationId: string,
+  caseId: string,
+): Promise<OwnershipView[]> {
   const id = z.uuid().parse(caseId);
   const snapshots = await latestSnapshots(client, id);
-  const { rows: links } = await client.query<{ beneficial_owner_of: string; ubo_key: string }>(
-    `SELECT beneficial_owner_of, ubo_key FROM case_parties
-      WHERE case_id = $1 AND removed_at IS NULL AND beneficial_owner_of IS NOT NULL`,
+  const { rows: links } = await client.query<{
+    beneficial_owner_of: string | null;
+    director_of: string | null;
+    ubo_key: string;
+  }>(
+    `SELECT beneficial_owner_of, director_of, ubo_key FROM case_parties
+      WHERE case_id = $1 AND removed_at IS NULL
+        AND (beneficial_owner_of IS NOT NULL OR director_of IS NOT NULL)`,
     [id],
   );
   const { rows: resolutions } = await client.query<{
@@ -249,6 +261,13 @@ export async function listOwnership(client: PoolClient, caseId: string): Promise
     // Shareholders and declared owners are shown through the analysis, not repeated here.
     const { code, country, name, legalForm, address, manager, references } = s.company;
     const company = { code, country, name, legalForm, address, references };
+    const managerKey = manager ? registryKey(keys, organizationId, manager) : null;
+    const linkedAs = (key: string) =>
+      links.some(
+        (l) =>
+          l.ubo_key === key &&
+          (l.beneficial_owner_of === s.case_party_id || l.director_of === s.case_party_id),
+      );
     return publicView({
       snapshotId: s.id,
       casePartyId: s.case_party_id,
@@ -259,6 +278,7 @@ export async function listOwnership(client: PoolClient, caseId: string): Promise
         ...u,
         linked: links.some((l) => l.beneficial_owner_of === s.case_party_id && l.ubo_key === u.key),
       })),
+      managerLinked: managerKey ? linkedAs(managerKey) : null,
       incomplete: s.incomplete,
       discrepancy: s.discrepancy,
       resolution: r
@@ -290,10 +310,23 @@ async function latestFor(client: PoolClient, caseId: string, snapshotId: string)
   return { id, snapshot };
 }
 
+/** The keyed identity of a stored registry person, as UBO keys are made at fetch time. */
+function registryKey(keys: PartyKeys, organizationId: string, p: StoredPerson): string {
+  const personalCode = p.personalCodeEncrypted
+    ? decrypt(keys.personalCodeEncryption, p.personalCodeEncrypted)
+    : null;
+  return personalCodeIndex(
+    keys.personalCodeIndex,
+    organizationId,
+    personKey({ ...p, personalCode }),
+  );
+}
+
 /**
  * Adds every identified beneficial owner not yet linked as a party of the case (role
- * BENEFICIAL_OWNER), reusing an existing party with the same personal code. They are then
- * screened like any other party.
+ * BENEFICIAL_OWNER) and the company's manager (role DIRECTOR, unless the manager is one of the
+ * beneficial owners), reusing an existing party with the same personal code. They are then
+ * screened like any other party; the ids of the new links are returned for that.
  */
 export async function linkBeneficialOwners(
   client: PoolClient,
@@ -301,14 +334,14 @@ export async function linkBeneficialOwners(
   organizationId: string,
   caseId: string,
   snapshotId: string,
-): Promise<{ linked: number; complianceStatus: string }> {
+): Promise<{ linked: number; casePartyIds: string[]; complianceStatus: string }> {
   const { id, snapshot } = await latestFor(client, caseId, snapshotId);
   const { rows: existing } = await client.query<{ ubo_key: string }>(
     `SELECT ubo_key FROM case_parties
       WHERE beneficial_owner_of = $1 AND removed_at IS NULL`,
     [snapshot.case_party_id],
   );
-  let linked = 0;
+  const casePartyIds: string[] = [];
   for (const u of snapshot.ubos) {
     if (existing.some((e) => e.ubo_key === u.key)) continue;
     const p = u.person;
@@ -345,12 +378,62 @@ export async function linkBeneficialOwners(
           snapshotId: snapshot.id,
         },
       });
-      linked += 1;
+      casePartyIds.push(rows[0]!.id);
     } catch (error) {
       translateDbError(error, 'this person is already linked as a beneficial owner');
     }
   }
-  return { linked, complianceStatus: await refreshCompliance(client, id) };
+
+  const manager = snapshot.company.manager;
+  const managerKey = manager && registryKey(keys, organizationId, manager);
+  if (manager && managerKey && !snapshot.ubos.some((u) => u.key === managerKey)) {
+    const { rowCount } = await client.query(
+      `SELECT 1 FROM case_parties
+        WHERE director_of = $1 AND ubo_key = $2 AND removed_at IS NULL`,
+      [snapshot.case_party_id, managerKey],
+    );
+    if (!rowCount) {
+      const { partyId } = await findOrCreateParty(client, keys, organizationId, {
+        partyType: 'NATURAL',
+        firstName: manager.firstName,
+        lastName: manager.lastName,
+        birthDate: manager.birthDate,
+        personalCode: manager.personalCodeEncrypted
+          ? decrypt(keys.personalCodeEncryption, manager.personalCodeEncrypted)
+          : null,
+        citizenships: manager.citizenship ? [manager.citizenship] : [],
+        residenceCountry: null,
+      });
+      try {
+        const { rows } = await client.query<{ id: string }>(
+          `INSERT INTO case_parties (case_id, party_id, role, is_our_client, director_of, ubo_key)
+           VALUES ($1, $2, 'DIRECTOR', false, $3, $4)
+           RETURNING id`,
+          [id, partyId, snapshot.case_party_id, managerKey],
+        );
+        await recordAudit(client, {
+          action: 'case_party.added',
+          entityType: 'case',
+          entityId: id,
+          after: {
+            casePartyId: rows[0]!.id,
+            partyId,
+            role: 'DIRECTOR',
+            directorOf: snapshot.case_party_id,
+            snapshotId: snapshot.id,
+          },
+        });
+        casePartyIds.push(rows[0]!.id);
+      } catch (error) {
+        translateDbError(error, 'this person is already linked as the director');
+      }
+    }
+  }
+  return {
+    linked: casePartyIds.length,
+    casePartyIds,
+    complianceStatus: await refreshCompliance(client, id),
+  };
 }
 
 /** Records how a UBO discrepancy or an incomplete chain was resolved, with evidence. */

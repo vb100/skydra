@@ -26,7 +26,8 @@ import {
   type ScreeningProvider,
   UnavailableScreeningProvider,
 } from './provider';
-import { listScreenings, reviewMatch, runScreening } from './screening';
+import { screeningStatus } from '@skydra/shared';
+import { autoScreen, listScreenings, reviewMatch, runScreening } from './screening';
 
 const keys = deriveKeys(LOCAL_DEVELOPMENT_KEY);
 const mock = new MockScreeningProvider();
@@ -214,6 +215,9 @@ describe('screening', () => {
       }),
     );
     expect(blocked.complianceStatus).toBe('BLOCKED');
+    const colour = async (caseId: string) =>
+      screeningStatus(await as(broker, (c) => listScreenings(c, caseId))).status;
+    expect(await colour(sanctioned.caseId)).toBe('RED');
 
     const pep = await caseWith('Ona Politikė');
     await completeCdd(pep.caseId, pep.casePartyId);
@@ -226,6 +230,39 @@ describe('screening', () => {
       }),
     );
     expect(confirmed.complianceStatus).toBe('REVIEW_REQUIRED');
+    expect(await colour(pep.caseId)).toBe('ORANGE');
+    // The enhanced-due-diligence approval is what the case waits for.
+    const waiting = (await as(broker, (c) => getCase(c, keys, pep.caseId))).complianceStatus;
+    expect(waiting).toBe('REVIEW_REQUIRED');
+  });
+
+  it('screens automatically: new parties at once, nothing where AML does not apply', async () => {
+    const { caseId, casePartyId } = await caseWith('Aurelija Automatinė');
+    expect(await as(broker, (c) => listScreenings(c, caseId))).toEqual([]);
+    expect(await autoScreen(app, broker, mock, caseId, [casePartyId])).toBe('SCREENED');
+    const [check] = await as(broker, (c) => listScreenings(c, caseId));
+    expect(check).toMatchObject({ casePartyId, status: 'COMPLETED', provider: 'MOCK' });
+
+    const { id: lease } = await as(broker, (c) =>
+      createCase(c, actor(broker), { ...SALE, transactionType: 'RENT', monthlyRent: 900 }),
+    );
+    expect(await autoScreen(app, broker, mock, lease)).toBe('SKIPPED');
+
+    // A provider outage is still on record as a failed check, never as "no matches".
+    const down: ScreeningProvider = {
+      mode: 'OPENSANCTIONS',
+      screen: () => Promise.reject(new ProviderError('OpenSanctions: timeout', [])),
+    };
+    expect(await autoScreen(app, broker, down, caseId, [casePartyId])).toBe('SCREENED');
+    const [latest] = await as(broker, (c) => listScreenings(c, caseId));
+    expect(latest).toMatchObject({ status: 'FAILED' });
+    expect(screeningStatus(await as(broker, (c) => listScreenings(c, caseId)))).toEqual({
+      status: 'GREEN',
+      lastAttemptFailed: true,
+    });
+
+    // Another broker's case is not screened.
+    expect(await autoScreen(app, colleague, mock, caseId, [casePartyId])).toBe('SKIPPED');
   });
 
   it('removing the party recomputes the status', async () => {

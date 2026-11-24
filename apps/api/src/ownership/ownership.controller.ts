@@ -14,6 +14,8 @@ import type { AuthDeps } from '../auth/auth.service';
 import { withTenant } from '../database/tenant';
 import { CurrentPrincipal, OrganizationGuard, SessionGuard } from '../http/session';
 import { fetchOwnership, linkBeneficialOwners, listOwnership, resolveOwnership } from './ownership';
+import { SCREENING_PROVIDER, type ScreeningProvider } from '../screening/provider';
+import { autoScreen } from '../screening/screening';
 import { REGISTRY_PROVIDER, type RegistryProvider } from './registry-provider';
 
 /** Registry data, ownership and beneficial owners of the legal entities in a case. */
@@ -23,6 +25,7 @@ export class OwnershipController {
   constructor(
     @Inject(AUTH_DEPS) private readonly deps: AuthDeps,
     @Inject(REGISTRY_PROVIDER) private readonly registry: RegistryProvider,
+    @Inject(SCREENING_PROVIDER) private readonly screening: ScreeningProvider,
   ) {}
 
   private context(principal: Principal) {
@@ -37,7 +40,9 @@ export class OwnershipController {
 
   @Get('ownership')
   list(@CurrentPrincipal() principal: Principal, @Param('id') id: string) {
-    return this.run(principal, (c) => listOwnership(c, id));
+    return this.run(principal, (c) =>
+      listOwnership(c, this.deps.keys, principal.organizationId, id),
+    );
   }
 
   @Post('parties/:casePartyId/ownership')
@@ -56,15 +61,26 @@ export class OwnershipController {
     );
   }
 
+  /** Links the beneficial owners and the manager, then screens each new link at once. */
   @Post('ownership/:snapshotId/link-owners')
-  link(
+  async link(
     @CurrentPrincipal() principal: Principal,
     @Param('id') id: string,
     @Param('snapshotId') snapshotId: string,
   ) {
-    return this.run(principal, (c) =>
+    const linked = await this.run(principal, (c) =>
       linkBeneficialOwners(c, this.deps.keys, principal.organizationId, id, snapshotId),
     );
+    const screening = linked.casePartyIds.length
+      ? await autoScreen(
+          this.deps.pool,
+          this.context(principal),
+          this.screening,
+          id,
+          linked.casePartyIds,
+        )
+      : 'SKIPPED';
+    return { ...linked, screening };
   }
 
   @Post('ownership/:snapshotId/resolve')

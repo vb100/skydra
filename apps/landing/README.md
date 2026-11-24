@@ -34,9 +34,9 @@ Pagrindinė versija nuo šiol yra šioje repozitorijoje. Klientas pakeitimus siu
 
 ## Privatumas, slapukai ir Google Analytics
 
-- **Privatumo politika:** `privatumas.html`. Geltonai pažymėtas vietas (`.todo`) turi užpildyti klientas: valdytojo duomenys, saugojimo terminai, FormSubmit sąlygos. Prieš skelbiant tekstą turi peržiūrėti teisininkas.
+- **Privatumo politika:** `privatumas.html`. Valdytojo duomenys įrašyti (MB „Skydra“). Geltonai pažymėtos (`.todo`) vietos laukia kliento: saugojimo terminai ir FormSubmit sąlygos. Prieš skelbiant tekstą turi peržiūrėti teisininkas.
 - **Slapukų juosta:** [vanilla-cookieconsent](https://github.com/orestbida/cookieconsent) 3.3.0 (MIT), laikoma `vendor/cookieconsent/`. Nustatymai ir tekstai lietuviškai yra `js/consent.js`, išvaizda `css/consent.css`. Mygtukai „Priimti“ ir „Atmesti“ vienodo svorio. Pasirinkimas saugomas `cc_cookie` slapuke 6 mėn.
-- **Google Analytics 4:** įrašomas į `js/consent.js` (`GA_MEASUREMENT_ID = 'G-…'`).
+- **Google Analytics 4:** `G-1WW3YQ2BS2` (srautas „Skydra svetaine“), įrašytas `js/consent.js`. Google Tag Manager (`GTM-…`) sąmoningai nenaudojamas: jis būtų įkeliamas prieš sutikimą ir leistų pridėti skriptus, apeinant sutikimą ir CSP.
   - Kol ID tuščias, juosta nerodoma ir „Slapukų nustatymai“ nuorodos paslėptos, nes nebūtinų slapukų tada nėra.
   - `gtag.js` atsisiunčiamas tik po sutikimo su „Analitika“. Google signalai ir reklamos personalizavimas išjungti, atšaukus sutikimą `_ga*` slapukai ištrinami.
   - Juosta nerodoma robotams (`hideFromBots`), todėl automatiniuose testuose ją reikia įjungti.

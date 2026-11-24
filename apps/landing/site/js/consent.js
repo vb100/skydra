@@ -4,7 +4,7 @@
 // "Analitika" category, so nothing reaches Google before consent. Ads signals stay off.
 // While GA_MEASUREMENT_ID is empty the site sets no optional cookies, so no banner is shown.
 (function () {
-  var GA_MEASUREMENT_ID = ''; // e.g. 'G-XXXXXXXXXX', from the client's GA4 property
+  var GA_MEASUREMENT_ID = 'G-1WW3YQ2BS2'; // GA4 web stream "Skydra svetaine" (https://skydra.eu)
 
   // The demonstration copy (Cloud Run service skydra-landing-preview) shows the banner exactly as
   // it will work with GA4, but never loads anything after consent.
@@ -113,7 +113,7 @@
               {
                 title: 'Analitiniai slapukai',
                 description:
-                  'Google Analytics 4 renka apibendrintą lankomumo statistiką: kurie puslapiai lankomi, iš kokio įrenginio ir apytikslės vietovės. Reklamos ir asmeninimo funkcijos išjungtos.',
+                  'Google Analytics 4 renka apibendrintą lankomumo statistiką: kurie puslapiai lankomi, kaip jais naudojamasi (slinkimas, paspaudimai ant nuorodų, formų naudojimas), iš kokio įrenginio ir apytikslės vietovės. Reklamos ir asmeninimo funkcijos išjungtos.',
                 linkedCategory: 'analytics',
                 cookieTable: {
                   headers: { name: 'Slapukas', domain: 'Paskirtis', exp: 'Galioja' },

@@ -16,7 +16,7 @@
 1. **AML pareigos nepriklauso nuo plano.** Planai riboja tik organizacijos valdymo funkcijas. Privaloma patikra niekada neblokuojama dėl limito.
 2. **Taisyklės yra duomenys, ne kodas.** Rizikos taisyklės, tvirtinimo matrica, peržiūrų intervalai, sutapimo slenksčiai, UBO ribos ir saugojimo terminai versijuojami ir susiejami su šalimi bei galiojimo laikotarpiu.
 3. **Teisinis režimas fiksuojamas kiekviename įraše.** Kiekviena patikra ir kiekvienas vertinimas žino, pagal kurį režimą atliktas: PPTFPĮ iki 2027-07-10, AMLR nuo tos dienos.
-4. **Tiekėjai keičiami be eigos pakeitimų.** Patikros, tapatybės patikra, registrai ir dokumentų ištraukimas veikia per vidines sąsajas su adapteriais: `MOCK`, `ONDATO`, `MANUAL` ir ateityje `SKYDRA_SEARCH`.
+4. **Tiekėjai keičiami be eigos pakeitimų.** Patikros, tapatybės patikra, registrai ir dokumentų ištraukimas veikia per vidines sąsajas su adapteriais: `MOCK`, `MANUAL` ir tikrais tiekėjais – `OPENSANCTIONS` (sankcijos, PEP), `DOKOBIT` (tapatybė), `REGISTRU_CENTRAS` (registrai), vėliau žiniasklaidos paieška (Brave, GDELT).
 5. **Imitacija produkcijoje neįmanoma.** Jei `APP_ENV=prod`, o kuris nors adapteris yra `MOCK`, aplikacija nepasileidžia.
 6. **Istorija neperrašoma.** Audit trail, sprendimai ir užbaigti vertinimai tik papildomi. Pataisa visada yra naujas įrašas su nuoroda į ankstesnį.
 7. **Duomenys tik ES.** Produkcija veikia europe-north1 regione, atsarginės kopijos irgi lieka ES.
@@ -89,7 +89,7 @@ Visos aplinkos yra viename GCP projekte: **ESV project** (`melodic-casing-501208
 ┌───────▼───────┐   ┌─────────▼──────┐   ┌───────▼────────┐
 │ Cloud SQL     │   │ Cloud Storage  │   │ Išoriniai      │
 │ PostgreSQL 17 │   │ dokumentai,    │   │ tiekėjai       │
-│ (private IP)  │   │ eksportai      │   │ (Ondato vėliau)│
+│ (private IP)  │   │ eksportai      │   │ (OpenSanctions)│
 └───────────────┘   └────────────────┘   └────────────────┘
         Secret Manager · Cloud Logging/Monitoring · BigQuery (analitika)
 ```
@@ -208,7 +208,7 @@ skydra/
 | D3 | Viskas viename GCP projekte „ESV project“, regionas europe-north1, ES duomenų rezidencija | vartotojas, Q47 |
 | D4 | Trys aplinkos: lokali, demo (kartu ir testinė), prod | vartotojas |
 | D5 | MVP be el. pašto; nuorodas generuoja administratorius | vartotojas |
-| D6 | Nuotolinė tapatybės patikra – imitacija, kol nėra Ondato | vartotojas |
+| D6 | Nuotolinė tapatybės patikra – imitacija, kol nėra Dokobit sutarties | vartotojas |
 | D7 | MVP sąsaja tik LT, i18n nuo pradžių | vartotojas, Q10 |
 | D8 | Planai Individual / Agency / Agency Pro; AML funkcijos visuose planuose | klientas |
 | D9 | Rizikos modelis pagal veiksnių lygius be balų; centralizuotas LT-RISK-01; organizacijų taisyklės – 2 etapas | Q35, Q36, papildomi atsakymai |
@@ -216,6 +216,7 @@ skydra/
 | D11 | MVP eksportas: PDF ir ZIP; Word – ne | Q42, Q44 |
 | D12 | Automatinis duomenų trynimas išjungtas, kol nėra patvirtinto saugojimo grafiko | Q45 |
 | D13 | `app.skydra.eu` (prod), `demo.skydra.eu`; pagrindinis puslapis lieka Hostinger | Q50 |
+| D14 | Ondato pakeistas: sankcijos ir PEP – OpenSanctions, žiniasklaida – Brave ir GDELT, tapatybė – Dokobit, registrai – Registrų centras | klientas, 2026-11-24 specifikacija |
 
 ## 13. Atviri klausimai
 
@@ -223,7 +224,8 @@ skydra/
 |---|---|---|
 | GCP apmokėjimo įjungimas | klientas | diegimą į demo ir prod, seno turinio išvalymą |
 | Papildomos IAM teisės: Cloud SQL, Pub/Sub, Scheduler, Monitoring, Logging konfigūravimas, Compute (LB / Cloud Armor), KMS, Workload Identity Pools | klientas / vartotojas | Terraform paleidimą |
-| Ondato sutartis, sandbox, Lietuvos registrų duomenų formatas | klientas | Ondato adapterį, MVP priėmimą |
+| OpenSanctions licencija rodyti rezultatus brokeriams; API raktas | klientas | OpenSanctions naudojimą gamyboje |
+| Dokobit ir Registrų centro sutartys, duomenų formatas | klientas | tapatybės ir registrų adapterius |
 | LT-RISK-01 veiksnių lentelė | klientas (AML konsultantas) | rizikos taisyklių turinį (ne variklį) |
 | Užpildyti JADIS ir JANGIS išrašai, JANGIS išrašų struktūros | klientas | ištraukimo testus |
 | Sutikimas naudoti DI paslaugą (ES regione) kaip subtvarkytoją | klientas | DI pagrįstą dokumentų ištraukimą |

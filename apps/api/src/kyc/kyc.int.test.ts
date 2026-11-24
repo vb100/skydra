@@ -226,7 +226,7 @@ describe('KYC completion', () => {
         as(broker, (c) =>
           simulateRemoteVerification(
             c,
-            new UnavailableIdentityProvider('ONDATO'),
+            new UnavailableIdentityProvider('DOKOBIT'),
             caseId,
             started.id,
             {
@@ -262,7 +262,7 @@ describe('KYC completion', () => {
       expect(await failing(caseId)).toEqual(['CDD_COMPLETED', 'RISK_ASSESSED']);
 
       await expect(
-        startRemoteVerification(app, broker, new UnavailableIdentityProvider('ONDATO'), caseId, {
+        startRemoteVerification(app, broker, new UnavailableIdentityProvider('DOKOBIT'), caseId, {
           casePartyId,
         }),
       ).rejects.toBeInstanceOf(RuleError);

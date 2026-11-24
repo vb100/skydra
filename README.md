@@ -149,9 +149,12 @@ docker build -t skydra:local .   # lokaliai; Cloud Run atvaizdą kompiliuoja inf
 
 - **Tiekėjai:**
   - Visi tiekėjai jungiami per `ScreeningProvider` sąsają (`SCREENING_PROVIDER`).
-  - `MOCK` (lokaliai ir demo) imituoja rezultatus. Pavardė su „Sankcij“ grąžina sankcijas, „Politik“ – PEP, „Artimas“ – PEP artimą asmenį, „Skandal“ – neigiamą informaciją; kitais atvejais sutapimų nėra.
-  - Prod aplinkoje `MOCK` uždraustas. `ONDATO` ir `MANUAL` kol kas aiškiai atsisako veikti.
-- **Ką siunčiame tiekėjui:** vardą, gimimo datą ir šalis. Asmens kodo – niekada.
+  - `MOCK` (lokaliai ir demo) imituoja rezultatus. Pavardė su „Sankcij“ grąžina sankcijas, „Politik“ – PEP, „Artimas“ – PEP artimą asmenį, „Skandal“ – neigiamą informaciją, „Panaš“ – silpną PEP atitikmenį; kitais atvejais sutapimų nėra.
+  - `OPENSANCTIONS`: tikra sankcijų, PEP ir kitų rizikos sąrašų patikra per OpenSanctions API (`docs/integrations/opensanctions.md`). Reikia `OPENSANCTIONS_API_KEY`.
+  - Prod aplinkoje `MOCK` uždraustas. `MANUAL` kol kas aiškiai atsisako veikti.
+- **Ką siunčiame tiekėjui:** fiziniam asmeniui vardą, gimimo datą ir pilietybę; įmonei pavadinimą, įmonės kodą ir šalį. Asmens kodo – niekada.
+- **Stiprūs ir silpni atitikmenys:** atitikmuo, kurio balas siekia slenkstį (`OPENSANCTIONS_THRESHOLD`, numatytasis 0,7), yra stiprus ir turi būti įvertintas. Silpni rodomi suskleisti ir bylos nestabdo.
+- **Užklausų žurnalas:** kiekvienas tiekėjo bandymas (užklausa, atsakymas, HTTP kodas, SHA-256, trukmė) saugomas `screening_requests` lentelėje, kurią programa gali tik papildyti. Nepavykusi užklausa kartojama iki 3 kartų (serverio klaida, užklausų riba, laiko riba 15 s).
 - **Patikros eiga:**
   - Tiekėjas kviečiamas ne DB transakcijos metu, o rezultatai išsaugomi vienoje transakcijoje kartu su auditu.
   - Nepavykusi patikra irgi užfiksuojama (`FAILED`).
@@ -176,7 +179,7 @@ docker build -t skydra:local .   # lokaliai; Cloud Run atvaizdą kompiliuoja inf
   - nėra neišspręstų eskalavimų.
 - **Tapatybės patikra:**
   - **gyvai:** brokeris įveda dokumento duomenis, dokumento numeris šifruojamas, pasibaigęs dokumentas atmetamas;
-  - **nuotoliu:** per tiekėją. `MOCK` leidžia imituoti rezultatą „patvirtinta“ arba „atmesta“; Ondato bus prijungtas vėliau.
+  - **nuotoliu:** per tiekėją. `MOCK` leidžia imituoti rezultatą „patvirtinta“ arba „atmesta“; Dokobit (Smart-ID, Mobile-ID) bus prijungtas pasirašius sutartį.
   - Užbaigta patikra nebekeičiama.
 - **CDD užbaigtu pažymėti negalima,** kol neužpildytas sandorio tikslas ir pareiškimai (veikia savo vardu, PEP) ir kol nepatikrinta fizinio asmens tapatybė.
 - **Pereiti į sutarties ar užbaigimo etapą** galima tik tada, kai atitikties būsena yra `COMPLETED` (taikoma, kai AML procedūros galioja).

@@ -32,10 +32,57 @@ describe('loadConfig', () => {
     const config = loadConfig({
       ...base,
       APP_ENV: 'prod',
-      SCREENING_PROVIDER: 'ONDATO',
+      SCREENING_PROVIDER: 'OPENSANCTIONS',
+      OPENSANCTIONS_API_KEY: 'test-key',
       IDENTITY_PROVIDER: 'MANUAL',
     });
     expect(usesSimulatedProviders(config)).toBe(false);
+    expect(config.openSanctions).toEqual({
+      apiKey: 'test-key',
+      baseUrl: 'https://api.opensanctions.org',
+      threshold: 0.7,
+    });
+  });
+
+  it('requires the OpenSanctions key only when OpenSanctions screens', () => {
+    expect(() => loadConfig({ ...base, SCREENING_PROVIDER: 'OPENSANCTIONS' })).toThrow(
+      /OPENSANCTIONS_API_KEY/,
+    );
+    expect(loadConfig(base).openSanctions).toBeNull();
+    expect(
+      loadConfig({
+        ...base,
+        SCREENING_PROVIDER: 'OPENSANCTIONS',
+        OPENSANCTIONS_API_KEY: 'k',
+        OPENSANCTIONS_THRESHOLD: '0.8',
+        OPENSANCTIONS_URL: 'https://example.test/',
+      }).openSanctions,
+    ).toMatchObject({ threshold: 0.8, baseUrl: 'https://example.test' });
+    expect(() =>
+      loadConfig({
+        ...base,
+        SCREENING_PROVIDER: 'OPENSANCTIONS',
+        OPENSANCTIONS_API_KEY: 'k',
+        OPENSANCTIONS_THRESHOLD: '0.2',
+      }),
+    ).toThrow(/OPENSANCTIONS_THRESHOLD/);
+  });
+
+  it('accepts each provider code only for its own integration', () => {
+    expect(() => loadConfig({ ...base, SCREENING_PROVIDER: 'ONDATO' })).toThrow(
+      /SCREENING_PROVIDER/,
+    );
+    expect(() => loadConfig({ ...base, IDENTITY_PROVIDER: 'OPENSANCTIONS' })).toThrow(
+      /IDENTITY_PROVIDER/,
+    );
+    expect(
+      loadConfig({ ...base, IDENTITY_PROVIDER: 'DOKOBIT', REGISTRY_PROVIDER: 'REGISTRU_CENTRAS' })
+        .providers,
+    ).toEqual({
+      screening: 'MOCK',
+      identity: 'DOKOBIT',
+      registry: 'REGISTRU_CENTRAS',
+    });
   });
 
   it('rejects unknown values with a readable message', () => {

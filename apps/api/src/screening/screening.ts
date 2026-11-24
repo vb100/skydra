@@ -5,7 +5,13 @@ import { recordAudit } from '../audit/audit';
 import { refreshCompliance } from '../cases/cases';
 import { type TenantContext, withTenant } from '../database/tenant';
 import { NotFoundError, RuleError, translateDbError } from '../domain-errors';
-import type { ProviderResult, ScreeningProvider, ScreeningSubject } from './provider';
+import {
+  type ProviderExchange,
+  ProviderError,
+  type ProviderResult,
+  type ScreeningProvider,
+  type ScreeningSubject,
+} from './provider';
 
 export type ScreeningMatch = {
   id: string;
@@ -13,6 +19,7 @@ export type ScreeningMatch = {
   name: string;
   score: string | null;
   categories: string[];
+  strength: 'STRONG' | 'WEAK';
   details: Record<string, unknown>;
   reviewStatus: 'OPEN' | 'FALSE_POSITIVE' | 'TRUE_POSITIVE';
   reviewJustification: string | null;
@@ -57,10 +64,11 @@ async function targets(client: PoolClient, caseId: string, casePartyId?: string)
     citizenships: string[];
     residence_country: string | null;
     registration_country: string | null;
+    company_code: string | null;
   }>(
     `SELECT cp.id AS case_party_id, p.id AS party_id, p.party_type, p.display_name,
             to_char(p.birth_date, 'YYYY-MM-DD') AS birth_date, p.citizenships,
-            p.residence_country, p.registration_country
+            p.residence_country, p.registration_country, p.company_code
        FROM case_parties cp JOIN parties p ON p.id = cp.party_id
       WHERE cp.case_id = $1 AND cp.removed_at IS NULL AND ($2::uuid IS NULL OR cp.id = $2)
       ORDER BY cp.added_at`,
@@ -85,6 +93,7 @@ async function targets(client: PoolClient, caseId: string, casePartyId?: string)
           ),
         ),
       ],
+      ...(r.party_type === 'LEGAL' && r.company_code ? { registrationNumber: r.company_code } : {}),
     },
   }));
 }
@@ -106,21 +115,32 @@ export async function runScreening(
   const { casePartyId } = RunScreeningInput.parse(input);
   const toScreen = await withTenant(pool, ctx, (c) => targets(c, id, casePartyId));
 
-  const outcomes: { target: Target; result?: ProviderResult; error?: string }[] = [];
+  const outcomes: {
+    target: Target;
+    result?: ProviderResult;
+    error?: string;
+    exchanges: ProviderExchange[];
+  }[] = [];
   for (const target of toScreen) {
     try {
-      outcomes.push({ target, result: await provider.screen(target.subject) });
+      const result = await provider.screen(target.subject);
+      outcomes.push({ target, result, exchanges: result.exchanges ?? [] });
     } catch (error) {
       if (error instanceof RuleError) throw error;
-      outcomes.push({ target, error: 'provider_error' });
-      console.error('screening provider failed', error);
+      // The failed attempts are evidence too: the check is FAILED, never "no matches".
+      outcomes.push({
+        target,
+        error: 'provider_error',
+        exchanges: error instanceof ProviderError ? error.exchanges : [],
+      });
+      console.error('screening provider failed', error instanceof Error ? error.message : error);
     }
   }
 
   return withTenant(pool, ctx, async (client) => {
     const checkIds: string[] = [];
     try {
-      for (const { target, result, error } of outcomes) {
+      for (const { target, result, error, exchanges } of outcomes) {
         const { rows } = await client.query<{ id: string }>(
           `INSERT INTO screening_checks (case_id, case_party_id, party_id, provider, status,
                                          subject, provider_reference)
@@ -136,11 +156,39 @@ export async function runScreening(
           ],
         );
         const checkId = rows[0]!.id;
+        for (const x of exchanges)
+          await client.query(
+            `INSERT INTO screening_requests (check_id, provider, attempt, request, response,
+                                             http_status, response_sha256, error, duration_ms,
+                                             sent_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            [
+              checkId,
+              provider.mode,
+              x.attempt,
+              JSON.stringify(x.request),
+              x.response === null ? null : JSON.stringify(x.response),
+              x.httpStatus,
+              x.responseSha256,
+              x.error,
+              x.durationMs,
+              x.sentAt,
+            ],
+          );
         for (const m of result?.matches ?? [])
           await client.query(
-            `INSERT INTO screening_matches (check_id, external_id, name, score, categories, details)
-             VALUES ($1, $2, $3, $4, $5, $6)`,
-            [checkId, m.externalId, m.name, m.score, m.categories, JSON.stringify(m.details)],
+            `INSERT INTO screening_matches (check_id, external_id, name, score, strength,
+                                            categories, details)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+            [
+              checkId,
+              m.externalId,
+              m.name,
+              m.score,
+              m.strength,
+              m.categories,
+              JSON.stringify(m.details),
+            ],
           );
         await client.query(
           `UPDATE screening_checks SET status = $2, match_count = $3, error = $4 WHERE id = $1`,
@@ -158,6 +206,8 @@ export async function runScreening(
             provider: provider.mode,
             status: result ? 'COMPLETED' : 'FAILED',
             matchCount: result?.matches.length ?? null,
+            strongMatches: result?.matches.filter((m) => m.strength === 'STRONG').length ?? null,
+            attempts: exchanges.length,
           },
         });
         checkIds.push(checkId);
@@ -183,11 +233,12 @@ export async function listScreenings(
             coalesce((
               SELECT json_agg(json_build_object(
                        'id', m.id, 'externalId', m.external_id, 'name', m.name,
-                       'score', m.score::text, 'categories', m.categories, 'details', m.details,
+                       'score', m.score::text, 'strength', m.strength,
+                       'categories', m.categories, 'details', m.details,
                        'reviewStatus', m.review_status,
                        'reviewJustification', m.review_justification,
                        'reviewedBy', m.reviewed_by, 'reviewedAt', m.reviewed_at)
-                     ORDER BY m.score DESC NULLS LAST, m.name)
+                     ORDER BY m.strength = 'WEAK', m.score DESC NULLS LAST, m.name)
                 FROM screening_matches m WHERE m.check_id = s.id), '[]'::json) AS matches
        FROM screening_checks s
       WHERE s.case_id = $1

@@ -273,7 +273,9 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
     for (const m of s.matches)
       p(
         `${m.categories.map((x) => label(lt.matchCategories, x)).join(', ')} · ${m.name}` +
-          `${m.score ? ` · ${Number(m.score)} %` : ''} · ${label(lt.screening.reviewStatuses, m.reviewStatus)}` +
+          `${m.score ? ` · ${Number(m.score)} %` : ''}` +
+          `${m.strength === 'WEAK' ? ' · silpnas (žemiau slenksčio)' : ''}` +
+          ` · ${label(lt.screening.reviewStatuses, m.reviewStatus)}` +
           `${m.reviewJustification ? ` – ${m.reviewJustification}` : ''}`,
         { indent: 14 },
       );

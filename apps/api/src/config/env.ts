@@ -1,4 +1,9 @@
-import { AppEnv, ProviderMode } from '@skydra/shared';
+import {
+  AppEnv,
+  IdentityProviderMode,
+  RegistryProviderMode,
+  ScreeningProviderMode,
+} from '@skydra/shared';
 import { z } from 'zod';
 
 const EnvSchema = z.object({
@@ -13,9 +18,14 @@ const EnvSchema = z.object({
     .refine((v) => Buffer.from(v, 'base64').length === 32, 'must be 32 bytes, base64-encoded'),
   // Built web app to serve from the same origin (the container image); unset in development.
   WEB_DIST_DIR: z.string().min(1).optional(),
-  SCREENING_PROVIDER: ProviderMode,
-  IDENTITY_PROVIDER: ProviderMode,
-  REGISTRY_PROVIDER: ProviderMode,
+  SCREENING_PROVIDER: ScreeningProviderMode,
+  IDENTITY_PROVIDER: IdentityProviderMode,
+  REGISTRY_PROVIDER: RegistryProviderMode,
+  // OpenSanctions (screening). The key comes from Secret Manager, never from code.
+  OPENSANCTIONS_API_KEY: z.string().min(1).optional(),
+  OPENSANCTIONS_URL: z.url().default('https://api.opensanctions.org'),
+  // Score (0–1) from which a result counts as a match that must be reviewed; below it, a weak one.
+  OPENSANCTIONS_THRESHOLD: z.coerce.number().min(0.5).max(0.99).default(0.7),
 });
 
 export type AppConfig = {
@@ -26,10 +36,12 @@ export type AppConfig = {
   secretEncryptionKey: string;
   webDistDir: string | null;
   providers: {
-    screening: ProviderMode;
-    identity: ProviderMode;
-    registry: ProviderMode;
+    screening: ScreeningProviderMode;
+    identity: IdentityProviderMode;
+    registry: RegistryProviderMode;
   };
+  /** Set when screening uses OpenSanctions. */
+  openSanctions: { apiKey: string; baseUrl: string; threshold: number } | null;
 };
 
 /** The key published in .env.example for local development. Never acceptable elsewhere. */
@@ -64,7 +76,20 @@ export function loadConfig(source: NodeJS.ProcessEnv): AppConfig {
       identity: e.IDENTITY_PROVIDER,
       registry: e.REGISTRY_PROVIDER,
     },
+    openSanctions: null,
   };
+
+  if (config.providers.screening === 'OPENSANCTIONS') {
+    if (!e.OPENSANCTIONS_API_KEY)
+      throw new ConfigError(
+        'OPENSANCTIONS_API_KEY is required when SCREENING_PROVIDER=OPENSANCTIONS',
+      );
+    config.openSanctions = {
+      apiKey: e.OPENSANCTIONS_API_KEY,
+      baseUrl: e.OPENSANCTIONS_URL.replace(/\/+$/, ''),
+      threshold: e.OPENSANCTIONS_THRESHOLD,
+    };
+  }
 
   if (config.env !== 'local' && config.secretEncryptionKey === LOCAL_DEVELOPMENT_KEY) {
     throw new ConfigError('SECRET_ENCRYPTION_KEY is the public local development key');

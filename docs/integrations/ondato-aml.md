@@ -1,5 +1,7 @@
 # Ondato AML API – integracijos pastabos
 
+> **Istorinis dokumentas.** 2026-11-24 klientas Ondato pakeitė kitais tiekėjais: sankcijos ir PEP – OpenSanctions (`opensanctions.md`), žiniasklaida – Brave ir GDELT, tapatybė – Dokobit, registrai – Registrų centras. Pastabos paliekamos, jei prie Ondato būtų grįžtama.
+
 *Peržiūrėta 2026-10-21. Šaltiniai: [AML Screening API v2](https://ondato.atlassian.net/wiki/spaces/PUB/pages/2128248871/AML+Screening+API+v2), jos subpuslapiai ir vieši OpenAPI aprašai:*
 
 - *screening: `https://sandbox-amlscreening.ondato.com/swagger/v2/swagger.json`*

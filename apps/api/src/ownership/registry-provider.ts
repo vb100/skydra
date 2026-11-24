@@ -35,8 +35,8 @@ export type CompanyRecord = {
 };
 
 /**
- * Company and ownership data. MOCK returns synthetic companies now; Ondato (KYB, JADIS / JANGIS)
- * or direct registry access replace it later without changes to the flow.
+ * Company and ownership data. MOCK returns synthetic companies now; Registrų centras (JAR, JADIS,
+ * JANGIS) replaces it once the contract is signed, without changes to the flow.
  */
 export interface RegistryProvider {
   readonly mode: ProviderMode;

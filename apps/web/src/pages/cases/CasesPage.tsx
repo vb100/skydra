@@ -29,7 +29,7 @@ const fold = (s: string) =>
 
 const compare: Record<SortKey, (a: CaseListItem, b: CaseListItem) => number> = {
   reference: (a, b) => a.reference.localeCompare(b.reference),
-  client: (a, b) => (a.clientName ?? '').localeCompare(b.clientName ?? '', 'lt'),
+  client: (a, b) => (a.clientName ?? '').localeCompare(b.clientName ?? '', 'lt'), // Lithuanian names
   status: (a, b) =>
     STATUS_ORDER.indexOf(a.complianceStatus) - STATUS_ORDER.indexOf(b.complianceStatus),
   risk: (a, b) =>

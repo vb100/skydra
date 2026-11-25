@@ -5,9 +5,11 @@ import {
   Inject,
   Param,
   Post,
+  Query,
   Res,
   UseGuards,
 } from '@nestjs/common';
+import { LOCALES, type Locale } from '@skydra/shared';
 import type { FastifyReply } from 'fastify';
 import { can, type Principal } from '../access/policy';
 import { AUTH_DEPS } from '../auth/auth.module-tokens';
@@ -16,6 +18,9 @@ import { withTenant } from '../database/tenant';
 import { CurrentPrincipal, OrganizationGuard, SessionGuard } from '../http/session';
 import { FILE_STORE, type FileStore } from '../storage/file-store';
 import { exportCase, exportCaseZip, listExports } from './case-report';
+
+/** The report language (client answer Q10): Lithuanian unless English is asked for. */
+const language = (lang?: string): Locale => LOCALES.find((l) => l === lang) ?? 'lt';
 
 /**
  * PDF and ZIP export of a completed case. A POST (with the CSRF header) rather than a download link: each
@@ -44,10 +49,11 @@ export class ExportController {
   async export(
     @CurrentPrincipal() principal: Principal,
     @Param('id') id: string,
+    @Query('lang') lang: string | undefined,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const result = await withTenant(this.deps.pool, this.context(principal), (c) =>
-      exportCase(c, this.deps.keys, id, this.store),
+      exportCase(c, this.deps.keys, id, this.store, language(lang)),
     );
     void reply
       .status(201)
@@ -64,10 +70,11 @@ export class ExportController {
   async exportZip(
     @CurrentPrincipal() principal: Principal,
     @Param('id') id: string,
+    @Query('lang') lang: string | undefined,
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const result = await withTenant(this.deps.pool, this.context(principal), (c) =>
-      exportCaseZip(c, this.deps.keys, this.store, id),
+      exportCaseZip(c, this.deps.keys, this.store, id, language(lang)),
     );
     void reply
       .status(201)

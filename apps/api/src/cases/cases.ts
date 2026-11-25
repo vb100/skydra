@@ -165,7 +165,8 @@ export async function listCases(client: PoolClient): Promise<CaseListItem[]> {
     ]);
 
   return rows.map((r) => {
-    const next = nextStep(byCase.get(r.id) ?? []);
+    // A case closed by a final decision has nothing left to do.
+    const next = r.complianceStatus === 'CLOSED' ? null : nextStep(byCase.get(r.id) ?? []);
     return {
       ...r,
       next: next && {

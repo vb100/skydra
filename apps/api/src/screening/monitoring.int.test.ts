@@ -15,6 +15,7 @@ import { LOCAL_DEVELOPMENT_KEY } from '../config/env';
 import { migrate } from '../database/migrator';
 import { type TenantContext, withTenant } from '../database/tenant';
 import { createTestDatabase, MIGRATIONS_DIR, type TestDatabase } from '../database/test-database';
+import { recordDecision } from '../kyc/decisions';
 import { recordInPersonVerification } from '../kyc/identity';
 import { addMember, updateMember } from '../organization/members';
 import { createOrganization, withPlatform } from '../platform/platform';
@@ -96,7 +97,7 @@ describe('ongoing monitoring', () => {
     return { caseId: id, casePartyId };
   }
 
-  /** Every open strong match ruled out, identity seen, CDD completed, risk assessed. */
+  /** Every open strong match ruled out, identity seen, CDD completed, risk assessed, approved. */
   async function complete(caseId: string, casePartyId: string, ctx = broker) {
     const [latest] = await as(ctx, (c) => listScreenings(c, caseId));
     for (const m of latest!.matches.filter((x) => x.reviewStatus === 'OPEN'))
@@ -121,6 +122,13 @@ describe('ongoing monitoring', () => {
       }),
     );
     await as(ctx, (c) => assessRisk(c, caseId, {}));
+    await as(ctx, (c) =>
+      recordDecision(c, caseId, {
+        decision: 'APPROVE',
+        justification: 'Visi AML reikalavimai įvykdyti',
+        suspiciousIndicators: false,
+      }),
+    );
   }
 
   beforeAll(async () => {

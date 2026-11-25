@@ -41,6 +41,7 @@ export function workBucket(c: WorkCase, viewer: Viewer): WorkBucket | null {
   if (c.escalation === 'OPEN' && viewer.isAmlOfficer) return 'resolve';
   if (viewer.userId !== c.responsibleUserId) return null;
 
+  if (c.complianceStatus === 'CLOSED') return 'done';
   if (!c.next) return c.complianceStatus === 'COMPLETED' ? 'done' : null;
   if (c.escalation === 'REPORTED' || c.next.item === 'APPROVAL_NOT_REJECTED') return 'blocked';
   if (c.escalation === 'OPEN') return 'waiting';

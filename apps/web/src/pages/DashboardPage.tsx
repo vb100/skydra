@@ -26,7 +26,10 @@ export function DashboardPage() {
   const { t } = useTranslation();
   const cases = useCases();
   const all = cases.data ?? [];
-  const open = all.filter((c) => c.complianceStatus !== 'COMPLETED');
+  // Completed or closed by a decline / termination: no longer open.
+  const finished = (c: CaseListItem) =>
+    c.complianceStatus === 'COMPLETED' || c.complianceStatus === 'CLOSED';
+  const open = all.filter((c) => !finished(c));
   const inScope = all.filter((c) => c.amlApplicability !== 'NOT_APPLICABLE_RENT_THRESHOLD');
   const count = (f: (c: CaseListItem) => boolean) => all.filter(f).length;
 
@@ -65,7 +68,7 @@ export function DashboardPage() {
       return {
         userId,
         name,
-        active: theirs.filter((c) => c.complianceStatus !== 'COMPLETED').length,
+        active: theirs.filter((c) => !finished(c)).length,
         action: theirs.filter((c) => workBucket(c, viewer) === 'action').length,
         blocked: theirs.filter((c) => c.complianceStatus === 'BLOCKED').length,
         done: theirs.filter((c) => c.complianceStatus === 'COMPLETED').length,
@@ -76,7 +79,7 @@ export function DashboardPage() {
 
   const now = useNow();
   const oldest = inScope
-    .filter((c) => c.complianceStatus !== 'COMPLETED')
+    .filter((c) => !finished(c))
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
     .slice(0, 5);
   const horizon = new Date(now + 90 * DAY).toISOString();

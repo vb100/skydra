@@ -46,6 +46,8 @@ export const ComplianceStatus = z.enum([
   'REVIEW_REQUIRED',
   'BLOCKED',
   'COMPLETED',
+  /** Declined or terminated by a final decision. */
+  'CLOSED',
 ]);
 export type ComplianceStatus = z.infer<typeof ComplianceStatus>;
 

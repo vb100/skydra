@@ -11,7 +11,14 @@ import { caseLink, useCases } from './useCases';
 
 type SortKey = 'reference' | 'client' | 'status' | 'risk' | 'updated';
 const RISK_ORDER = { HIGH: 0, MEDIUM: 1, LOW: 2 } as const;
-const STATUS_ORDER = ['BLOCKED', 'REVIEW_REQUIRED', 'IN_PROGRESS', 'NOT_STARTED', 'COMPLETED'];
+const STATUS_ORDER = [
+  'BLOCKED',
+  'REVIEW_REQUIRED',
+  'IN_PROGRESS',
+  'NOT_STARTED',
+  'COMPLETED',
+  'CLOSED',
+];
 
 /** Lower case without diacritics, so "zirmunu" finds "Žirmūnų". */
 const fold = (s: string) =>
@@ -58,7 +65,9 @@ export function CasesPage({ canCreate }: { canCreate: boolean }) {
         ? `${t(`checklist.todo.${c.next.item}`)}${c.next.partyName ? ` · ${c.next.partyName}` : ''}`
         : c.complianceStatus === 'COMPLETED'
           ? t('casesTable.completed')
-          : '';
+          : c.complianceStatus === 'CLOSED'
+            ? t('casesTable.closed')
+            : '';
   const linkOf = (c: CaseListItem) => caseLink(c.id, c.next ? TAB_OF_ITEM[c.next.item] : undefined);
 
   const header = (key: SortKey, label: string) => (

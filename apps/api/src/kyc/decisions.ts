@@ -1,7 +1,9 @@
 import {
   ChecklistItem,
   DecideApprovalInput,
+  type CaseDecision,
   EscalateInput,
+  RecordDecisionInput,
   RequestApprovalInput,
   ResolveEscalationInput,
 } from '@skydra/shared';
@@ -179,11 +181,77 @@ export async function resolveEscalation(
   return { complianceStatus: await refreshCompliance(client, id) };
 }
 
-/** Approvals and escalations of a case, newest first. */
+export type FinalDecision = {
+  id: string;
+  decision: CaseDecision;
+  justification: string;
+  suspiciousIndicators: boolean;
+  suspicionNotes: string | null;
+  riskLevel: string | null;
+  nextReviewOn: string | null;
+  legalRegime: string;
+  decidedBy: string;
+  decidedByName: string;
+  decidedAt: string;
+};
+
+/**
+ * The broker's final decision (client answer Q25). The rules (what must be done before an
+ * approval, approve vs. approve with enhanced measures, decline vs. terminate, suspicion reported
+ * first, nothing after closing) are enforced by the database; their messages come back as rule
+ * violations.
+ */
+export async function recordDecision(
+  client: PoolClient,
+  caseId: string,
+  input: z.input<typeof RecordDecisionInput>,
+): Promise<{ id: string; complianceStatus: string }> {
+  const id = z.uuid().parse(caseId);
+  const d = RecordDecisionInput.parse(input);
+  const { rowCount } = await client.query('SELECT 1 FROM cases WHERE id = $1', [id]);
+  if (!rowCount) throw new NotFoundError('case not found');
+  let row: { id: string; risk_level: string | null; next_review_on: string | null };
+  try {
+    const { rows } = await client.query<typeof row>(
+      `INSERT INTO case_decisions (case_id, decision, justification, suspicious_indicators,
+                                   suspicion_notes)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, risk_level, to_char(next_review_on, 'YYYY-MM-DD') AS next_review_on`,
+      [
+        id,
+        d.decision,
+        d.justification,
+        d.suspiciousIndicators,
+        d.suspiciousIndicators ? d.suspicionNotes : null,
+      ],
+    );
+    row = rows[0]!;
+  } catch (error) {
+    // The decision rules' messages (42501) become rule violations shown to the broker.
+    translateDbError(error);
+  }
+  await recordAudit(client, {
+    action: 'case.decided',
+    entityType: 'case',
+    entityId: id,
+    after: {
+      decisionId: row.id,
+      decision: d.decision,
+      justification: d.justification,
+      suspiciousIndicators: d.suspiciousIndicators,
+      suspicionNotes: d.suspiciousIndicators ? d.suspicionNotes : null,
+      riskLevel: row.risk_level,
+      nextReviewOn: row.next_review_on,
+    },
+  });
+  return { id: row.id, complianceStatus: await refreshCompliance(client, id) };
+}
+
+/** Approvals, escalations and final decisions of a case, newest first. */
 export async function listDecisions(
   client: PoolClient,
   caseId: string,
-): Promise<{ approvals: Approval[]; escalations: Escalation[] }> {
+): Promise<{ approvals: Approval[]; escalations: Escalation[]; final: FinalDecision[] }> {
   const id = z.uuid().parse(caseId);
   const { rows: approvals } = await client.query<Approval>(
     `SELECT a.id, a.reason, a.status, a.requested_by AS "requestedBy",
@@ -207,5 +275,15 @@ export async function listDecisions(
       WHERE e.case_id = $1 ORDER BY e.requested_at DESC`,
     [id],
   );
-  return { approvals, escalations };
+  const { rows: final } = await client.query<FinalDecision>(
+    `SELECT d.id, d.decision, d.justification, d.suspicious_indicators AS "suspiciousIndicators",
+            d.suspicion_notes AS "suspicionNotes", d.risk_level AS "riskLevel",
+            to_char(d.next_review_on, 'YYYY-MM-DD') AS "nextReviewOn",
+            d.legal_regime AS "legalRegime", d.decided_by AS "decidedBy",
+            u.full_name AS "decidedByName", d.decided_at AS "decidedAt"
+       FROM case_decisions d JOIN users u ON u.id = d.decided_by
+      WHERE d.case_id = $1 ORDER BY d.decided_at DESC, d.id DESC`,
+    [id],
+  );
+  return { approvals, escalations, final };
 }

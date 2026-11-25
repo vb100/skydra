@@ -16,6 +16,7 @@ import { CurrentPrincipal, OrganizationGuard, SessionGuard } from '../http/sessi
 import {
   decideApproval,
   escalate,
+  recordDecision,
   getChecklist,
   listDecisions,
   requestApproval,
@@ -129,6 +130,16 @@ export class KycController {
       (c) => decideApproval(c, id, approvalId, body as never),
       'case.approve',
     );
+  }
+
+  /** The final decision on the case: approve (with or without enhanced measures), decline, terminate. */
+  @Post('final-decision')
+  finalDecision(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    return this.run(principal, (c) => recordDecision(c, id, body as never));
   }
 
   @Post('escalations')

@@ -379,7 +379,12 @@ describe('HTTP API: authentication, CSRF and guards', () => {
           .json()
           .filter((e: { ok: boolean }) => !e.ok)
           .map((e: { item: string }) => e.item);
-      expect(await missing()).toEqual(['IDENTITY_VERIFIED', 'CDD_COMPLETED', 'RISK_ASSESSED']);
+      expect(await missing()).toEqual([
+        'IDENTITY_VERIFIED',
+        'CDD_COMPLETED',
+        'RISK_ASSESSED',
+        'DECISION_RECORDED',
+      ]);
       const casePartyId = detail.json().parties[0].id;
       const verified = await call('POST', `/api/cases/${id}/identity-verifications/in-person`, {
         cookie: broker1,
@@ -391,7 +396,19 @@ describe('HTTP API: authentication, CSRF and guards', () => {
         },
       });
       expect(verified.statusCode).toBe(201);
-      expect(await missing()).toEqual(['CDD_COMPLETED', 'RISK_ASSESSED']);
+      expect(await missing()).toEqual(['CDD_COMPLETED', 'RISK_ASSESSED', 'DECISION_RECORDED']);
+
+      // The final decision is validated and refused while requirements are missing.
+      const early = await call('POST', `/api/cases/${id}/final-decision`, {
+        cookie: broker1,
+        body: {
+          decision: 'APPROVE',
+          justification: 'Bandau per anksti',
+          suspiciousIndicators: false,
+        },
+      });
+      expect(early.statusCode).toBe(422);
+      expect(early.json().message).toMatch(/cannot be approved yet/);
 
       // A company buyer: registry data through the simulated provider, then its owners.
       const company = await call('POST', `/api/cases/${id}/parties`, {

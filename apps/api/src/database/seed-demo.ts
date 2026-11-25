@@ -12,7 +12,7 @@ import {
   updateCase,
   updateCaseParty,
 } from '../cases/cases';
-import { escalate, requestApproval } from '../kyc/decisions';
+import { escalate, recordDecision, requestApproval } from '../kyc/decisions';
 import { recordInPersonVerification } from '../kyc/identity';
 import { MockRegistryProvider } from '../ownership/mock-registry';
 import { fetchOwnership, linkBeneficialOwners } from '../ownership/ownership';
@@ -272,6 +272,15 @@ async function seedCases(
     );
   };
   const assess = (caseId: string) => as(broker, (c) => assessRisk(c, caseId, {}));
+  /** The broker's final approval: what completes a case once everything else is done. */
+  const approve = (caseId: string, justification: string) =>
+    as(broker, (c) =>
+      recordDecision(c, caseId, {
+        decision: 'APPROVE',
+        justification,
+        suspiciousIndicators: false,
+      }),
+    );
   const confirmFirstMatch = async (caseId: string, justification: string) => {
     const [check] = await as(broker, (c) => listScreenings(c, caseId));
     const match = check!.matches[0]!;
@@ -295,6 +304,7 @@ async function seedCases(
     await complete(id, buyer, 'AB1000001', KYC('Gyventi', 'Būsto paskola ir santaupos'));
     await complete(id, seller, 'AB1000002', KYC('Turto pardavimas', 'Parduodamas turtas'));
     await assess(id);
+    await approve(id, 'Abiejų šalių tapatybė nustatyta, rizika maža, įtarimo požymių nėra.');
     await as(broker, (c) => updateCase(c, actor(broker), id, { stage: 'OFFER_ACCEPTED' }));
     await as(broker, (c) => updateCase(c, actor(broker), id, { stage: 'CONTRACT' }));
   }
@@ -393,6 +403,7 @@ async function seedCases(
     await complete(id, buyer, null, KYC('Biuro patalpos veiklai', 'Įmonės apyvartinės lėšos'));
     await complete(id, seller, 'AB1000008', KYC('Turto pardavimas', 'Parduodamas turtas'));
     await assess(id);
+    await approve(id, 'Nuosavybės struktūra nustatyta per holdingą, rizika vidutinė.');
   }
 
   // 8. Cash payment and a suspicion: escalated to the AML officer, case blocked.
@@ -440,6 +451,7 @@ async function seedCases(
     await screen(id);
     await complete(id, buyer, 'AB1000010', KYC('Gyventi', 'Santaupos'));
     await assess(id);
+    await approve(id, 'Tapatybė nustatyta, rizika maža, įtarimo požymių nėra.');
     const later: ScreeningProvider = {
       mode: 'MOCK',
       screen: async (subject) => {
@@ -461,7 +473,28 @@ async function seedCases(
     };
     await runScreening(app, broker, later, id, {}, { origin: 'MONITORING' });
   }
-  return 10;
+
+  // 11. The client did not explain the source of funds: the broker declined, the case is closed.
+  {
+    const id = await newCase({
+      transactionType: 'SALE',
+      propertyType: 'HOUSE',
+      propertyAddress: 'Ąžuolų g. 15, Trakai',
+      transactionValue: 390000,
+      paymentMethod: 'MIXED',
+    });
+    await person(id, 'BUYER', 'Kęstutis', 'Atsisakytasis', '37703030303', true);
+    await screen(id);
+    await as(broker, (c) =>
+      recordDecision(c, id, {
+        decision: 'DECLINE',
+        justification:
+          'Klientas nepateikė lėšų kilmę pagrindžiančių dokumentų, todėl CDD užbaigti negalima.',
+        suspiciousIndicators: false,
+      }),
+    );
+  }
+  return 11;
 }
 
 if (require.main === module)

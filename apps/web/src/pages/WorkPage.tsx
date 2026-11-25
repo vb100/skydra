@@ -48,7 +48,10 @@ export function WorkPage({ me, abilities }: { me: Me; abilities: CaseAbilities }
     )
     .sort((a, b) => (a.nextReviewOn ?? '').localeCompare(b.nextReviewOn ?? ''));
   const mine = all.filter(
-    (c) => c.responsibleUserId === abilities.userId && c.complianceStatus !== 'COMPLETED',
+    (c) =>
+      c.responsibleUserId === abilities.userId &&
+      c.complianceStatus !== 'COMPLETED' &&
+      c.complianceStatus !== 'CLOSED',
   );
   const firstName = me.user.fullName.split(' ')[0];
 

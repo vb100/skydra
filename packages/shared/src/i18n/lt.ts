@@ -316,6 +316,7 @@ export const lt = {
     noResults: 'Pagal paiešką bylų nerasta.',
     notApplicable: 'AML netaikoma',
     completed: 'Atlikta',
+    closed: 'Uždaryta sprendimu',
     sortBy: 'Rūšiuoti pagal {{column}}',
     count: '{{shown}} iš {{total}}',
   },
@@ -358,6 +359,9 @@ export const lt = {
     blockedTitle: 'Sandoris sustabdytas',
     doneTitle: 'Byla užbaigta',
     doneBody: 'Visi AML reikalavimai įvykdyti. Bylą galite eksportuoti.',
+    closedTitle: 'Byla uždaryta',
+    closedBody:
+      'Užregistruotas sprendimas atsisakyti arba nutraukti aptarnavimą. Bylą galite eksportuoti ir saugoti.',
     items: {
       PARTIES_ADDED: {
         body: 'Pridėkite pirkėją, pardavėją ar kitas sandorio šalis.',
@@ -410,6 +414,10 @@ export const lt = {
       NO_OPEN_ESCALATION: {
         body: 'Byla sustabdyta, kol AML atsakingas asmuo priims sprendimą dėl pranešimo.',
         action: 'Peržiūrėti pranešimą',
+      },
+      DECISION_RECORDED: {
+        body: 'Visi kiti AML reikalavimai įvykdyti. Užregistruokite galutinį sprendimą su pagrindimu ir įtarimo požymių vertinimu.',
+        action: 'Priimti sprendimą',
       },
     },
     waitingApproval: 'Laukiama tvirtintojo sprendimo dėl patvirtinimo.',
@@ -488,6 +496,7 @@ export const lt = {
     REVIEW_REQUIRED: 'Reikia peržiūros',
     BLOCKED: 'Sustabdyta',
     COMPLETED: 'Atlikta',
+    CLOSED: 'Uždaryta',
   },
   legalRegimes: { PPTFPI: 'PPTFPĮ (iki 2027-07-10)', AMLR: 'ES AMLR' },
   parties: {
@@ -665,6 +674,7 @@ export const lt = {
       EDD_APPROVED: 'Gaukite tvirtintojo patvirtinimą',
       APPROVAL_NOT_REJECTED: 'Tvirtintojas atmetė patvirtinimą',
       NO_OPEN_ESCALATION: 'Laukiama AML atsakingo asmens sprendimo',
+      DECISION_RECORDED: 'Užregistruokite galutinį sprendimą',
     },
     allDone: 'Visi AML reikalavimai įvykdyti.',
     party: '{{name}}: ',
@@ -682,6 +692,7 @@ export const lt = {
       EDD_APPROVED: 'Tvirtintojo patvirtinimas dėl didelės rizikos / PEP (jei reikia)',
       APPROVAL_NOT_REJECTED: 'Patvirtinimas neatmestas',
       NO_OPEN_ESCALATION: 'Nėra neišspręstų pranešimų AML atsakingam asmeniui',
+      DECISION_RECORDED: 'Užregistruotas galutinis sprendimas (po paskutinio rizikos vertinimo)',
     },
   },
   ownership: {
@@ -764,6 +775,7 @@ export const lt = {
     'case_party.removed': 'Pašalinta šalis',
     'screening.completed': 'Atlikta patikra',
     'screening.match_reviewed': 'Įvertintas sutapimas',
+    'case.decided': 'Užregistruotas galutinis sprendimas',
     'document.uploaded': 'Pridėtas dokumentas',
     'document.downloaded': 'Atsisiųstas dokumentas',
     'identity.verified_in_person': 'Tapatybė patikrinta gyvai',
@@ -845,6 +857,38 @@ export const lt = {
     none: 'Byla dar neeksportuota.',
     entry: '{{format}} · {{date}} · {{by}} · SHA-256 {{hash}}',
     hint: 'Kiekvieno eksporto SHA-256 maiša registruojama: pagal ją galima patikrinti, ar failas nepakeistas.',
+  },
+  finalDecision: {
+    title: 'Galutinis sprendimas',
+    hint: 'Galutinis sprendimas užbaigia bylą. Patvirtinti galima, kai įvykdyti visi kiti AML reikalavimai. Atsisakyti arba nutraukti aptarnavimą galima bet kada – tada byla uždaroma, o sandoris nutraukiamas.',
+    decision: 'Sprendimas',
+    decisions: {
+      APPROVE: 'Patvirtinti klientą / sandorį',
+      APPROVE_WITH_ENHANCED_MEASURES: 'Patvirtinti su papildomomis AML priemonėmis',
+      DECLINE: 'Atsisakyti kliento / sandorio',
+      TERMINATE: 'Nutraukti kliento aptarnavimą',
+    },
+    justification: 'Pagrindimas (bent 10 simbolių)',
+    suspicious: 'Įtarimo požymių vertinimas',
+    suspiciousNo: 'Įtarimo požymių nenustatyta',
+    suspiciousYes: 'Nustatyti įtarimo požymiai',
+    suspicionNotes: 'Kokie požymiai ir kokių veiksmų imtasi (bent 10 simbolių)',
+    suspicionNeedsReport:
+      'Įtarimo požymius pirmiausia praneškite AML atsakingam asmeniui (skiltis „Pranešimai“).',
+    enhancedRequired:
+      'Taikytas sustiprintas tyrimas (didelė rizika ar patvirtintas PEP), todėl tinka tik „Patvirtinti su papildomomis AML priemonėmis“.',
+    notReady:
+      'Patvirtinti dar negalima: įvykdykite kitus AML reikalavimus. Atsisakyti galima ir dabar.',
+    submit: 'Užregistruoti sprendimą',
+    confirm: 'Užregistruoti galutinį sprendimą?',
+    closesCase: 'Byla bus uždaryta, sandoris nutrauktas. Šio sprendimo pakeisti nebus galima.',
+    recorded: 'Sprendimas užregistruotas',
+    entry: '{{decision}} · {{by}}, {{date}}',
+    nextReview: 'Kita peržiūra: {{date}}',
+    risk: 'Rizika sprendimo metu: {{level}}',
+    closed: 'Byla uždaryta galutiniu sprendimu.',
+    history: 'Ankstesni sprendimai',
+    outdated: 'Po šio sprendimo rizika įvertinta iš naujo – reikia naujo sprendimo.',
   },
   approvals: {
     title: 'Patvirtinimas (sustiprintas tapatybės nustatymas)',

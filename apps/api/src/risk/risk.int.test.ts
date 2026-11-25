@@ -14,7 +14,7 @@ import { migrate } from '../database/migrator';
 import { type TenantContext, withTenant } from '../database/tenant';
 import { createTestDatabase, MIGRATIONS_DIR, type TestDatabase } from '../database/test-database';
 import { NotFoundError, RuleError } from '../domain-errors';
-import { getChecklist, requestApproval } from '../kyc/decisions';
+import { getChecklist, recordDecision, requestApproval } from '../kyc/decisions';
 import { recordInPersonVerification } from '../kyc/identity';
 import { addMember } from '../organization/members';
 import { createOrganization, withPlatform } from '../platform/platform';
@@ -121,7 +121,7 @@ describe('risk assessment', () => {
 
   it('previews, records with the rule-set version and completes a low-risk case', async () => {
     const { caseId } = await readyCase();
-    expect(await missing(caseId)).toEqual(['RISK_ASSESSED']);
+    expect(await missing(caseId)).toEqual(['RISK_ASSESSED', 'DECISION_RECORDED']);
 
     const overview = await as(broker, (c) => riskOverview(c, caseId));
     expect(overview).toMatchObject({
@@ -137,7 +137,16 @@ describe('risk assessment', () => {
     });
 
     const result = await as(broker, (c) => assessRisk(c, caseId, {}));
-    expect(result).toMatchObject({ finalLevel: 'LOW', complianceStatus: 'COMPLETED' });
+    expect(result).toMatchObject({ finalLevel: 'LOW', complianceStatus: 'IN_PROGRESS' });
+    // The broker's final decision completes it.
+    const decided = await as(broker, (c) =>
+      recordDecision(c, caseId, {
+        decision: 'APPROVE',
+        justification: 'Maža rizika, visi reikalavimai įvykdyti',
+        suspiciousIndicators: false,
+      }),
+    );
+    expect(decided.complianceStatus).toBe('COMPLETED');
 
     const after = await as(broker, (c) => riskOverview(c, caseId));
     const fiveYears = new Date();
@@ -162,16 +171,17 @@ describe('risk assessment', () => {
     const { caseId } = await readyCase();
     await as(broker, (c) => assessRisk(c, caseId, {}));
     await as(broker, (c) => updateCase(c, actor(broker), caseId, { stage: 'OFFER_ACCEPTED' }));
-    expect(await missing(caseId)).toEqual([]);
+    // Only the broker's final decision remains.
+    expect(await missing(caseId)).toEqual(['DECISION_RECORDED']);
 
     await as(broker, (c) => updateCase(c, actor(broker), caseId, { paymentMethod: 'CASH' }));
-    expect(await missing(caseId)).toEqual(['RISK_ASSESSED']);
+    expect(await missing(caseId)).toEqual(['RISK_ASSESSED', 'DECISION_RECORDED']);
     const overview = await as(broker, (c) => riskOverview(c, caseId));
     expect(overview).toMatchObject({ stale: true, preview: { calculatedLevel: 'HIGH' } });
 
     // HIGH needs the enhanced-due-diligence approval.
     await as(broker, (c) => assessRisk(c, caseId, {}));
-    expect(await missing(caseId)).toEqual(['EDD_APPROVED']);
+    expect(await missing(caseId)).toEqual(['EDD_APPROVED', 'DECISION_RECORDED']);
     expect((await as(broker, (c) => getCase(c, keys, caseId))).complianceStatus).toBe(
       'REVIEW_REQUIRED',
     );
@@ -180,14 +190,14 @@ describe('risk assessment', () => {
   it('the approval request needs a current risk assessment', async () => {
     const { caseId } = await readyCase({ pepSelfDeclared: true });
     // Until the risk is assessed the system does not know an approval is needed.
-    expect(await missing(caseId)).toEqual(['RISK_ASSESSED']);
+    expect(await missing(caseId)).toEqual(['RISK_ASSESSED', 'DECISION_RECORDED']);
     await expect(
       as(broker, (c) =>
         requestApproval(c, caseId, { reason: 'Klientas yra PEP, lėšos pagrįstos' }),
       ),
     ).rejects.toThrow(/assess the risk/);
     expect((await as(broker, (c) => assessRisk(c, caseId, {}))).finalLevel).toBe('HIGH');
-    expect(await missing(caseId)).toEqual(['EDD_APPROVED']);
+    expect(await missing(caseId)).toEqual(['EDD_APPROVED', 'DECISION_RECORDED']);
     await as(broker, (c) =>
       requestApproval(c, caseId, { reason: 'Klientas yra PEP, lėšos pagrįstos' }),
     );

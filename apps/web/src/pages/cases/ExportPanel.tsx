@@ -5,9 +5,18 @@ import { useToast } from '../../feedback';
 import { formatDateTime } from '../../format';
 import type { Run } from './types';
 
-type CaseExport = { id: string; sha256: string; exportedByName: string; exportedAt: string };
+type CaseExport = {
+  id: string;
+  format: 'PDF' | 'ZIP';
+  sha256: string;
+  exportedByName: string;
+  exportedAt: string;
+};
 
-/** PDF export of a completed case and the register of earlier exports with their SHA-256. */
+/**
+ * Export of a completed case (client answer Q44): the report as PDF, or the complete case as a
+ * ZIP with every document; and the register of earlier exports with their SHA-256.
+ */
 export function ExportPanel(props: {
   caseId: string;
   reference: string;
@@ -22,10 +31,11 @@ export function ExportPanel(props: {
     queryFn: () => api<CaseExport[]>('GET', `/cases/${caseId}/exports`),
   });
 
-  async function download() {
+  async function download(format: 'pdf' | 'zip') {
     let hash: string | null = null;
+    const name = format === 'pdf' ? `${reference}.pdf` : `Case_${reference}.zip`;
     const ok = await run(async () => {
-      hash = await apiDownload(`/cases/${caseId}/export.pdf`, `${reference}.pdf`);
+      hash = await apiDownload(`/cases/${caseId}/export.${format}`, name);
     });
     if (ok) toast(t('toast.exported', { hash: `${(hash ?? '').slice(0, 16)}…` }));
   }
@@ -43,9 +53,14 @@ export function ExportPanel(props: {
     <section className="card static stack">
       <h2 className="card-title">{t('exports.title')}</h2>
       {completed ? (
-        <button type="button" className="primary" onClick={() => void download()}>
-          {t('exports.download')}
-        </button>
+        <div className="actions">
+          <button type="button" className="primary" onClick={() => void download('pdf')}>
+            {t('exports.download')}
+          </button>
+          <button type="button" onClick={() => void download('zip')}>
+            {t('exports.downloadZip')}
+          </button>
+        </div>
       ) : (
         <p className="muted">{t('exports.onlyCompleted')}</p>
       )}
@@ -55,6 +70,7 @@ export function ExportPanel(props: {
         {exports.data?.map((x) => (
           <li key={x.id}>
             {t('exports.entry', {
+              format: x.format,
               date: formatDateTime(x.exportedAt),
               by: x.exportedByName,
               hash: x.sha256.slice(0, 16) + '…',

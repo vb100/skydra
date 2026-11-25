@@ -1,5 +1,6 @@
 export * from './access';
 export * from './cases';
+export * from './documents';
 export * from './kyc';
 export * from './ownership';
 export * from './progress';

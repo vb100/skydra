@@ -14,6 +14,9 @@ import type { OwnershipNode } from '../ownership/analysis';
 import { listOwnership, type OwnershipView } from '../ownership/ownership';
 import { type RiskOverview, riskOverview } from '../risk/risk';
 import { listScreenings, type ScreeningCheck } from '../screening/screening';
+import { type CaseDocument, listDocuments, readDocument } from '../documents/documents';
+import type { FileStore } from '../storage/file-store';
+import { zip } from './zip';
 
 const req = createRequire(__filename);
 // DejaVu covers Lithuanian letters (ą č ę ė į š ų ū ž), which the PDF standard fonts do not.
@@ -33,6 +36,7 @@ export type CaseReportData = {
   ownership: OwnershipView[];
   risk: RiskOverview;
   decisions: Awaited<ReturnType<typeof listDecisions>>;
+  documents: CaseDocument[];
   audit: AuditRow[];
 };
 
@@ -66,6 +70,7 @@ export async function collectReport(
     ownership: await listOwnership(client, keys, who[0]?.id ?? '', id),
     risk: await riskOverview(client, id),
     decisions: await listDecisions(client, id),
+    documents: await listDocuments(client, id),
     audit,
   };
 }
@@ -285,6 +290,17 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
         (s.status === 'COMPLETED' ? `sutapimų: ${s.matchCount}` : 'patikra nepavyko'),
       { indent: 10 },
     );
+    if (s.manual) {
+      // A check made by hand: what was searched where, when, and why the result holds.
+      const evidence = d.documents.find((x) => x.id === s.evidenceDocumentId);
+      p(
+        `Rankinė patikra: ${s.manual.source} · ieškota ${s.manual.searchedOn} · ` +
+          `${label(lt.screening.manualResults, s.manual.result)} – ${s.manual.justification}` +
+          (s.manual.sourceUrl ? ` · ${s.manual.sourceUrl}` : '') +
+          (evidence ? ` · įrodymas: ${evidence.fileName}` : ''),
+        { indent: 18 },
+      );
+    }
     for (const m of s.matches) {
       if (m.details.kind === 'article') {
         // The article itself is the evidence: its address and date, as the broker reviewed it.
@@ -355,7 +371,19 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
           : ''),
     );
 
-  h2(`${n(7)}. AML reikalavimų įvykdymas`);
+  // The documents are the annex of the report (Q44); the ZIP export carries the files.
+  h2(`${n(7)}. Priedai`);
+  if (d.documents.length === 0) p('Dokumentų nepridėta.', { muted: true });
+  for (const doc of d.documents) {
+    const who = c.parties.find((x) => x.id === doc.casePartyId)?.party.displayName;
+    p(
+      `${label(lt.documents.categories, doc.category)} · ${doc.fileName}${who ? ` · ${who}` : ''} · ` +
+        `${Math.max(1, Math.round(doc.sizeBytes / 1024))} KB · ${doc.uploadedByName}, ${date(doc.uploadedAt)}`,
+    );
+    p(`SHA-256: ${doc.sha256}`, { indent: 10, muted: true });
+  }
+
+  h2(`${n(8)}. AML reikalavimų įvykdymas`);
   for (const e of d.checklist) {
     const who = e.casePartyId
       ? `${c.parties.find((x) => x.id === e.casePartyId)?.party.displayName ?? ''}: `
@@ -363,7 +391,7 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
     p(`${e.ok ? '✓' : '✗'} ${who}${label(lt.checklist.items, e.item)}`);
   }
 
-  h2(`${n(8)}. Veiksmų istorija`);
+  h2(`${n(9)}. Veiksmų istorija`);
   for (const a of d.audit)
     p(
       `#${a.seq} · ${date(a.occurred_at)} · ${a.actor ?? 'sistema'} · ${label(lt.auditActions, a.action)}`,
@@ -396,6 +424,7 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
 
 export type CaseExport = {
   id: string;
+  format: 'PDF' | 'ZIP';
   sha256: string;
   sizeBytes: number;
   exportedByName: string;
@@ -437,12 +466,85 @@ export async function exportCase(
   return { pdf, sha256, exportId, reference: data.caseFile.reference };
 }
 
+/** ZIP folders of the client's export structure (answer to Q44). */
+const FOLDERS: Record<CaseDocument['category'], string> = {
+  IDENTITY: 'Identity',
+  UBO: 'UBO',
+  CLIENT: 'Client_Documents',
+  SCREENING: 'Other',
+  OTHER: 'Other',
+};
+
+/** Everything a ZIP may hold at once (the files are read into memory). */
+const MAX_ZIP_BYTES = 300 * 1024 * 1024;
+
+/**
+ * The complete case as a ZIP (client answer Q44): the report as Case_Report.pdf and every
+ * document under Attachments/<folder>/, each file checked against its SHA-256. A snapshot of the
+ * moment: registered with the archive's own SHA-256 and recorded in the audit trail with the
+ * documents it contains.
+ */
+export async function exportCaseZip(
+  client: PoolClient,
+  keys: SecretKeys,
+  store: FileStore,
+  caseId: string,
+): Promise<{ zip: Buffer; sha256: string; exportId: string; reference: string }> {
+  const data = await collectReport(client, keys, caseId);
+  if (data.caseFile.complianceStatus !== 'COMPLETED')
+    throw new RuleError('complete the AML checks before exporting the case');
+  const total = data.documents.reduce((n, doc) => n + doc.sizeBytes, 0);
+  if (total > MAX_ZIP_BYTES) throw new RuleError('the documents are too large for one archive');
+
+  const { rows: ids } = await client.query<{ id: string }>('SELECT gen_random_uuid() AS id');
+  const exportId = ids[0]!.id;
+  const pdf = await renderReport(data, exportId);
+  const used = new Set<string>();
+  const entries = [{ name: 'Case_Report.pdf', data: pdf, modified: data.exportedAt }];
+  for (const doc of data.documents) {
+    const { body } = await readDocument(client, store, data.caseFile.id, doc.id, { audit: false });
+    // Two files of the same name in a folder: the later one gets a number.
+    const folder = `Attachments/${FOLDERS[doc.category]}/`;
+    const dot = doc.fileName.lastIndexOf('.');
+    const [stem, ext] =
+      dot > 0 ? [doc.fileName.slice(0, dot), doc.fileName.slice(dot)] : [doc.fileName, ''];
+    let name = `${folder}${doc.fileName}`;
+    for (let i = 2; used.has(name.toLowerCase()); i++) name = `${folder}${stem} (${i})${ext}`;
+    used.add(name.toLowerCase());
+    entries.push({ name, data: body, modified: new Date(doc.uploadedAt) });
+  }
+  const archive = zip(entries);
+  const sha256 = createHash('sha256').update(archive).digest('hex');
+  try {
+    await client.query(
+      `INSERT INTO case_exports (id, case_id, format, sha256, size_bytes, compliance_status)
+       VALUES ($1, $2, 'ZIP', $3, $4, 'COMPLETED')`,
+      [exportId, data.caseFile.id, sha256, archive.length],
+    );
+  } catch (error) {
+    translateDbError(error);
+  }
+  await recordAudit(client, {
+    action: 'case.exported',
+    entityType: 'case',
+    entityId: data.caseFile.id,
+    after: {
+      exportId,
+      format: 'ZIP',
+      sha256,
+      sizeBytes: archive.length,
+      documents: data.documents.map((doc) => ({ id: doc.id, sha256: doc.sha256 })),
+    },
+  });
+  return { zip: archive, sha256, exportId, reference: data.caseFile.reference };
+}
+
 export async function listExports(client: PoolClient, caseId: string): Promise<CaseExport[]> {
   const id = z.uuid().parse(caseId);
   const { rowCount } = await client.query('SELECT 1 FROM cases WHERE id = $1', [id]);
   if (!rowCount) throw new NotFoundError('case not found');
   const { rows } = await client.query<CaseExport>(
-    `SELECT x.id, x.sha256, x.size_bytes AS "sizeBytes", u.full_name AS "exportedByName",
+    `SELECT x.id, x.format, x.sha256, x.size_bytes AS "sizeBytes", u.full_name AS "exportedByName",
             x.exported_at AS "exportedAt"
        FROM case_exports x JOIN users u ON u.id = x.exported_by
       WHERE x.case_id = $1 ORDER BY x.exported_at DESC`,

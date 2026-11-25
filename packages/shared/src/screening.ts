@@ -96,3 +96,38 @@ export function screeningStatus(checks: readonly CheckSummary[]): {
  * (Brave). OpenSanctions: €0.10 per credit, the first 2 000 free (docs/integrations).
  */
 export const PROVIDER_PRICE_EUR = { OPENSANCTIONS: 0.1, BRAVE: null, GDELT: 0 } as const;
+
+/**
+ * A manual screening record (client answer Q28, AC4): the controlled fallback when the
+ * automatic check is not available. Evidence is required: a link to the source or a document
+ * uploaded to the case. A potential match found by hand is then reviewed like any other.
+ */
+export const ManualScreeningInput = z
+  .object({
+    casePartyId: z.uuid(),
+    source: z.string().trim().min(2).max(300),
+    sourceUrl: z
+      .url({ protocol: /^https$/ })
+      .max(2000)
+      .optional(),
+    searchedOn: z.iso.date(),
+    result: z.enum(['NO_MATCH', 'POTENTIAL_MATCH']),
+    /** For a potential match: what was found. */
+    match: z
+      .object({
+        name: z.string().trim().min(2).max(300),
+        category: MatchCategory,
+      })
+      .optional(),
+    justification: z.string().trim().min(10).max(4000),
+    evidenceDocumentId: z.uuid().optional(),
+  })
+  .refine((v) => v.sourceUrl || v.evidenceDocumentId, {
+    message: 'a link to the source or a document is required',
+    path: ['sourceUrl'],
+  })
+  .refine((v) => (v.result === 'POTENTIAL_MATCH') === Boolean(v.match), {
+    message: 'describe the match found, and only then',
+    path: ['match'],
+  });
+export type ManualScreeningInput = z.input<typeof ManualScreeningInput>;

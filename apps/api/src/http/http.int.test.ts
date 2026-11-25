@@ -8,6 +8,7 @@ import { currentTotpCode } from '../auth/totp';
 import { loadConfig } from '../config/env';
 import { migrate } from '../database/migrator';
 import { createTestDatabase, MIGRATIONS_DIR, type TestDatabase } from '../database/test-database';
+import { MemoryFileStore } from '../storage/file-store';
 
 const ORIGIN = 'http://localhost:5173';
 const PASSWORD = 'labai ilgas ir saugus slaptažodis';
@@ -80,7 +81,11 @@ describe('HTTP API: authentication, CSRF and guards', () => {
       IDENTITY_PROVIDER: 'MOCK',
       REGISTRY_PROVIDER: 'MOCK',
     });
-    app = await createApp(config, { pool: db.appPool({ max: 5 }), logger: false });
+    app = await createApp(config, {
+      pool: db.appPool({ max: 5 }),
+      logger: false,
+      fileStore: new MemoryFileStore(),
+    });
     await app.init();
     await app.getHttpAdapter().getInstance().ready();
 
@@ -421,6 +426,44 @@ describe('HTTP API: authentication, CSRF and guards', () => {
         { cookie: broker1 },
       );
       expect(linked.json().linked).toBe(2);
+
+      // A document is the file itself as the body; its real type is read from its bytes.
+      const upload = (body: Buffer, contentType: string, cookie = broker1) =>
+        app.inject({
+          method: 'POST',
+          url: `/api/cases/${id}/documents?category=CLIENT&fileName=${encodeURIComponent('Anketa (kliento).pdf')}`,
+          headers: { origin: ORIGIN, [CSRF_HEADER]: '1', cookie, 'content-type': contentType },
+          payload: body,
+        }) as unknown as Promise<Res>;
+      const pdf = Buffer.from('%PDF-1.7\nanketa');
+      const uploaded = await upload(pdf, 'application/pdf');
+      expect(uploaded.statusCode).toBe(201);
+      expect(uploaded.json()).toMatchObject({
+        contentType: 'application/pdf',
+        sizeBytes: pdf.length,
+      });
+      expect(
+        (await upload(Buffer.from('<html><script>x</script>'), 'application/pdf')).statusCode,
+      ).toBe(422);
+      expect((await upload(pdf, 'application/pdf', broker2)).statusCode).toBe(404);
+      const file = (await app.inject({
+        method: 'GET',
+        url: `/api/cases/${id}/documents/${uploaded.json().id}/file`,
+        headers: { cookie: broker1 },
+      })) as unknown as Res & { rawPayload: Buffer };
+      expect(file.statusCode).toBe(200);
+      expect(file.rawPayload.equals(pdf)).toBe(true);
+      expect(file.headers['content-type']).toBe('application/pdf');
+      expect(String(file.headers['content-disposition'])).toContain(
+        "filename*=UTF-8''Anketa%20(kliento).pdf",
+      );
+      expect(String(file.headers['content-security-policy'])).toContain('sandbox');
+      // The manual screening fallback needs a manager or the AML officer.
+      const manual = await call('POST', `/api/cases/${id}/screenings/manual`, {
+        cookie: broker1,
+        body: {},
+      });
+      expect(manual.statusCode).toBe(403);
 
       // Deciding approvals needs the approver permission.
       const decide = await call(

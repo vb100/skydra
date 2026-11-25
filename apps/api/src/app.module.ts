@@ -24,10 +24,17 @@ import { PlatformController } from './platform/platform.controller';
 import { RiskController } from './risk/risk.controller';
 import { createScreeningProvider } from './screening/create-provider';
 import { SCREENING_PROVIDER } from './screening/provider';
+import { DocumentsController } from './documents/documents.controller';
+import {
+  FILE_STORE,
+  type FileStore,
+  GcsFileStore,
+  UnavailableFileStore,
+} from './storage/file-store';
 
 @Module({})
 export class AppModule {
-  static forRoot(config: AppConfig, pool?: Pool): DynamicModule {
+  static forRoot(config: AppConfig, pool?: Pool, fileStore?: FileStore): DynamicModule {
     return {
       module: AppModule,
       imports: [ConfigModule.forRoot(config), DatabaseModule.forRoot(pool)],
@@ -41,6 +48,7 @@ export class AppModule {
         RiskController,
         OwnershipController,
         ExportController,
+        DocumentsController,
       ],
       providers: [
         {
@@ -70,6 +78,12 @@ export class AppModule {
             config.providers.registry === 'MOCK'
               ? new MockRegistryProvider()
               : new UnavailableRegistryProvider(config.providers.registry),
+        },
+        {
+          provide: FILE_STORE,
+          useValue:
+            fileStore ??
+            (config.storage ? new GcsFileStore(config.storage) : new UnavailableFileStore()),
         },
         SessionGuard,
         PlatformAdminGuard,

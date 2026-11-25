@@ -7,8 +7,10 @@ import { NestFactory } from '@nestjs/core';
 import { FastifyAdapter, type NestFastifyApplication } from '@nestjs/platform-fastify';
 import type { Pool } from 'pg';
 import { AppModule } from './app.module';
+import type { FileStore } from './storage/file-store';
 import type { AppConfig } from './config/env';
 import { HttpErrorFilter } from './http/errors';
+import { DOCUMENT_TYPES, MAX_DOCUMENT_BYTES } from '@skydra/shared';
 
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 export const CSRF_HEADER = 'x-skydra-csrf';
@@ -19,10 +21,10 @@ export const CSRF_HEADER = 'x-skydra-csrf';
  */
 export async function createApp(
   config: AppConfig,
-  options: { pool?: Pool; logger?: false } = {},
+  options: { pool?: Pool; logger?: false; fileStore?: FileStore } = {},
 ): Promise<NestFastifyApplication> {
   const app = await NestFactory.create<NestFastifyApplication>(
-    AppModule.forRoot(config, options.pool),
+    AppModule.forRoot(config, options.pool, options.fileStore),
     // Behind the Google load balancer the client IP arrives in X-Forwarded-For.
     new FastifyAdapter({ trustProxy: config.env !== 'local', bodyLimit: 1_048_576 }),
     { logger: options.logger },
@@ -33,6 +35,14 @@ export async function createApp(
 
   const fastify = app.getHttpAdapter().getInstance();
   await fastify.register(cookie);
+
+  // Document uploads: the file itself is the body, up to 20 MB (other requests keep 1 MB). The
+  // real type is checked from the file's bytes before it is stored.
+  fastify.addContentTypeParser(
+    [...DOCUMENT_TYPES, 'application/octet-stream'],
+    { parseAs: 'buffer', bodyLimit: MAX_DOCUMENT_BYTES },
+    (_request, body, done) => done(null, body),
+  );
 
   // CSRF: state-changing requests must carry a custom header, which browsers only send from our
   // own origin (no CORS is enabled), and a present Origin must be ours. SameSite=Lax cookies are
@@ -64,11 +74,13 @@ function securityHeaders(config: AppConfig, url: string, reply: FastifyReply) {
   reply.header('referrer-policy', 'same-origin');
   reply.header('x-frame-options', 'DENY');
   reply.header('permissions-policy', 'camera=(), microphone=(), geolocation=()');
-  reply.header(
-    'content-security-policy',
-    "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; " +
-      "connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
-  );
+  // A stricter policy set by the route (uploaded files are served sandboxed) is kept.
+  if (!reply.hasHeader('content-security-policy'))
+    reply.header(
+      'content-security-policy',
+      "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; " +
+        "connect-src 'self'; font-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
+    );
   if (config.env !== 'local')
     reply.header('strict-transport-security', 'max-age=31536000; includeSubDomains');
   if (url.startsWith('/api/')) reply.header('cache-control', 'no-store');

@@ -68,3 +68,20 @@ export async function apiDownload(path: string, fallbackName: string): Promise<s
   URL.revokeObjectURL(url);
   return res.headers.get('x-content-sha256');
 }
+
+/**
+ * Sends a file as the request body (no multipart): what it is travels in the query. The API
+ * checks the real type from the file's bytes.
+ */
+export async function apiUpload<T>(path: string, file: Blob, query: Record<string, string>) {
+  const res = await fetch(`/api${path}?${new URLSearchParams(query)}`, {
+    method: 'POST',
+    credentials: 'same-origin',
+    // Always octet-stream: phones label photos variously (image/heif…); the API reads the bytes.
+    headers: { 'x-skydra-csrf': '1', 'content-type': 'application/octet-stream' },
+    body: file,
+  });
+  const data = (await res.json().catch(() => ({}))) as { error?: string; message?: string };
+  if (!res.ok) throw new ApiError(data.error ?? 'unknown', res.status, data.message);
+  return data as T;
+}

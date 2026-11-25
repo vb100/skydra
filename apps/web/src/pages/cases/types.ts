@@ -98,6 +98,14 @@ export type ScreeningCheck = {
   /** Every source searched (OPENSANCTIONS, BRAVE, GDELT…); empty for older checks. */
   sources: string[];
   origin: 'MANUAL' | 'AUTOMATIC' | 'MONITORING' | null;
+  manual: {
+    source: string;
+    sourceUrl?: string;
+    searchedOn: string;
+    result: 'NO_MATCH' | 'POTENTIAL_MATCH';
+    justification: string;
+  } | null;
+  evidenceDocumentId: string | null;
   status: 'PENDING' | 'COMPLETED' | 'FAILED';
   matchCount: number | null;
   requestedAt: string;
@@ -145,6 +153,8 @@ export type CaseAbilities = {
   isAmlOfficer: boolean;
   /** A one-member organization, where the four-eyes rule does not apply. */
   solo: boolean;
+  /** May record a manual screening when the automatic check cannot be made. */
+  canManualScreen: boolean;
 };
 
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH';
@@ -248,4 +258,18 @@ export type CaseHistoryEntry = {
   details: Record<string, string | number | boolean>;
 };
 
-export type CaseTab = 'overview' | 'parties' | 'screening' | 'risk' | 'decisions' | 'history';
+export type CaseTab =
+  'overview' | 'parties' | 'screening' | 'documents' | 'risk' | 'decisions' | 'history';
+
+export type CaseDocument = {
+  id: string;
+  casePartyId: string | null;
+  category: 'IDENTITY' | 'UBO' | 'CLIENT' | 'SCREENING' | 'OTHER';
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  sha256: string;
+  description: string | null;
+  uploadedByName: string;
+  uploadedAt: string;
+};

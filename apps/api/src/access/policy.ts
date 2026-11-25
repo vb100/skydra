@@ -21,6 +21,7 @@ export type Action =
   | 'case.approve'
   | 'case.assign'
   | 'aml.escalation_handle'
+  | 'screening.manual'
   | 'audit.view';
 
 const has = (p: Principal, role: Role) => p.roles.has(role);
@@ -48,6 +49,10 @@ const RULES: Record<Action, (p: Principal) => boolean> = {
   'case.approve': (p) => holds(p, 'APPROVER'),
   'case.assign': (p) => has(p, 'MANAGER') && hasFeature(p.entitlements, 'TASK_ASSIGNMENT'),
   'aml.escalation_handle': (p) => holds(p, 'AML_OFFICER'),
+  // The manual screening fallback (Q28, AC4) is for someone with the right: a manager or the AML
+  // officer; in a one-person organization, that person.
+  'screening.manual': (p) =>
+    has(p, 'MANAGER') || holds(p, 'AML_OFFICER') || p.entitlements.plan === 'INDIVIDUAL',
   'audit.view': (p) => has(p, 'ORG_ADMIN') || has(p, 'MANAGER') || holds(p, 'AML_OFFICER'),
 };
 

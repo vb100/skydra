@@ -39,6 +39,13 @@ const EnvSchema = z.object({
   // many days old; one run handles at most MONITORING_BATCH parties (the rest on the next run).
   MONITORING_INTERVAL_DAYS: z.coerce.number().int().min(1).max(365).default(7),
   MONITORING_BATCH: z.coerce.number().int().min(1).max(5000).default(200),
+  // Case documents: a private Cloud Storage bucket. Locally the emulator of infra/docker
+  // (STORAGE_EMULATOR_HOST=http://localhost:4443). Without a bucket documents cannot be added.
+  STORAGE_BUCKET: z
+    .string()
+    .regex(/^[a-z0-9][a-z0-9._-]{1,220}[a-z0-9]$/)
+    .optional(),
+  STORAGE_EMULATOR_HOST: z.url().optional(),
 });
 
 export type AppConfig = {
@@ -61,6 +68,7 @@ export type AppConfig = {
     gdelt: { baseUrl: string } | null;
   };
   monitoring: { intervalDays: number; batch: number };
+  storage: { bucket: string; endpoint: string; emulator: boolean } | null;
 };
 
 /** The key published in .env.example for local development. Never acceptable elsewhere. */
@@ -98,7 +106,20 @@ export function loadConfig(source: NodeJS.ProcessEnv): AppConfig {
     openSanctions: null,
     adverseMedia: { brave: null, gdelt: null },
     monitoring: { intervalDays: e.MONITORING_INTERVAL_DAYS, batch: e.MONITORING_BATCH },
+    storage: e.STORAGE_BUCKET
+      ? {
+          bucket: e.STORAGE_BUCKET,
+          endpoint: (e.STORAGE_EMULATOR_HOST ?? 'https://storage.googleapis.com').replace(
+            /\/+$/,
+            '',
+          ),
+          emulator: Boolean(e.STORAGE_EMULATOR_HOST),
+        }
+      : null,
   };
+
+  if (config.storage?.emulator && config.env !== 'local')
+    throw new ConfigError('STORAGE_EMULATOR_HOST is for local development only');
 
   if (config.providers.screening === 'OPENSANCTIONS') {
     if (!e.OPENSANCTIONS_API_KEY)

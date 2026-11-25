@@ -1,4 +1,9 @@
-import { ReviewMatchInput, RunScreeningInput, type ScreeningOrigin } from '@skydra/shared';
+import {
+  ManualScreeningInput,
+  ReviewMatchInput,
+  RunScreeningInput,
+  type ScreeningOrigin,
+} from '@skydra/shared';
 import type { Pool, PoolClient } from 'pg';
 import { z } from 'zod';
 import { recordAudit } from '../audit/audit';
@@ -38,6 +43,15 @@ export type ScreeningCheck = {
   sources: string[];
   /** MANUAL, AUTOMATIC or MONITORING; null for checks before 0015. */
   origin: ScreeningOrigin | null;
+  /** A check made by hand (provider MANUAL): source, date searched, result, reasons. */
+  manual: {
+    source: string;
+    sourceUrl?: string;
+    searchedOn: string;
+    result: 'NO_MATCH' | 'POTENTIAL_MATCH';
+    justification: string;
+  } | null;
+  evidenceDocumentId: string | null;
   status: 'PENDING' | 'COMPLETED' | 'FAILED';
   subject: ScreeningSubject;
   matchCount: number | null;
@@ -273,6 +287,95 @@ export async function autoScreen(
   }
 }
 
+/**
+ * Records a check made by hand (client answer Q28, AC4): the controlled fallback when the
+ * automatic check cannot be made. Allowed only while the party has no completed automatic
+ * result in force (its latest check failed, or none could be made), with the source, the date,
+ * the result, the reasons and evidence. A potential match found is then reviewed as usual.
+ */
+export async function recordManualScreening(
+  client: PoolClient,
+  caseId: string,
+  input: ManualScreeningInput,
+): Promise<{ checkId: string; complianceStatus: string }> {
+  const id = z.uuid().parse(caseId);
+  const m = ManualScreeningInput.parse(input);
+  const [target] = await targets(client, id, m.casePartyId);
+  const { rows: last } = await client.query<{ status: string }>(
+    `SELECT status FROM screening_checks WHERE case_party_id = $1
+      ORDER BY requested_at DESC LIMIT 1`,
+    [m.casePartyId],
+  );
+  if (last[0]?.status === 'COMPLETED')
+    throw new RuleError(
+      'the latest check of this party is complete; a manual record is only for when it cannot be made',
+    );
+  if (m.searchedOn > new Date().toISOString().slice(0, 10))
+    throw new RuleError('the search date cannot be in the future');
+
+  const manual = {
+    source: m.source,
+    ...(m.sourceUrl ? { sourceUrl: m.sourceUrl } : {}),
+    searchedOn: m.searchedOn,
+    result: m.result,
+    justification: m.justification,
+  };
+  try {
+    const { rows } = await client.query<{ id: string }>(
+      `INSERT INTO screening_checks (case_id, case_party_id, party_id, provider, sources, origin,
+                                     status, subject, manual, evidence_document_id)
+       VALUES ($1, $2, $3, 'MANUAL', '{MANUAL}', 'MANUAL', 'PENDING', $4, $5, $6)
+       RETURNING id`,
+      [
+        id,
+        target!.casePartyId,
+        target!.partyId,
+        JSON.stringify(target!.subject),
+        JSON.stringify(manual),
+        m.evidenceDocumentId ?? null,
+      ],
+    );
+    const checkId = rows[0]!.id;
+    if (m.match)
+      await client.query(
+        `INSERT INTO screening_matches (check_id, external_id, name, score, strength, categories,
+                                        details)
+         VALUES ($1, NULL, $2, NULL, 'STRONG', $3, $4)`,
+        [
+          checkId,
+          m.match.name,
+          [m.match.category],
+          JSON.stringify({ kind: 'manual', source: m.source, sourceUrl: m.sourceUrl ?? null }),
+        ],
+      );
+    await client.query(
+      `UPDATE screening_checks SET status = 'COMPLETED', match_count = $2 WHERE id = $1`,
+      [checkId, m.match ? 1 : 0],
+    );
+    await recordAudit(client, {
+      action: 'screening.completed',
+      entityType: 'case',
+      entityId: id,
+      after: {
+        checkId,
+        casePartyId: m.casePartyId,
+        provider: 'MANUAL',
+        manual: true,
+        status: 'COMPLETED',
+        result: m.result,
+        source: m.source,
+        searchedOn: m.searchedOn,
+        evidenceDocumentId: m.evidenceDocumentId ?? null,
+        matchCount: m.match ? 1 : 0,
+      },
+    });
+    return { checkId, complianceStatus: await refreshCompliance(client, id) };
+  } catch (error) {
+    if (error instanceof RuleError) throw error;
+    translateDbError(error);
+  }
+}
+
 /** All checks of a case, newest first, with their matches. */
 export async function listScreenings(
   client: PoolClient,
@@ -281,7 +384,8 @@ export async function listScreenings(
   const id = z.uuid().parse(caseId);
   const { rows } = await client.query<ScreeningCheck>(
     `SELECT s.id, s.case_party_id AS "casePartyId", s.party_id AS "partyId", s.provider,
-            s.sources, s.origin, s.status,
+            s.sources, s.origin, s.manual, s.evidence_document_id AS "evidenceDocumentId",
+            s.status,
             s.subject, s.match_count AS "matchCount", s.error, s.legal_regime AS "legalRegime",
             s.requested_by AS "requestedBy", s.requested_at AS "requestedAt",
             s.completed_at AS "completedAt",

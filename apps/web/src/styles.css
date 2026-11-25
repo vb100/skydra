@@ -440,6 +440,26 @@ a.card strong {
   }
 }
 
+/* A document in the documents tab: what it is on the left, the download on the right. */
+.document-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+.document-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .document-row {
+    flex-direction: column;
+  }
+}
+
 .match-new {
   border-color: var(--warn);
 }

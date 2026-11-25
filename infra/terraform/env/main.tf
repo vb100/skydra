@@ -183,6 +183,32 @@ resource "google_secret_manager_secret_iam_member" "brave" {
   member    = "serviceAccount:${google_service_account.service.email}"
 }
 
+# Case documents (identity copies, registry extracts, questionnaires, screening evidence). Private,
+# in the environment's region; the application may add and read files but not delete or replace
+# them, so a document on record cannot be changed afterwards.
+resource "google_storage_bucket" "documents" {
+  name                        = "${var.project_id}-${local.name}-documents"
+  location                    = var.region
+  storage_class               = "STANDARD"
+  uniform_bucket_level_access = true
+  public_access_prevention    = "enforced"
+  force_destroy               = false
+
+  versioning {
+    enabled = true
+  }
+  soft_delete_policy {
+    retention_duration_seconds = 30 * 24 * 3600
+  }
+}
+
+resource "google_storage_bucket_iam_member" "documents" {
+  for_each = toset(["roles/storage.objectCreator", "roles/storage.objectViewer"])
+  bucket   = google_storage_bucket.documents.name
+  role     = each.value
+  member   = "serviceAccount:${google_service_account.service.email}"
+}
+
 resource "google_service_account" "service" {
   account_id   = "${local.name}-run"
   display_name = "SkyDra ${var.env}: application service"
@@ -271,6 +297,10 @@ resource "google_cloud_run_v2_service" "app" {
           }
         }
       }
+      env {
+        name  = "STORAGE_BUCKET"
+        value = google_storage_bucket.documents.name
+      }
       dynamic "env" {
         for_each = var.integrations.screening == "OPENSANCTIONS" ? [1] : []
         content {
@@ -330,6 +360,7 @@ resource "google_cloud_run_v2_service" "app" {
     google_secret_manager_secret_iam_member.service,
     google_secret_manager_secret_iam_member.opensanctions,
     google_secret_manager_secret_iam_member.brave,
+    google_storage_bucket_iam_member.documents,
   ]
 }
 

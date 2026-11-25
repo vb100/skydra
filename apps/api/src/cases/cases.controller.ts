@@ -15,7 +15,13 @@ import { AUTH_DEPS } from '../auth/auth.module-tokens';
 import type { AuthDeps } from '../auth/auth.service';
 import { withTenant } from '../database/tenant';
 import { SCREENING_PROVIDER, type ScreeningProvider } from '../screening/provider';
-import { autoScreen, listScreenings, reviewMatch, runScreening } from '../screening/screening';
+import {
+  autoScreen,
+  listScreenings,
+  recordManualScreening,
+  reviewMatch,
+  runScreening,
+} from '../screening/screening';
 import { CurrentPrincipal, OrganizationGuard, SessionGuard } from '../http/session';
 import {
   activateAml,
@@ -166,6 +172,17 @@ export class CasesController {
       id,
       (body ?? {}) as never,
     );
+  }
+
+  /** The manual fallback when the automatic check cannot be made (Q28, AC4). */
+  @Post('cases/:id/screenings/manual')
+  manualScreening(
+    @CurrentPrincipal() principal: Principal,
+    @Param('id') id: string,
+    @Body() body: unknown,
+  ) {
+    if (!can(principal, 'screening.manual')) throw new ForbiddenException({ error: 'forbidden' });
+    return this.run(principal, (c) => recordManualScreening(c, id, body as never));
   }
 
   @Post('cases/:id/screening-matches/:matchId/review')

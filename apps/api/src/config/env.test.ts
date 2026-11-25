@@ -91,6 +91,31 @@ describe('loadConfig', () => {
     );
   });
 
+  it('keeps documents in the configured bucket; the emulator only locally', () => {
+    expect(loadConfig(base).storage).toBeNull();
+    expect(loadConfig({ ...base, STORAGE_BUCKET: 'p-skydra-demo-documents' }).storage).toEqual({
+      bucket: 'p-skydra-demo-documents',
+      endpoint: 'https://storage.googleapis.com',
+      emulator: false,
+    });
+    expect(
+      loadConfig({
+        ...base,
+        STORAGE_BUCKET: 'skydra-local',
+        STORAGE_EMULATOR_HOST: 'http://localhost:4443/',
+      }).storage,
+    ).toEqual({ bucket: 'skydra-local', endpoint: 'http://localhost:4443', emulator: true });
+    expect(() =>
+      loadConfig({
+        ...base,
+        APP_ENV: 'demo',
+        SECRET_ENCRYPTION_KEY: Buffer.alloc(32, 7).toString('base64'),
+        STORAGE_BUCKET: 'skydra-local',
+        STORAGE_EMULATOR_HOST: 'http://localhost:4443',
+      }),
+    ).toThrow(/local development only/);
+  });
+
   it('accepts each provider code only for its own integration', () => {
     expect(() => loadConfig({ ...base, SCREENING_PROVIDER: 'ONDATO' })).toThrow(
       /SCREENING_PROVIDER/,

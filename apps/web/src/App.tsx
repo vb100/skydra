@@ -50,6 +50,11 @@ function SignedIn() {
     canAssign: !!active?.roles.includes('MANAGER') && active.planCode !== 'INDIVIDUAL',
     canApprove: !!active?.permissions.includes('APPROVER'),
     isAmlOfficer: !!active?.permissions.includes('AML_OFFICER'),
+    // access/policy.ts screening.manual: the manual fallback is for a manager or the AML officer.
+    canManualScreen:
+      !!active?.roles.includes('MANAGER') ||
+      !!active?.permissions.includes('AML_OFFICER') ||
+      active?.planCode === 'INDIVIDUAL',
   };
   const cases = (element: ReactNode) => (canSeeCases ? element : <Navigate to="/" />);
   const canSeeMembers =

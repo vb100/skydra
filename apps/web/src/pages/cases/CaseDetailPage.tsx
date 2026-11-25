@@ -17,6 +17,7 @@ import { useErrorMessage } from '../../session';
 import { Badge, ErrorText, Field, Page, Select } from '../../ui';
 import { AddPartyForm } from './AddPartyForm';
 import { DecisionsPanel } from './DecisionsPanel';
+import { DocumentsPanel } from './DocumentsPanel';
 import { ExportPanel } from './ExportPanel';
 import { HistoryPanel } from './HistoryPanel';
 import { NextStepCard } from './NextStepCard';
@@ -37,7 +38,15 @@ import type {
   ScreeningCheck,
 } from './types';
 
-const TABS: CaseTab[] = ['overview', 'parties', 'screening', 'risk', 'decisions', 'history'];
+const TABS: CaseTab[] = [
+  'overview',
+  'parties',
+  'screening',
+  'documents',
+  'risk',
+  'decisions',
+  'history',
+];
 // Where a click on a step in the step bar leads.
 const TAB_OF_STEP: Record<CaseStep, CaseTab> = {
   TRANSACTION: 'overview',
@@ -185,7 +194,7 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
   const client = topParties.find((p) => p.isOurClient) ?? topParties[0];
   const visibleTabs = amlApplies
     ? TABS
-    : TABS.filter((x) => x === 'overview' || x === 'parties' || x === 'history');
+    : TABS.filter((x) => ['overview', 'parties', 'documents', 'history'].includes(x));
 
   async function activate(e: FormEvent) {
     e.preventDefault();
@@ -460,8 +469,14 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
             )}
             {tab === 'parties' && parties}
             {tab === 'screening' && amlApplies && (
-              <ScreeningPanel caseId={id} parties={c.parties} run={run} />
+              <ScreeningPanel
+                caseId={id}
+                parties={c.parties}
+                canManual={abilities.canManualScreen}
+                run={run}
+              />
             )}
+            {tab === 'documents' && <DocumentsPanel caseId={id} parties={c.parties} run={run} />}
             {tab === 'risk' && amlApplies && <RiskPanel caseId={id} run={run} />}
             {tab === 'decisions' && amlApplies && (
               <DecisionsPanel caseId={id} abilities={abilities} run={run} />

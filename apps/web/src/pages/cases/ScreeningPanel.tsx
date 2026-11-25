@@ -1,4 +1,4 @@
-import { type HealthResponse, screeningStatus } from '@skydra/shared';
+import { type HealthResponse, MatchCategory, screeningStatus } from '@skydra/shared';
 import { useQuery } from '@tanstack/react-query';
 import { type FormEvent, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,11 +6,17 @@ import { api } from '../../api';
 import { useConfirm } from '../../feedback';
 import { formatDate, formatDateTime } from '../../format';
 import { Field, Hint, Select } from '../../ui';
+import { UploadForm, useDocuments } from './DocumentsPanel';
 import { ScreeningBadge } from './PartyCard';
-import type { CaseParty, Run, ScreeningCheck, ScreeningMatch } from './types';
+import type { CaseDocument, CaseParty, Run, ScreeningCheck, ScreeningMatch } from './types';
 
 /** Sanctions / PEP / adverse-media checks of the case parties and the broker's review. */
-export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; run: Run }) {
+export function ScreeningPanel(props: {
+  caseId: string;
+  parties: CaseParty[];
+  canManual: boolean;
+  run: Run;
+}) {
   const { t } = useTranslation();
   const { caseId, parties, run } = props;
   const checks = useQuery({
@@ -82,13 +88,19 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
               ) : (
                 <>
                   <span className="muted">
-                    {t(check.origin ? 'screening.lastCheckOrigin' : 'screening.lastCheck', {
-                      date: date(check.requestedAt),
-                      origin: check.origin && t(`screening.origins.${check.origin}`),
-                      provider: (check.sources.length ? check.sources : [check.provider])
-                        .map((p) => t(`screening.providers.${p}`, { defaultValue: p }))
-                        .join(', '),
-                    })}
+                    {/* A manual record says so through its provider; the origin would repeat it. */}
+                    {t(
+                      check.origin && check.provider !== 'MANUAL'
+                        ? 'screening.lastCheckOrigin'
+                        : 'screening.lastCheck',
+                      {
+                        date: date(check.requestedAt),
+                        origin: check.origin && t(`screening.origins.${check.origin}`),
+                        provider: (check.sources.length ? check.sources : [check.provider])
+                          .map((p) => t(`screening.providers.${p}`, { defaultValue: p }))
+                          .join(', '),
+                      },
+                    )}
                   </span>
                   {check.status === 'FAILED' && status === 'FAILED' && (
                     <span className="error">{t('screening.failed')}</span>
@@ -105,6 +117,16 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
                   <EarlierConfirmed own={own} latest={check} />
                 </>
               )}
+              {check?.manual && <ManualRecord caseId={caseId} check={check} />}
+              {(!check || check.status === 'FAILED') &&
+                (props.canManual ? (
+                  <details className="disclosure">
+                    <summary>{t('screening.manual.open')}</summary>
+                    <ManualForm caseId={caseId} party={cp} parties={parties} run={run} />
+                  </details>
+                ) : (
+                  check && <span className="muted">{t('screening.manual.notAllowed')}</span>
+                ))}
               <div className="actions">
                 <button type="button" className="ghost small" onClick={() => void screen(cp.id)}>
                   {t('screening.run')}
@@ -355,6 +377,173 @@ function MatchView(props: { caseId: string; match: ScreeningMatch; isNew?: boole
           </span>
         )
       )}
+    </div>
+  );
+}
+
+/** What a check made by hand rests on: source, date, result, reasons and the evidence. */
+function ManualRecord({ caseId, check }: { caseId: string; check: ScreeningCheck }) {
+  const { t } = useTranslation();
+  const documents = useDocuments(caseId);
+  const m = check.manual!;
+  const evidence = documents.data?.find((d) => d.id === check.evidenceDocumentId);
+  return (
+    <div className="stack-tight">
+      <span>
+        {t('screening.manual.recorded', { source: m.source, date: m.searchedOn })} ·{' '}
+        {t(`screening.manualResults.${m.result}`)}
+      </span>
+      <span className="muted">{m.justification}</span>
+      {m.sourceUrl && (
+        <a href={m.sourceUrl} target="_blank" rel="noopener noreferrer">
+          {new URL(m.sourceUrl).hostname}
+        </a>
+      )}
+      {evidence && (
+        <a href={`/api/cases/${caseId}/documents/${evidence.id}/file`} download={evidence.fileName}>
+          {evidence.fileName}
+        </a>
+      )}
+    </div>
+  );
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+/** The manual fallback (client answer Q28, AC4): only when the automatic check cannot be made. */
+function ManualForm(props: { caseId: string; party: CaseParty; parties: CaseParty[]; run: Run }) {
+  const { t } = useTranslation();
+  const confirm = useConfirm();
+  const [f, setF] = useState({
+    source: '',
+    sourceUrl: '',
+    searchedOn: today(),
+    result: '' as 'NO_MATCH' | 'POTENTIAL_MATCH' | '',
+    matchName: '',
+    matchCategory: '' as MatchCategory | '',
+    justification: '',
+  });
+  const [evidence, setEvidence] = useState<CaseDocument | null>(null);
+  const set = (key: keyof typeof f) => (value: string) => setF({ ...f, [key]: value });
+  const found = f.result === 'POTENTIAL_MATCH';
+  const ready =
+    f.source.trim().length >= 2 &&
+    f.result &&
+    f.justification.trim().length >= 10 &&
+    (f.sourceUrl.startsWith('https://') || evidence) &&
+    (!found || (f.matchName.trim().length >= 2 && f.matchCategory));
+
+  async function submit(e: FormEvent) {
+    e.preventDefault();
+    if (!ready) return;
+    const ok = await confirm({
+      title: t('screening.manual.title'),
+      body: `${t(`screening.manualResults.${f.result}`)}. ${t('confirm.irreversible')}`,
+      confirmLabel: t('confirm.record'),
+    });
+    if (!ok) return;
+    await props.run(
+      () =>
+        api('POST', `/cases/${props.caseId}/screenings/manual`, {
+          casePartyId: props.party.id,
+          source: f.source.trim(),
+          ...(f.sourceUrl.trim() ? { sourceUrl: f.sourceUrl.trim() } : {}),
+          searchedOn: f.searchedOn,
+          result: f.result,
+          ...(found ? { match: { name: f.matchName.trim(), category: f.matchCategory } } : {}),
+          justification: f.justification.trim(),
+          ...(evidence ? { evidenceDocumentId: evidence.id } : {}),
+        }),
+      t('toast.screened'),
+    );
+  }
+
+  return (
+    <div className="stack">
+      <p className="muted">{t('screening.manual.hint')}</p>
+      <form onSubmit={submit} className="stack" id={`manual-${props.party.id}`}>
+        <Field
+          label={t('screening.manual.source')}
+          name="source"
+          value={f.source}
+          onChange={set('source')}
+        />
+        <Field
+          label={t('screening.manual.sourceUrl')}
+          name="sourceUrl"
+          type="url"
+          value={f.sourceUrl}
+          onChange={set('sourceUrl')}
+          required={false}
+        />
+        <Field
+          label={t('screening.manual.searchedOn')}
+          name="searchedOn"
+          type="date"
+          value={f.searchedOn}
+          onChange={set('searchedOn')}
+        />
+        <Select
+          label={t('screening.manual.result')}
+          name="result"
+          options={['NO_MATCH', 'POTENTIAL_MATCH'] as const}
+          optionLabel={(v) => t(`screening.manualResults.${v}`)}
+          value={f.result}
+          onChange={set('result')}
+          emptyLabel=""
+          required
+        />
+        {found && (
+          <>
+            <Field
+              label={t('screening.manual.matchName')}
+              name="matchName"
+              value={f.matchName}
+              onChange={set('matchName')}
+            />
+            <Select
+              label={t('screening.manual.matchCategory')}
+              name="matchCategory"
+              options={MatchCategory.options}
+              optionLabel={(v) => t(`matchCategories.${v}`)}
+              value={f.matchCategory}
+              onChange={set('matchCategory')}
+              emptyLabel=""
+              required
+            />
+          </>
+        )}
+        <Field
+          label={t('screening.manual.justification')}
+          name="justification"
+          value={f.justification}
+          onChange={set('justification')}
+        />
+      </form>
+      <span>{t('screening.manual.evidence')}</span>
+      {evidence ? (
+        <span className="muted">✓ {evidence.fileName}</span>
+      ) : (
+        <UploadForm
+          caseId={props.caseId}
+          parties={props.parties}
+          run={props.run}
+          category="SCREENING"
+          casePartyId={props.party.id}
+          onUploaded={setEvidence}
+          compact
+        />
+      )}
+      <div className="actions">
+        <button
+          type="submit"
+          form={`manual-${props.party.id}`}
+          className="primary"
+          disabled={!ready}
+        >
+          {t('screening.manual.submit')}
+        </button>
+      </div>
     </div>
   );
 }

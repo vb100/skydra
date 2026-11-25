@@ -1,4 +1,4 @@
-import { ReviewMatchInput, RunScreeningInput } from '@skydra/shared';
+import { ReviewMatchInput, RunScreeningInput, type ScreeningOrigin } from '@skydra/shared';
 import type { Pool, PoolClient } from 'pg';
 import { z } from 'zod';
 import { recordAudit } from '../audit/audit';
@@ -21,10 +21,12 @@ export type ScreeningMatch = {
   categories: string[];
   strength: 'STRONG' | 'WEAK';
   details: Record<string, unknown>;
-  reviewStatus: 'OPEN' | 'FALSE_POSITIVE' | 'TRUE_POSITIVE';
+  reviewStatus: 'OPEN' | 'FALSE_POSITIVE' | 'TRUE_POSITIVE' | 'NOT_RELEVANT';
   reviewJustification: string | null;
   reviewedBy: string | null;
   reviewedAt: string | null;
+  /** The earlier match whose decision was carried to this one (same record found again). */
+  carriedFrom: string | null;
 };
 
 export type ScreeningCheck = {
@@ -34,6 +36,8 @@ export type ScreeningCheck = {
   provider: string;
   /** Every source searched (e.g. OPENSANCTIONS, BRAVE); empty for checks before 0014. */
   sources: string[];
+  /** MANUAL, AUTOMATIC or MONITORING; null for checks before 0015. */
+  origin: ScreeningOrigin | null;
   status: 'PENDING' | 'COMPLETED' | 'FAILED';
   subject: ScreeningSubject;
   matchCount: number | null;
@@ -112,7 +116,9 @@ export async function runScreening(
   provider: ScreeningProvider,
   caseId: string,
   input: RunScreeningInput,
-): Promise<{ checkIds: string[]; complianceStatus: string }> {
+  options: { origin?: ScreeningOrigin } = {},
+): Promise<{ checkIds: string[]; complianceStatus: string; newMatches: number; failed: number }> {
+  const origin = options.origin ?? 'MANUAL';
   const id = z.uuid().parse(caseId);
   const { casePartyId } = RunScreeningInput.parse(input);
   const toScreen = await withTenant(pool, ctx, (c) => targets(c, id, casePartyId));
@@ -142,12 +148,13 @@ export async function runScreening(
   const sources = [...(provider.sources ?? [provider.mode])];
   return withTenant(pool, ctx, async (client) => {
     const checkIds: string[] = [];
+    let newMatches = 0;
     try {
       for (const { target, result, error, exchanges } of outcomes) {
         const { rows } = await client.query<{ id: string }>(
           `INSERT INTO screening_checks (case_id, case_party_id, party_id, provider, sources,
-                                         status, subject, provider_reference)
-           VALUES ($1, $2, $3, $4, $5, 'PENDING', $6, $7)
+                                         origin, status, subject, provider_reference)
+           VALUES ($1, $2, $3, $4, $5, $6, 'PENDING', $7, $8)
            RETURNING id`,
           [
             id,
@@ -155,6 +162,7 @@ export async function runScreening(
             target.partyId,
             provider.mode,
             sources,
+            origin,
             JSON.stringify(target.subject),
             result?.reference ?? null,
           ],
@@ -194,6 +202,13 @@ export async function runScreening(
               JSON.stringify(m.details),
             ],
           );
+        // Strong matches whose decision was not carried from an earlier check: new findings.
+        const { rows: fresh } = await client.query<{ n: number }>(
+          `SELECT count(*)::int AS n FROM screening_matches
+            WHERE check_id = $1 AND strength = 'STRONG' AND carried_from IS NULL`,
+          [checkId],
+        );
+        newMatches += fresh[0]!.n;
         await client.query(
           `UPDATE screening_checks SET status = $2, match_count = $3, error = $4 WHERE id = $1`,
           result
@@ -209,10 +224,12 @@ export async function runScreening(
             casePartyId: target.casePartyId,
             provider: provider.mode,
             sources,
+            origin,
             status: result ? 'COMPLETED' : 'FAILED',
             matchCount: result?.matches.length ?? null,
             strongMatches: result?.matches.filter((m) => m.strength === 'STRONG').length ?? null,
             attempts: exchanges.length,
+            newStrongMatches: fresh[0]!.n,
           },
         });
         checkIds.push(checkId);
@@ -220,7 +237,12 @@ export async function runScreening(
     } catch (error) {
       translateDbError(error);
     }
-    return { checkIds, complianceStatus: await refreshCompliance(client, id) };
+    return {
+      checkIds,
+      complianceStatus: await refreshCompliance(client, id),
+      newMatches,
+      failed: outcomes.filter((o) => !o.result).length,
+    };
   });
 }
 
@@ -238,10 +260,11 @@ export async function autoScreen(
   casePartyIds?: readonly string[],
 ): Promise<'SCREENED' | 'SKIPPED'> {
   try {
-    if (!casePartyIds) await runScreening(pool, ctx, provider, caseId, {});
+    const origin = 'AUTOMATIC' as const;
+    if (!casePartyIds) await runScreening(pool, ctx, provider, caseId, {}, { origin });
     else
       for (const casePartyId of casePartyIds)
-        await runScreening(pool, ctx, provider, caseId, { casePartyId });
+        await runScreening(pool, ctx, provider, caseId, { casePartyId }, { origin });
     return 'SCREENED';
   } catch (error) {
     if (!(error instanceof RuleError))
@@ -258,7 +281,7 @@ export async function listScreenings(
   const id = z.uuid().parse(caseId);
   const { rows } = await client.query<ScreeningCheck>(
     `SELECT s.id, s.case_party_id AS "casePartyId", s.party_id AS "partyId", s.provider,
-            s.sources, s.status,
+            s.sources, s.origin, s.status,
             s.subject, s.match_count AS "matchCount", s.error, s.legal_regime AS "legalRegime",
             s.requested_by AS "requestedBy", s.requested_at AS "requestedAt",
             s.completed_at AS "completedAt",
@@ -269,7 +292,8 @@ export async function listScreenings(
                        'categories', m.categories, 'details', m.details,
                        'reviewStatus', m.review_status,
                        'reviewJustification', m.review_justification,
-                       'reviewedBy', m.reviewed_by, 'reviewedAt', m.reviewed_at)
+                       'reviewedBy', m.reviewed_by, 'reviewedAt', m.reviewed_at,
+                       'carriedFrom', m.carried_from)
                      ORDER BY m.strength = 'WEAK', m.score DESC NULLS LAST, m.name)
                 FROM screening_matches m WHERE m.check_id = s.id), '[]'::json) AS matches
        FROM screening_checks s

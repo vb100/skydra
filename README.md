@@ -36,7 +36,7 @@ Web aplikacija `/api` užklausas per Vite proxy nukreipia į API. Sveikatos pati
 ## Demo duomenys (prototipo pristatymui)
 
 ```bash
-pnpm db:seed:demo               # „Demo NT agentūra“: 3 nariai ir 9 bylos
+pnpm db:seed:demo               # „Demo NT agentūra“: 3 nariai ir 10 bylų
 pnpm dev
 ```
 
@@ -155,6 +155,7 @@ docker build -t skydra:local .   # lokaliai; Cloud Run atvaizdą kompiliuoja inf
   - Prod aplinkoje `MOCK` uždraustas. `MANUAL` kol kas aiškiai atsisako veikti.
 - **Ką siunčiame tiekėjui:** fiziniam asmeniui vardą, gimimo datą ir pilietybę; įmonei pavadinimą, įmonės kodą ir šalį. Asmens kodo – niekada.
 - **Stiprūs ir silpni atitikmenys:** atitikmuo, kurio balas siekia slenkstį (`OPENSANCTIONS_THRESHOLD`, numatytasis 0,7), yra stiprus ir turi būti įvertintas. Silpni rodomi suskleisti ir bylos nestabdo.
+- **Tęstinė stebėsena** (`docs/integrations/monitoring.md`): kasdien paleidžiama užduotis (`pnpm --filter @skydra/api monitor`, GCP – Cloud Run job `skydra-<env>-monitor`) iš naujo patikrina atvirų bylų šalis, kurių paskutinė patikra senesnė nei `MONITORING_INTERVAL_DAYS` (numatytoji reikšmė – 7 d.). Jau įvertintas įrašas, rastas dar kartą, išlaiko ankstesnį sprendimą. Naujas stiprus atitikmuo grąžina bylą į „Reikia peržiūros“ ir parodomas brokerio „Darbų“ puslapyje. Patvirtintas atitikmuo galioja ir tada, kai vėlesnė patikra jo neberanda.
 - **Automatinis paleidimas:** šalis patikrinama iškart ją pridėjus, naudos gavėjai ir įmonės vadovas – iškart juos susiejus, o visos šalys – pritaikius AML procedūras nuomos bylai. Jei patikra negali vykti (AML netaikomas, tiekėjas nesukonfigūruotas), šalis vis tiek pridedama; tiekėjo gedimas užfiksuojamas kaip `FAILED`.
 - **Įmonės vadovas:** vadovas iš registrų susiejamas su įmone kaip šalis `DIRECTOR` (jei jis nėra ir naudos gavėjas) ir tikrinamas kaip naudos gavėjai; tapatybės nustatymo ir CDD jam netaikoma. Rankiniu būdu `DIRECTOR` ir `BENEFICIAL_OWNER` pridėti negalima.
 - **Spalvinė būsena kiekvienam asmeniui** (`screeningStatus`, `packages/shared`): žalia – atitikmenų nėra arba visi atmesti; geltona – laukia įvertinimo arba patvirtinta kita rizikos informacija; oranžinė – patvirtintas PEP (sustiprintas tyrimas); raudona – patvirtintos sankcijos (sandoris stabdomas, rodoma instrukcija pranešti FNTT ir neinformuoti kliento). Skaičiuojama iš paskutinės užbaigtos patikros; silpni atitikmenys neįskaičiuojami.

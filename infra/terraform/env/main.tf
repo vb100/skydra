@@ -430,3 +430,117 @@ resource "google_cloud_run_domain_mapping" "app" {
     route_name = google_cloud_run_v2_service.app.name
   }
 }
+
+# ---------------------------------------------------------------------------------------------
+# Ongoing screening monitoring (docs/integrations/monitoring.md): a job that screens again the
+# parties of open cases, as the application (its service account, role and screening keys), and
+# optionally Cloud Scheduler starting it every day.
+
+locals {
+  monitoring_schedule = var.monitoring.schedule == null ? {} : { monitor = var.monitoring.schedule }
+  opensanctions_on    = var.integrations.screening == "OPENSANCTIONS"
+}
+
+resource "google_cloud_run_v2_job" "monitor" {
+  name                = "${local.name}-monitor"
+  location            = var.region
+  deletion_protection = var.deletion_protection
+
+  template {
+    task_count = 1
+    template {
+      service_account = google_service_account.service.email
+      max_retries     = 0
+      # GDELT allows one request every 5 s: a full batch can take long.
+      timeout = "3600s"
+      volumes {
+        name = "cloudsql"
+        cloud_sql_instance {
+          instances = [local.connection]
+        }
+      }
+      containers {
+        image   = var.image
+        command = ["node", "dist/screening/monitor.js"]
+        dynamic "env" {
+          for_each = merge(local.common_env, {
+            MONITORING_INTERVAL_DAYS = tostring(var.monitoring.interval_days)
+            MONITORING_BATCH         = tostring(var.monitoring.batch)
+            }, local.opensanctions_on ? {
+            OPENSANCTIONS_THRESHOLD = tostring(var.screening_threshold)
+            } : {}, local.opensanctions_on && var.adverse_media.gdelt ? {
+            GDELT_ENABLED = "true"
+          } : {})
+          content {
+            name  = env.key
+            value = env.value
+          }
+        }
+        dynamic "env" {
+          for_each = merge({
+            DATABASE_URL          = google_secret_manager_secret.this["database-url"].secret_id
+            SECRET_ENCRYPTION_KEY = google_secret_manager_secret.this["secret-encryption-key"].secret_id
+            }, local.opensanctions_on ? {
+            OPENSANCTIONS_API_KEY = google_secret_manager_secret.opensanctions.secret_id
+            } : {}, local.opensanctions_on && var.adverse_media.brave ? {
+            BRAVE_API_KEY = google_secret_manager_secret.brave.secret_id
+          } : {})
+          content {
+            name = env.key
+            value_source {
+              secret_key_ref {
+                secret  = env.value
+                version = "latest"
+              }
+            }
+          }
+        }
+        volume_mounts {
+          name       = "cloudsql"
+          mount_path = "/cloudsql"
+        }
+      }
+    }
+  }
+
+  depends_on = [
+    google_secret_manager_secret_version.this,
+    google_secret_manager_secret_iam_member.service,
+    google_secret_manager_secret_iam_member.opensanctions,
+    google_secret_manager_secret_iam_member.brave,
+    google_project_iam_member.sql_client,
+  ]
+}
+
+resource "google_service_account" "scheduler" {
+  for_each     = local.monitoring_schedule
+  account_id   = "${local.name}-scheduler"
+  display_name = "SkyDra ${var.env}: starts the monitoring job"
+}
+
+# Only this job, only to start it.
+resource "google_cloud_run_v2_job_iam_member" "scheduler" {
+  for_each = local.monitoring_schedule
+  name     = google_cloud_run_v2_job.monitor.name
+  location = var.region
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.scheduler[each.key].email}"
+}
+
+resource "google_cloud_scheduler_job" "monitor" {
+  for_each  = local.monitoring_schedule
+  name      = "${local.name}-monitor"
+  region    = coalesce(var.monitoring.scheduler_region, var.region)
+  schedule  = each.value
+  time_zone = "Europe/Vilnius"
+
+  http_target {
+    http_method = "POST"
+    uri         = "https://run.googleapis.com/v2/projects/${var.project_id}/locations/${var.region}/jobs/${google_cloud_run_v2_job.monitor.name}:run"
+    oauth_token {
+      service_account_email = google_service_account.scheduler[each.key].email
+    }
+  }
+
+  depends_on = [google_cloud_run_v2_job_iam_member.scheduler]
+}

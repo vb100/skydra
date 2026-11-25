@@ -82,8 +82,9 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
               ) : (
                 <>
                   <span className="muted">
-                    {t('screening.lastCheck', {
+                    {t(check.origin ? 'screening.lastCheckOrigin' : 'screening.lastCheck', {
                       date: date(check.requestedAt),
+                      origin: check.origin && t(`screening.origins.${check.origin}`),
                       provider: (check.sources.length ? check.sources : [check.provider])
                         .map((p) => t(`screening.providers.${p}`, { defaultValue: p }))
                         .join(', '),
@@ -95,7 +96,13 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
                   {check.status === 'COMPLETED' && check.matches.length === 0 && (
                     <span>{t('screening.noMatches')}</span>
                   )}
-                  <Matches caseId={caseId} matches={check.matches} run={run} />
+                  <Matches
+                    caseId={caseId}
+                    matches={check.matches}
+                    monitoring={check.origin === 'MONITORING'}
+                    run={run}
+                  />
+                  <EarlierConfirmed own={own} latest={check} />
                 </>
               )}
               <div className="actions">
@@ -111,8 +118,57 @@ export function ScreeningPanel(props: { caseId: string; parties: CaseParty[]; ru
   );
 }
 
+/**
+ * Confirmed matches of earlier checks that the latest completed check no longer contains (e.g.
+ * the person was delisted): they stay in force, so they stay visible.
+ */
+function EarlierConfirmed({ own, latest }: { own: ScreeningCheck[]; latest: ScreeningCheck }) {
+  const { t } = useTranslation();
+  const lastDone = own.find((c) => c.status === 'COMPLETED');
+  if (!lastDone || lastDone.id !== latest.id) return null;
+  const present = new Set(lastDone.matches.map((m) => m.externalId).filter(Boolean));
+  const seen = new Set<string>();
+  const earlier = own
+    .filter((c) => c.status === 'COMPLETED' && c.id !== lastDone.id)
+    .flatMap((c) => c.matches)
+    .filter((m) => m.reviewStatus === 'TRUE_POSITIVE')
+    .filter((m) => {
+      const key = m.externalId ?? m.id;
+      if (present.has(key) || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  if (earlier.length === 0) return null;
+  return (
+    <div className="stack-tight">
+      <strong>{t('screening.earlierConfirmed')}</strong>
+      <span className="muted">{t('screening.earlierConfirmedHint')}</span>
+      {earlier.map((m) => (
+        <div key={m.id} className="match">
+          <strong>
+            {m.categories.map((c) => t(`matchCategories.${c}`)).join(', ')} · {m.name}
+          </strong>
+          {m.reviewedAt && (
+            <span className="muted">
+              {t('screening.reviewedBy', {
+                date: formatDateTime(m.reviewedAt),
+                justification: m.reviewJustification,
+              })}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** Strong matches first, each to be reviewed; weak ones (below the threshold) folded. */
-function Matches(props: { caseId: string; matches: ScreeningMatch[]; run: Run }) {
+function Matches(props: {
+  caseId: string;
+  matches: ScreeningMatch[];
+  monitoring: boolean;
+  run: Run;
+}) {
   const { t } = useTranslation();
   const strong = props.matches.filter((m) => m.strength === 'STRONG');
   const weak = props.matches.filter((m) => m.strength === 'WEAK');
@@ -120,7 +176,13 @@ function Matches(props: { caseId: string; matches: ScreeningMatch[]; run: Run })
     <>
       {strong.length > 0 && <span>{t('screening.matches', { count: strong.length })}</span>}
       {strong.map((m) => (
-        <MatchView key={m.id} caseId={props.caseId} match={m} run={props.run} />
+        <MatchView
+          key={m.id}
+          caseId={props.caseId}
+          match={m}
+          isNew={props.monitoring && !m.carriedFrom}
+          run={props.run}
+        />
       ))}
       {weak.length > 0 && (
         <details className="disclosure">
@@ -195,7 +257,8 @@ const LIST_DECISIONS = ['FALSE_POSITIVE', 'TRUE_POSITIVE'] as const;
 const ARTICLE_DECISIONS = ['TRUE_POSITIVE', 'FALSE_POSITIVE', 'NOT_RELEVANT'] as const;
 type Decision = (typeof ARTICLE_DECISIONS)[number];
 
-function MatchView({ caseId, match, run }: { caseId: string; match: ScreeningMatch; run: Run }) {
+function MatchView(props: { caseId: string; match: ScreeningMatch; isNew?: boolean; run: Run }) {
+  const { caseId, match, run } = props;
   const { t } = useTranslation();
   const confirm = useConfirm();
   const [decision, setDecision] = useState<Decision | ''>('');
@@ -228,7 +291,8 @@ function MatchView({ caseId, match, run }: { caseId: string; match: ScreeningMat
   );
 
   return (
-    <div className="match">
+    <div className={props.isNew ? 'match match-new' : 'match'}>
+      {props.isNew && <span className="chip chip-new">{t('screening.newInMonitoring')}</span>}
       {article ? (
         <ArticleHead match={match} />
       ) : (
@@ -252,6 +316,7 @@ function MatchView({ caseId, match, run }: { caseId: string; match: ScreeningMat
         </>
       )}
       <span>{t(`${statusKey}.${match.reviewStatus}`)}</span>
+      {match.carriedFrom && <span className="muted">{t('screening.carried')}</span>}
       {match.reviewStatus === 'OPEN' ? (
         <form onSubmit={submit} className="stack">
           {article && <p className="muted">{t('screening.article.hint')}</p>}

@@ -35,6 +35,10 @@ const EnvSchema = z.object({
     .default('false')
     .transform((v) => v === 'true'),
   GDELT_URL: z.url().default('https://api.gdeltproject.org'),
+  // Ongoing monitoring: a party of an open case is screened again once its latest check is this
+  // many days old; one run handles at most MONITORING_BATCH parties (the rest on the next run).
+  MONITORING_INTERVAL_DAYS: z.coerce.number().int().min(1).max(365).default(7),
+  MONITORING_BATCH: z.coerce.number().int().min(1).max(5000).default(200),
 });
 
 export type AppConfig = {
@@ -56,6 +60,7 @@ export type AppConfig = {
     brave: { apiKey: string; baseUrl: string } | null;
     gdelt: { baseUrl: string } | null;
   };
+  monitoring: { intervalDays: number; batch: number };
 };
 
 /** The key published in .env.example for local development. Never acceptable elsewhere. */
@@ -92,6 +97,7 @@ export function loadConfig(source: NodeJS.ProcessEnv): AppConfig {
     },
     openSanctions: null,
     adverseMedia: { brave: null, gdelt: null },
+    monitoring: { intervalDays: e.MONITORING_INTERVAL_DAYS, batch: e.MONITORING_BATCH },
   };
 
   if (config.providers.screening === 'OPENSANCTIONS') {

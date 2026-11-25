@@ -15,6 +15,8 @@ export type CaseSummary = {
   clientName: string | null;
   partyNames: string[];
   nextReviewOn: string | null;
+  /** Monitoring found a new strong match that still awaits review. */
+  monitoringAlert: boolean;
   openApprovalBy: string | null;
   escalation: 'OPEN' | 'REPORTED' | null;
   createdAt: string;
@@ -74,6 +76,7 @@ export type CaseDetail = CaseSummary & {
 
 export type ScreeningMatch = {
   id: string;
+  externalId: string | null;
   name: string;
   score: string | null;
   /** STRONG must be reviewed; WEAK (below the provider's threshold) is shown folded. */
@@ -84,6 +87,8 @@ export type ScreeningMatch = {
   reviewStatus: 'OPEN' | 'FALSE_POSITIVE' | 'TRUE_POSITIVE' | 'NOT_RELEVANT';
   reviewJustification: string | null;
   reviewedAt: string | null;
+  /** The earlier match whose decision was carried over (same record found again). */
+  carriedFrom: string | null;
 };
 
 export type ScreeningCheck = {
@@ -92,6 +97,7 @@ export type ScreeningCheck = {
   provider: string;
   /** Every source searched (OPENSANCTIONS, BRAVE, GDELT…); empty for older checks. */
   sources: string[];
+  origin: 'MANUAL' | 'AUTOMATIC' | 'MONITORING' | null;
   status: 'PENDING' | 'COMPLETED' | 'FAILED';
   matchCount: number | null;
   requestedAt: string;

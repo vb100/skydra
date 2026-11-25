@@ -36,6 +36,8 @@ export type CaseSummary = {
   /** Requester of an approval waiting for a decision. */
   openApprovalBy: string | null;
   escalation: 'OPEN' | 'REPORTED' | null;
+  /** Monitoring found a new strong match that still awaits review (client answer to Q33). */
+  monitoringAlert: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -101,6 +103,15 @@ const SUMMARY = `
          (SELECT e.status FROM case_escalations e
            WHERE e.case_id = c.id AND e.status IN ('OPEN', 'REPORTED')
            ORDER BY e.requested_at DESC LIMIT 1) AS "escalation",
+         EXISTS (SELECT 1 FROM case_parties cp
+                   CROSS JOIN LATERAL (
+                     SELECT s.id, s.origin FROM screening_checks s
+                      WHERE s.case_party_id = cp.id AND s.status = 'COMPLETED'
+                      ORDER BY s.requested_at DESC LIMIT 1) l
+                   JOIN screening_matches m ON m.check_id = l.id
+                  WHERE cp.case_id = c.id AND cp.removed_at IS NULL AND l.origin = 'MONITORING'
+                    AND m.review_status = 'OPEN' AND m.strength = 'STRONG'
+                    AND m.carried_from IS NULL) AS "monitoringAlert",
          c.created_at AS "createdAt",
          c.updated_at AS "updatedAt"`;
 

@@ -71,6 +71,22 @@ variable "adverse_media" {
   default = { brave = false, gdelt = false }
 }
 
+variable "monitoring" {
+  description = "Ongoing screening monitoring: a party of an open case is screened again when its latest check is interval_days old. schedule is a cron expression in Europe/Vilnius time for Cloud Scheduler (null: no schedule, the job runs only by hand); scheduler_region where Cloud Scheduler runs (null: the region of the environment)."
+  type = object({
+    interval_days    = optional(number, 7)
+    batch            = optional(number, 200)
+    schedule         = optional(string)
+    scheduler_region = optional(string)
+  })
+  default = {}
+
+  validation {
+    condition     = var.monitoring.interval_days >= 1 && var.monitoring.interval_days <= 365
+    error_message = "monitoring.interval_days must be between 1 and 365."
+  }
+}
+
 variable "db_tier" {
   description = "Cloud SQL machine type (Enterprise edition)."
   type        = string

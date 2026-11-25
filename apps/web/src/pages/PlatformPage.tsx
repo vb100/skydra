@@ -1,3 +1,4 @@
+import { PROVIDER_PRICE_EUR } from '@skydra/shared';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +7,17 @@ import { useErrorMessage } from '../session';
 import { ErrorText, Field, Page } from '../ui';
 
 type Organization = { id: string; name: string; planCode: string; status: string };
+type Usage = {
+  month: string;
+  organizationId: string;
+  organization: string;
+  checks: number;
+  monitoringChecks: number;
+  failedChecks: number;
+  openSanctions: number;
+  brave: number;
+  gdelt: number;
+};
 const PLANS = ['INDIVIDUAL', 'AGENCY', 'AGENCY_PRO'] as const;
 
 export function PlatformPage() {
@@ -100,6 +112,71 @@ export function PlatformPage() {
           </li>
         ))}
       </ul>
+      <UsageTable />
     </Page>
+  );
+}
+
+const euro = new Intl.NumberFormat('lt-LT', { style: 'currency', currency: 'EUR' });
+
+/** Screening volume and provider requests per month: what the providers will bill. */
+function UsageTable() {
+  const { t } = useTranslation();
+  const usage = useQuery({
+    queryKey: ['platform', 'usage'],
+    queryFn: () => api<Usage[]>('GET', '/platform/usage?months=6'),
+  });
+  const rows = usage.data ?? [];
+  const cost = (requests: number) => euro.format(requests * PROVIDER_PRICE_EUR.OPENSANCTIONS);
+  const total = rows.reduce((n, r) => n + r.openSanctions, 0);
+  return (
+    <>
+      <h2>{t('platform.usage.title')}</h2>
+      <p className="muted">{t('platform.usage.hint')}</p>
+      {usage.isSuccess && rows.length === 0 && <p>{t('platform.usage.none')}</p>}
+      <ul className="list">
+        {rows.map((r) => (
+          <li key={`${r.month}-${r.organizationId}`} className="card static">
+            <strong>
+              {r.month} · {r.organization}
+            </strong>
+            <dl className="usage-grid">
+              <div>
+                <dt>{t('platform.usage.checks')}</dt>
+                <dd>
+                  {r.checks}
+                  <span className="muted">
+                    {t('platform.usage.checksDetail', {
+                      monitoring: r.monitoringChecks,
+                      failed: r.failedChecks,
+                    })}
+                  </span>
+                </dd>
+              </div>
+              <div>
+                <dt>{t('platform.usage.openSanctions')}</dt>
+                <dd>
+                  {r.openSanctions}
+                  <span className="muted">≈ {cost(r.openSanctions)}</span>
+                </dd>
+              </div>
+              <div>
+                <dt>{t('platform.usage.brave')}</dt>
+                <dd>{r.brave}</dd>
+              </div>
+              <div>
+                <dt>{t('platform.usage.gdelt')}</dt>
+                <dd>{r.gdelt}</dd>
+              </div>
+            </dl>
+          </li>
+        ))}
+      </ul>
+      {rows.length > 1 && (
+        <p>
+          <strong>{t('platform.usage.total', { cost: cost(total), requests: total })}</strong>
+        </p>
+      )}
+    </>
   );
 }

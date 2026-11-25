@@ -98,15 +98,15 @@ export async function gatherFacts(client: PoolClient, caseId: string): Promise<R
     [caseId],
   );
 
-  // Confirmed matches of the latest completed check per party.
+  // Confirmed matches of the active parties, from every completed check: a confirmation stays in
+  // force when a later check no longer finds the record (as in the checklist, migration 0015).
   const { rows: confirmed } = await client.query<{ categories: string[] }>(
     `SELECT m.categories
        FROM screening_matches m
-       JOIN (SELECT DISTINCT ON (s.case_party_id) s.id
-               FROM screening_checks s JOIN case_parties cp ON cp.id = s.case_party_id
-              WHERE s.case_id = $1 AND s.status = 'COMPLETED' AND cp.removed_at IS NULL
-              ORDER BY s.case_party_id, s.requested_at DESC) l ON l.id = m.check_id
-      WHERE m.review_status = 'TRUE_POSITIVE'`,
+       JOIN screening_checks s ON s.id = m.check_id
+       JOIN case_parties cp ON cp.id = s.case_party_id
+      WHERE s.case_id = $1 AND s.status = 'COMPLETED' AND cp.removed_at IS NULL
+        AND m.review_status = 'TRUE_POSITIVE'`,
     [caseId],
   );
   const categories = new Set(confirmed.flatMap((m) => m.categories));

@@ -173,6 +173,17 @@ export const lt = {
     submit: 'Sukurti ir gauti kvietimą',
     inviteReady:
       'Organizacija sukurta. Perduokite šią vienkartinę nuorodą administratoriui saugiu kanalu (galioja 72 val.):',
+    usage: {
+      title: 'Patikros ir tiekėjų užklausos',
+      hint: 'Per mėnesį: užbaigtos patikros (iš jų tęstinės stebėsenos ir nepavykusios) ir atsakytos tiekėjų užklausos, už kurias tiekėjai ima mokestį. OpenSanctions kaina – 0,10 € už užklausą, neįskaičiuojant nemokamų kreditų; Brave – pagal pasirinktą planą.',
+      none: 'Patikrų dar nebuvo.',
+      checks: 'Patikros',
+      checksDetail: 'stebėsena {{monitoring}}, nepavyko {{failed}}',
+      openSanctions: 'OpenSanctions',
+      brave: 'Brave',
+      gdelt: 'GDELT',
+      total: 'OpenSanctions per laikotarpį: {{requests}} užklausų, ≈ {{cost}}',
+    },
   },
   members: {
     title: 'Organizacijos nariai',
@@ -252,6 +263,7 @@ export const lt = {
       waiting: 'Laukia kitų',
       blocked: 'Sustabdytos bylos',
       reviews: 'Artėjančios rizikos peržiūros (90 d.)',
+      monitoring: 'Stebėsena rado naujų galimų sutapimų',
     },
     empty: {
       action: 'Šiuo metu jūsų veiksmo nelaukia nė viena byla.',
@@ -262,6 +274,7 @@ export const lt = {
     waitingApproval: 'Laukiama tvirtintojo sprendimo',
     waitingEscalation: 'Laukiama AML atsakingo asmens sprendimo',
     reviewOn: 'Peržiūra {{date}}',
+    monitoringHint: 'Pakartotinė patikra rado naują galimą sutapimą – įvertinkite jį.',
     allCases: 'Visos bylos →',
     noCaseAccess: 'Jūsų rolė bylų nemato. Organizacijos nustatymai ir nariai – meniu viršuje.',
   },
@@ -524,6 +537,17 @@ export const lt = {
       'Patikros imituojamos. Pavardė su „Sankcij“ – sankcijos, „Politik“ – PEP, „Artimas“ – PEP artimas asmuo, „Skandal“ – neigiamas straipsnis žiniasklaidoje, „Panaš“ – silpnas PEP atitikmuo; kitos – sutapimų nėra.',
     notScreened: 'Dar netikrinta',
     lastCheck: 'Paskutinė patikra: {{date}} ({{provider}})',
+    lastCheckOrigin: 'Paskutinė patikra: {{date}}, {{origin}} ({{provider}})',
+    origins: {
+      MANUAL: 'paleista rankiniu būdu',
+      AUTOMATIC: 'automatinė',
+      MONITORING: 'tęstinė stebėsena',
+    },
+    newInMonitoring: 'Nauja – rasta tęstinės stebėsenos metu',
+    carried: 'Tas pats įrašas rastas ir ankstesnėje patikroje – ankstesnis sprendimas galioja.',
+    earlierConfirmed: 'Patvirtinta ankstesnėje patikroje',
+    earlierConfirmedHint:
+      'Paskutinė patikra šio įrašo neberado (pvz., asmuo išbrauktas iš sąrašo), tačiau patvirtinimas galioja, kol nebus priimtas atskiras sprendimas.',
     providers: {
       MOCK: 'imitacija',
       MANUAL: 'įvesta rankiniu būdu',

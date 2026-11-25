@@ -81,6 +81,16 @@ describe('loadConfig', () => {
     expect(() => loadConfig({ ...os, GDELT_ENABLED: 'yes' })).toThrow(/GDELT_ENABLED/);
   });
 
+  it('monitors weekly by default, within bounds', () => {
+    expect(loadConfig(base).monitoring).toEqual({ intervalDays: 7, batch: 200 });
+    expect(
+      loadConfig({ ...base, MONITORING_INTERVAL_DAYS: '1', MONITORING_BATCH: '50' }).monitoring,
+    ).toEqual({ intervalDays: 1, batch: 50 });
+    expect(() => loadConfig({ ...base, MONITORING_INTERVAL_DAYS: '0' })).toThrow(
+      /MONITORING_INTERVAL_DAYS/,
+    );
+  });
+
   it('accepts each provider code only for its own integration', () => {
     expect(() => loadConfig({ ...base, SCREENING_PROVIDER: 'ONDATO' })).toThrow(
       /SCREENING_PROVIDER/,

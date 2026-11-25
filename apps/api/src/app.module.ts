@@ -25,6 +25,7 @@ import { RiskController } from './risk/risk.controller';
 import { createScreeningProvider } from './screening/create-provider';
 import { SCREENING_PROVIDER } from './screening/provider';
 import { DocumentsController } from './documents/documents.controller';
+import { ClientsController } from './clients/clients.controller';
 import {
   FILE_STORE,
   type FileStore,
@@ -49,6 +50,7 @@ export class AppModule {
         OwnershipController,
         ExportController,
         DocumentsController,
+        ClientsController,
       ],
       providers: [
         {

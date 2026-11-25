@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { screeningStatus } from './screening';
+import { screeningStatus, worstScreeningStatus } from './screening';
 
 type M = Parameters<typeof screeningStatus>[0][number]['matches'][number];
 const match = (over: Partial<M> = {}): M => ({
@@ -68,5 +68,14 @@ describe('screeningStatus', () => {
   it('keeps the latest completed result when a re-check fails, and says so', () => {
     const red = done(match({ reviewStatus: 'TRUE_POSITIVE', categories: ['SANCTIONS'] }));
     expect(screeningStatus([failed, red])).toEqual({ status: 'RED', lastAttemptFailed: true });
+  });
+});
+
+describe('worstScreeningStatus', () => {
+  it('takes the most serious status of a person’s cases', () => {
+    expect(worstScreeningStatus([])).toBe('NOT_SCREENED');
+    expect(worstScreeningStatus(['GREEN', 'ORANGE', 'YELLOW'])).toBe('ORANGE');
+    expect(worstScreeningStatus(['FAILED', 'GREEN'])).toBe('FAILED');
+    expect(worstScreeningStatus(['ORANGE', 'RED'])).toBe('RED');
   });
 });

@@ -16,6 +16,7 @@ import { type RiskOverview, riskOverview } from '../risk/risk';
 import { listScreenings, type ScreeningCheck } from '../screening/screening';
 import { type CaseDocument, listDocuments, readDocument } from '../documents/documents';
 import type { FileStore } from '../storage/file-store';
+import { getProfile, type OrganizationProfile, readLogo } from '../organization/profile';
 import { zip } from './zip';
 
 const req = createRequire(__filename);
@@ -27,6 +28,9 @@ type AuditRow = { seq: string; occurred_at: Date; action: string; actor: string 
 
 export type CaseReportData = {
   organizationName: string;
+  /** The agency's details and logo from its profile (client answer Q43). */
+  organization: OrganizationProfile;
+  logo: Buffer | null;
   exportedByName: string;
   exportedAt: Date;
   caseFile: CaseDetail;
@@ -44,6 +48,7 @@ export async function collectReport(
   client: PoolClient,
   keys: SecretKeys,
   caseId: string,
+  store?: FileStore,
 ): Promise<CaseReportData> {
   const id = z.uuid().parse(caseId);
   const caseFile = await getCase(client, keys, id);
@@ -59,8 +64,22 @@ export async function collectReport(
       ORDER BY e.seq`,
     [id],
   );
+  const organization = await getProfile(client);
+  let logo: Buffer | null = null;
+  if (organization.hasLogo && store)
+    try {
+      logo = (await readLogo(client, store))?.body ?? null;
+    } catch (error) {
+      // The report stands without the logo; the reason is logged, not hidden.
+      console.error(
+        'case report: logo unavailable',
+        error instanceof Error ? error.message : error,
+      );
+    }
   return {
     organizationName: who[0]?.organization ?? '',
+    organization,
+    logo,
     exportedByName: who[0]?.user ?? '',
     exportedAt: new Date(),
     caseFile,
@@ -132,12 +151,57 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
     d.ownership.some((o) => o.provider === 'MOCK') ||
     d.identity.some((v) => v.provider === 'MOCK');
 
+  // The agency (Q43): logo and details from its profile.
+  const o = d.organization;
+  const top = doc.y;
+  let textX = doc.page.margins.left;
+  if (d.logo) {
+    try {
+      doc.image(d.logo, doc.page.margins.left, top, { fit: [120, 44] });
+      textX += 132;
+    } catch (error) {
+      console.error(
+        'case report: logo not embeddable',
+        error instanceof Error ? error.message : error,
+      );
+    }
+  }
+  doc.font('Sans-Bold').fontSize(11).text(o.name, textX, top);
+  doc
+    .font('Sans')
+    .fontSize(8.5)
+    .fillColor('#5b6673')
+    .text(
+      [
+        o.companyCode && `Įmonės kodas ${o.companyCode}`,
+        o.address,
+        [o.phone, o.email, o.website].filter(Boolean).join(' · '),
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      textX,
+    )
+    .fillColor('#000000');
+  doc.x = doc.page.margins.left;
+  doc.y = Math.max(doc.y, top + 48);
+  doc.moveDown(0.6);
+
   // Title
   h1(`AML byla ${c.reference}`);
   p(`${d.organizationName} · eksportavo ${d.exportedByName} · ${date(d.exportedAt)}`, {
     muted: true,
   });
   p(`Eksporto ID: ${exportId}`, { muted: true });
+  // Who decided and when, and on which methodology (Q43), before the details.
+  const decided = d.decisions.final[0];
+  if (decided)
+    p(
+      `Galutinis sprendimas: ${label(lt.finalDecision.decisions, decided.decision)} · ${decided.decidedByName}, ${date(decided.decidedAt)}`,
+    );
+  if (d.risk.current)
+    p(`Rizikos metodika: ${d.risk.current.ruleSetCode} / ${d.risk.current.ruleSetVersion}`, {
+      muted: true,
+    });
   if (simulated || d.risk.ruleSet.isDemo) {
     doc.moveDown(0.4);
     doc
@@ -461,8 +525,9 @@ export async function exportCase(
   client: PoolClient,
   keys: SecretKeys,
   caseId: string,
+  store?: FileStore,
 ): Promise<{ pdf: Buffer; sha256: string; exportId: string; reference: string }> {
-  const data = await collectReport(client, keys, caseId);
+  const data = await collectReport(client, keys, caseId, store);
   // A completed case, or one closed by a decline or termination (its file is kept too).
   if (!['COMPLETED', 'CLOSED'].includes(data.caseFile.complianceStatus))
     throw new RuleError('complete the AML checks before exporting the case');
@@ -513,7 +578,7 @@ export async function exportCaseZip(
   store: FileStore,
   caseId: string,
 ): Promise<{ zip: Buffer; sha256: string; exportId: string; reference: string }> {
-  const data = await collectReport(client, keys, caseId);
+  const data = await collectReport(client, keys, caseId, store);
   // A completed case, or one closed by a decline or termination (its file is kept too).
   if (!['COMPLETED', 'CLOSED'].includes(data.caseFile.complianceStatus))
     throw new RuleError('complete the AML checks before exporting the case');

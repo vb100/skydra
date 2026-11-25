@@ -75,6 +75,11 @@ export function AppShell(props: {
                   {t('members.link')}
                 </NavLink>
               )}
+              {props.canSeeMembers && (
+                <NavLink to="/organization" onClick={close}>
+                  {t('organizationProfile.link')}
+                </NavLink>
+              )}
               {me.isPlatformAdmin && (
                 <NavLink to="/platform" onClick={close}>
                   {t('home.platform')}

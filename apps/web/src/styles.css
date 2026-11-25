@@ -441,6 +441,20 @@ a.card strong {
 }
 
 /* A document in the documents tab: what it is on the left, the download on the right. */
+/* The agency's logo on the organization page, as it will appear in exports. */
+.org-logo {
+  max-width: 240px;
+  max-height: 88px;
+  object-fit: contain;
+  align-self: flex-start;
+}
+fieldset.plain {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
 .document-row {
   display: flex;
   align-items: flex-start;

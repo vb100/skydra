@@ -516,6 +516,11 @@ export function renderReport(
     );
     if (final.riskLevel) row(Z.risk, label(lt.riskLevels, final.riskLevel));
     if (final.nextReviewOn) row(Z.nextReview, day(final.nextReviewOn));
+    // Reopenings (Q26): when, by whom and why the completed case was changed.
+    for (const v of d.decisions.revisions)
+      p(f(r.reopened, { date: date(v.openedAt), by: v.openedByName, reason: v.reason }), {
+        muted: true,
+      });
     for (const e of earlier)
       p(
         f(Z.earlier, {

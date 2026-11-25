@@ -12,6 +12,7 @@ import { z } from 'zod';
 import { recordAudit } from '../audit/audit';
 import { refreshCompliance } from '../cases/cases';
 import { NotFoundError, RuleError, translateDbError } from '../domain-errors';
+import { type CaseRevision, listRevisions } from './revisions';
 
 export type ChecklistEntry = { casePartyId: string | null; item: ChecklistItem; ok: boolean };
 
@@ -251,7 +252,12 @@ export async function recordDecision(
 export async function listDecisions(
   client: PoolClient,
   caseId: string,
-): Promise<{ approvals: Approval[]; escalations: Escalation[]; final: FinalDecision[] }> {
+): Promise<{
+  approvals: Approval[];
+  escalations: Escalation[];
+  final: FinalDecision[];
+  revisions: CaseRevision[];
+}> {
   const id = z.uuid().parse(caseId);
   const { rows: approvals } = await client.query<Approval>(
     `SELECT a.id, a.reason, a.status, a.requested_by AS "requestedBy",
@@ -285,5 +291,5 @@ export async function listDecisions(
       WHERE d.case_id = $1 ORDER BY d.decided_at DESC, d.id DESC`,
     [id],
   );
-  return { approvals, escalations, final };
+  return { approvals, escalations, final, revisions: await listRevisions(client, id) };
 }

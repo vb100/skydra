@@ -277,6 +277,16 @@ export type CaseDocument = {
   uploadedAt: string;
 };
 
+/** A completed case reopened to change it (client answer Q26). */
+export type CaseRevision = {
+  id: string;
+  reason: string;
+  openedByName: string;
+  openedAt: string;
+  closedAt: string | null;
+  closedByDecision: string | null;
+};
+
 /** The broker's final decision on a case (client answer Q25). */
 export type FinalDecision = {
   id: string;

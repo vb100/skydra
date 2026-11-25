@@ -60,6 +60,23 @@ const RULES: [RegExp, string][] = [
   [/below the mandatory minimum/, 'riskMinimum'],
   [/lowering the calculated risk/, 'riskLowering'],
   [/needs a justification/, 'riskJustification'],
+  [/reopen it to make changes/, 'caseLocked'],
+  [/only a completed case is reopened|already reopened/, 'reopenOnly'],
+  [/cannot be approved yet/, 'decisionNotReady'],
+  [/approve with enhanced measures/, 'decisionEnhanced'],
+  [/terminate instead/, 'decisionTerminate'],
+  [/decline instead/, 'decisionDecline'],
+  [/report the suspicious indicators/, 'decisionReportFirst'],
+  [/closed by (an earlier decision|a decision)/, 'caseClosed'],
+  [/already approved on its latest/, 'decisionAlready'],
+  [/only PDF, JPEG/, 'documentType'],
+  [/larger than 20 MB/, 'documentSize'],
+  [/file storage is not configured/, 'storageUnavailable'],
+  [/latest check of this party is complete/, 'manualNotNeeded'],
+  [/search date cannot be in the future/, 'manualFutureDate'],
+  [/not a document of this case/, 'manualEvidence'],
+  [/logo must be a PNG or JPEG|logo is larger/, 'logoFile'],
+  [/only an organization administrator/, 'profileAdminOnly'],
 ];
 
 /** Translated message for an API error code. */

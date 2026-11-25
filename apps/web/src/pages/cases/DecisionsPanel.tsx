@@ -8,6 +8,7 @@ import { FinalDecisionCard } from './FinalDecisionCard';
 import type {
   Approval,
   CaseAbilities,
+  CaseRevision,
   ChecklistEntry,
   Escalation,
   FinalDecision,
@@ -25,10 +26,12 @@ export function DecisionsPanel(props: { caseId: string; abilities: CaseAbilities
   const decisions = useQuery({
     queryKey: ['decisions', caseId],
     queryFn: () =>
-      api<{ approvals: Approval[]; escalations: Escalation[]; final: FinalDecision[] }>(
-        'GET',
-        `/cases/${caseId}/decisions`,
-      ),
+      api<{
+        approvals: Approval[];
+        escalations: Escalation[];
+        final: FinalDecision[];
+        revisions: CaseRevision[];
+      }>('GET', `/cases/${caseId}/decisions`),
   });
   const checklist = useQuery({
     queryKey: ['checklist', caseId],
@@ -85,6 +88,7 @@ export function DecisionsPanel(props: { caseId: string; abilities: CaseAbilities
         <FinalDecisionCard
           caseId={caseId}
           decisions={decisions.data.final}
+          revisions={decisions.data.revisions}
           approvals={approvals}
           checklist={checklist.data}
           run={run}

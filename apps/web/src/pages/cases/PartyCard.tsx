@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { OwnershipPanel } from './OwnershipPanel';
 import { PartyKycPanel } from './PartyKycPanel';
 import type { CaseParty, IdentityVerification, OwnershipView, Run } from './types';
+import { useCaseLocked } from './caseLock';
 
 type ChipState = 'ok' | 'attention' | 'missing' | 'pep' | 'blocked';
 
@@ -136,6 +137,7 @@ export function PartyCard(props: {
   run: Run;
 }) {
   const { t } = useTranslation();
+  const locked = useCaseLocked();
   const { caseParty: cp } = props;
   const legal = cp.party.partyType === 'LEGAL';
 
@@ -194,11 +196,13 @@ export function PartyCard(props: {
               run={props.run}
             />
           )}
-          <div className="actions">
-            <button type="button" className="danger small" onClick={props.onRemove}>
-              {t('parties.remove')}
-            </button>
-          </div>
+          {!locked && (
+            <div className="actions">
+              <button type="button" className="danger small" onClick={props.onRemove}>
+                {t('parties.remove')}
+              </button>
+            </div>
+          )}
         </div>
       )}
 

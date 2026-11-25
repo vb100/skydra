@@ -5,7 +5,7 @@ import { api } from '../../api';
 import { useConfirm } from '../../feedback';
 import { formatDate, formatDateTime } from '../../format';
 import { Field, Select } from '../../ui';
-import type { Approval, ChecklistEntry, FinalDecision, Run } from './types';
+import type { Approval, CaseRevision, ChecklistEntry, FinalDecision, Run } from './types';
 
 const APPROVALS: readonly CaseDecision[] = ['APPROVE', 'APPROVE_WITH_ENHANCED_MEASURES'];
 
@@ -17,6 +17,7 @@ const APPROVALS: readonly CaseDecision[] = ['APPROVE', 'APPROVE_WITH_ENHANCED_ME
 export function FinalDecisionCard(props: {
   caseId: string;
   decisions: FinalDecision[];
+  revisions: CaseRevision[];
   approvals: Approval[];
   checklist: ChecklistEntry[];
   run: Run;
@@ -159,6 +160,21 @@ export function FinalDecisionCard(props: {
         </>
       )}
 
+      {props.revisions.length > 0 && (
+        <details className="disclosure">
+          <summary>{t('revisions.history')}</summary>
+          {props.revisions.map((v) => (
+            <span key={v.id} className="muted">
+              {t('revisions.entry', {
+                date: formatDateTime(v.openedAt),
+                by: v.openedByName,
+                reason: v.reason,
+              })}
+              {v.closedAt && ` · ${t('revisions.closed', { date: formatDateTime(v.closedAt) })}`}
+            </span>
+          ))}
+        </details>
+      )}
       {earlier.length > 0 && (
         <details className="disclosure">
           <summary>{t('finalDecision.history')}</summary>

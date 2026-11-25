@@ -32,6 +32,7 @@ import {
   requestApproval,
   resolveEscalation,
 } from './decisions';
+import { reopenCase } from './revisions';
 import {
   listIdentityVerifications,
   recordInPersonVerification,
@@ -119,6 +120,9 @@ describe('KYC completion', () => {
     );
     await assess(caseId, ctx);
   }
+
+  const reopen = (caseId: string, reason: string, ctx = broker) =>
+    as(ctx, (c) => reopenCase(c, keys, caseId, { reason }));
 
   /** The broker's final decision (approve unless said otherwise). */
   const finalDecision = (
@@ -536,14 +540,83 @@ describe('KYC completion', () => {
       expect(final[0]).toMatchObject({ decision: 'APPROVE', riskLevel: 'MEDIUM' });
       expect(final[0]!.nextReviewOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
 
-      // New information, a new assessment: the earlier approval no longer covers the case.
+      // A completed case is read-only: new information needs the case reopened (Q26).
+      await expect(
+        as(broker, (c) => updateCase(c, actor(broker), caseId, { transactionValue: 160000 })),
+      ).rejects.toThrow(/reopen it to make changes/);
+      await expect(reopen(caseId, 'Trumpai')).rejects.toThrow();
+      const reopened = await reopen(caseId, 'Pasikeitė sandorio kaina po derybų');
+      expect(reopened.complianceStatus).toBe('IN_PROGRESS');
+      await expect(reopen(caseId, 'Antras atidarymas tuo pačiu metu')).rejects.toThrow(
+        /only a completed case is reopened|already reopened/,
+      );
       await as(broker, (c) => updateCase(c, actor(broker), caseId, { transactionValue: 160000 }));
       await assess(caseId);
       expect(await failing(caseId)).toEqual(['DECISION_RECORDED']);
-      expect(await status(caseId)).toBe('IN_PROGRESS');
       expect((await finalDecision(caseId)).complianceStatus).toBe('COMPLETED');
 
+      // The reopening is on record with the state it left, and closed by the new decision.
+      const { revisions, final: decisions } = await as(broker, (c) => listDecisions(c, caseId));
+      expect(revisions).toMatchObject([
+        {
+          reason: 'Pasikeitė sandorio kaina po derybų',
+          openedBy: broker.userId,
+          closedByDecision: decisions[0]!.id,
+          snapshot: {
+            complianceStatus: 'COMPLETED',
+            riskLevel: 'MEDIUM',
+            decision: { decision: 'APPROVE' },
+            transaction: { value: '150000.00' },
+          },
+        },
+      ]);
+      await expect(
+        as(broker, (c) =>
+          c.query(
+            'UPDATE case_revisions SET closed_at = NULL, closed_by_decision = NULL WHERE case_id = $1',
+            [caseId],
+          ),
+        ),
+      ).rejects.toThrow(/closed only by a decision/);
+
+      // Terminating needs no reopening.
       expect((await finalDecision(caseId, 'TERMINATE')).complianceStatus).toBe('CLOSED');
+    });
+
+    it('a completed case keeps its stage, screening, reports and exports, but not its data', async () => {
+      const { caseId, casePartyId } = await screenedCase('Užrakinta');
+      await verifyAndComplete(caseId, casePartyId);
+      await finalDecision(caseId);
+      const locked = /reopen it to make changes/;
+      // Refused: data, parties, identity, KYC, risk, approvals.
+      await expect(
+        as(broker, (c) =>
+          addCaseParty(c, keys, actor(broker), caseId, {
+            party: { partyType: 'NATURAL', firstName: 'Nauja', lastName: 'Šalis' },
+            role: 'SELLER',
+            isOurClient: false,
+          }),
+        ),
+      ).rejects.toThrow(locked);
+      await expect(
+        as(broker, (c) =>
+          updateCaseParty(c, caseId, casePartyId, { kyc: { ...KYC, purpose: 'Kitas tikslas' } }),
+        ),
+      ).rejects.toThrow(locked);
+      await expect(
+        as(broker, (c) =>
+          recordInPersonVerification(c, keys, caseId, { casePartyId, ...DOCUMENT } as never),
+        ),
+      ).rejects.toThrow(locked);
+      await expect(assess(caseId)).rejects.toThrow(locked);
+      // Still possible: the transaction's stage, a new check, a report to the AML officer.
+      await as(broker, (c) => updateCase(c, actor(broker), caseId, { stage: 'CONTRACT' }));
+      await runScreening(app, broker, screening, caseId, {});
+      expect(await status(caseId)).toBe('COMPLETED');
+      const raised = await as(broker, (c) =>
+        escalate(c, caseId, { reason: 'Nauji įtarimai po užbaigimo' }),
+      );
+      expect(raised.complianceStatus).toBe('BLOCKED');
     });
 
     it('suspicious indicators must have been reported to the AML officer first', async () => {

@@ -7,10 +7,12 @@ import { useConfirm } from '../../feedback';
 import { formatDate } from '../../format';
 import { Field, Hint, Select } from '../../ui';
 import type { RiskFactor, RiskOverview, Run } from './types';
+import { useCaseLocked } from './caseLock';
 
 /** LT-RISK-01: the preliminary result from current data, the recorded assessment and history. */
 export function RiskPanel({ caseId, run }: { caseId: string; run: Run }) {
   const { t } = useTranslation();
+  const locked = useCaseLocked();
   const confirm = useConfirm();
   const risk = useQuery({
     queryKey: ['risk', caseId],
@@ -127,7 +129,7 @@ export function RiskPanel({ caseId, run }: { caseId: string; run: Run }) {
         <Factors factors={preview.factors} />
       </details>
 
-      {needsAssessment ? (
+      {locked ? null : needsAssessment ? (
         form
       ) : (
         <details className="disclosure">

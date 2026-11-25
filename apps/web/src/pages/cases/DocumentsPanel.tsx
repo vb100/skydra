@@ -6,6 +6,7 @@ import { api, apiUpload } from '../../api';
 import { formatDateTime } from '../../format';
 import { Field, Select } from '../../ui';
 import type { CaseDocument, CaseParty, Run } from './types';
+import { useCaseLocked } from './caseLock';
 
 const CATEGORIES = DocumentCategory.options;
 
@@ -124,6 +125,7 @@ export function UploadForm(props: {
 /** The documents of a case: what is on file, and adding more. Documents are never removed. */
 export function DocumentsPanel(props: { caseId: string; parties: CaseParty[]; run: Run }) {
   const { t } = useTranslation();
+  const locked = useCaseLocked();
   const documents = useDocuments(props.caseId);
   const party = (id: string | null) =>
     props.parties.find((p) => p.id === id)?.party.displayName ?? null;
@@ -131,10 +133,12 @@ export function DocumentsPanel(props: { caseId: string; parties: CaseParty[]; ru
     <section className="stack">
       <h2>{t('documents.title')}</h2>
       <p className="muted">{t('documents.hint')}</p>
-      <section className="card static">
-        <h3 className="card-title">{t('documents.add')}</h3>
-        <UploadForm caseId={props.caseId} parties={props.parties} run={props.run} />
-      </section>
+      {!locked && (
+        <section className="card static">
+          <h3 className="card-title">{t('documents.add')}</h3>
+          <UploadForm caseId={props.caseId} parties={props.parties} run={props.run} />
+        </section>
+      )}
       {documents.isSuccess && documents.data.length === 0 && (
         <p className="muted">{t('documents.none')}</p>
       )}

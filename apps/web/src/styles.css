@@ -1315,6 +1315,12 @@ dialog.confirm .actions {
   background: var(--warn-soft);
   color: var(--warn);
 }
+/* A completed, locked case: calm, with the way to reopen it. */
+.banner.locked {
+  background: var(--ok-soft);
+  color: var(--text);
+  border: 1px solid color-mix(in srgb, var(--ok) 30%, transparent);
+}
 
 /* History timeline */
 .timeline {

@@ -6,6 +6,7 @@ import { useConfirm } from '../../feedback';
 import { formatDateTime } from '../../format';
 import { Field, Hint, Select } from '../../ui';
 import type { OwnershipNode, OwnershipView, Run } from './types';
+import { useCaseLocked } from './caseLock';
 
 /** Registry data, ownership chain and beneficial owners of one legal-entity party. */
 export function OwnershipPanel(props: {
@@ -16,6 +17,7 @@ export function OwnershipPanel(props: {
   run: Run;
 }) {
   const { t } = useTranslation();
+  const locked = useCaseLocked();
   const { caseId, casePartyId, ownership: o, simulated, run } = props;
   const fetch = () =>
     run(
@@ -34,11 +36,13 @@ export function OwnershipPanel(props: {
       {!o ? (
         <>
           <span className="muted">{t('ownership.none')}</span>
-          <div className="actions">
-            <button type="button" className="primary" onClick={() => void fetch()}>
-              {t('ownership.fetch')}
-            </button>
-          </div>
+          {!locked && (
+            <div className="actions">
+              <button type="button" className="primary" onClick={() => void fetch()}>
+                {t('ownership.fetch')}
+              </button>
+            </div>
+          )}
         </>
       ) : (
         <>
@@ -101,28 +105,30 @@ export function OwnershipPanel(props: {
                 })}
               </span>
             ) : (
-              <ResolveForm caseId={caseId} snapshotId={o.snapshotId} run={run} />
+              !locked && <ResolveForm caseId={caseId} snapshotId={o.snapshotId} run={run} />
             ))}
 
-          <div className="actions">
-            {(o.ubos.some((u) => !u.linked) || o.managerLinked === false) && (
-              <button
-                type="button"
-                className="primary"
-                onClick={() =>
-                  void run(
-                    () => api('POST', `/cases/${caseId}/ownership/${o.snapshotId}/link-owners`),
-                    t('toast.ownersLinked'),
-                  )
-                }
-              >
-                {t('ownership.link')}
+          {!locked && (
+            <div className="actions">
+              {(o.ubos.some((u) => !u.linked) || o.managerLinked === false) && (
+                <button
+                  type="button"
+                  className="primary"
+                  onClick={() =>
+                    void run(
+                      () => api('POST', `/cases/${caseId}/ownership/${o.snapshotId}/link-owners`),
+                      t('toast.ownersLinked'),
+                    )
+                  }
+                >
+                  {t('ownership.link')}
+                </button>
+              )}
+              <button type="button" className="ghost" onClick={() => void fetch()}>
+                {t('ownership.refetch')}
               </button>
-            )}
-            <button type="button" className="ghost" onClick={() => void fetch()}>
-              {t('ownership.refetch')}
-            </button>
-          </div>
+            </div>
+          )}
         </>
       )}
     </div>

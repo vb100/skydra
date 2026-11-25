@@ -86,3 +86,7 @@ export const RecordDecisionInput = z
     path: ['suspicionNotes'],
   });
 export type RecordDecisionInput = z.input<typeof RecordDecisionInput>;
+
+/** Reopening a completed case to change it (client answer Q26). */
+export const ReopenCaseInput = z.object({ reason: z.string().trim().min(10).max(2000) });
+export type ReopenCaseInput = z.input<typeof ReopenCaseInput>;

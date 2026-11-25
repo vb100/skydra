@@ -18,6 +18,8 @@ import { Badge, ErrorText, Field, Page, Select } from '../../ui';
 import { AddPartyForm } from './AddPartyForm';
 import { DecisionsPanel } from './DecisionsPanel';
 import { DocumentsPanel } from './DocumentsPanel';
+import { CaseLockContext } from './caseLock';
+import { ReopenBanner } from './ReopenBanner';
 import { ExportPanel } from './ExportPanel';
 import { HistoryPanel } from './HistoryPanel';
 import { NextStepCard } from './NextStepCard';
@@ -29,6 +31,7 @@ import type {
   Approval,
   CaseAbilities,
   CaseDetail,
+  CaseRevision,
   CaseTab,
   ChecklistEntry,
   Escalation,
@@ -83,7 +86,10 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
   const decisions = useQuery({
     queryKey: ['decisions', id],
     queryFn: () =>
-      api<{ approvals: Approval[]; escalations: Escalation[] }>('GET', `/cases/${id}/decisions`),
+      api<{ approvals: Approval[]; escalations: Escalation[]; revisions: CaseRevision[] }>(
+        'GET',
+        `/cases/${id}/decisions`,
+      ),
   });
   const assignees = useQuery({
     queryKey: ['assignees'],
@@ -192,6 +198,9 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
     ...c.parties.filter((p) => p.beneficialOwnerOf === companyId),
   ];
   const client = topParties.find((p) => p.isOurClient) ?? topParties[0];
+  // A completed case is read-only until reopened (Q26).
+  const openRevision = decisions.data?.revisions.find((r) => !r.closedAt) ?? null;
+  const locked = c.complianceStatus === 'COMPLETED' && !openRevision;
   const visibleTabs = amlApplies
     ? TABS
     : TABS.filter((x) => ['overview', 'parties', 'documents', 'history'].includes(x));
@@ -355,15 +364,17 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
     <div className="stack">
       <div className="page-head">
         <h2>{t('cases.parties')}</h2>
-        <button
-          type="button"
-          className={topParties.length === 0 && !adding ? 'primary' : undefined}
-          onClick={() => setAdding((a) => !a)}
-        >
-          {adding ? t('casePage.closeForm') : t('casePage.addParty')}
-        </button>
+        {!locked && (
+          <button
+            type="button"
+            className={topParties.length === 0 && !adding ? 'primary' : undefined}
+            onClick={() => setAdding((a) => !a)}
+          >
+            {adding ? t('casePage.closeForm') : t('casePage.addParty')}
+          </button>
+        )}
       </div>
-      {adding && (
+      {adding && !locked && (
         <section className="card static">
           <AddPartyForm
             caseId={id}
@@ -400,96 +411,99 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
   );
 
   return (
-    <Page
-      title={client ? `${c.reference} · ${client.party.displayName}` : c.reference}
-      back={back}
-      wide
-    >
-      <div className="case-sub">
-        <Badge kind={c.complianceStatus}>{t(`complianceStatuses.${c.complianceStatus}`)}</Badge>
-        {c.riskLevel && (
-          <Badge kind={`risk-${c.riskLevel}`}>
-            {t('risk.title')}: {t(`riskLevels.${c.riskLevel}`)}
-          </Badge>
-        )}
-        <span className="muted">
-          {t(`transactionTypes.${c.transactionType}`)} · {c.propertyAddress} ·{' '}
-          {t(`stages.${c.stage}`)}
-        </span>
-      </div>
-
-      {amlApplies && <Stepper steps={steps} onSelect={(s) => go(TAB_OF_STEP[s])} />}
-
-      <div className="case-layout">
-        <aside className="case-side">
-          {amlApplies && checklist.data && (
-            <NextStepCard
-              checklist={list}
-              parties={c.parties}
-              approvals={decisions.data?.approvals ?? []}
-              escalations={decisions.data?.escalations ?? []}
-              abilities={abilities}
-              responsibleUserId={c.responsibleUserId}
-              closed={c.complianceStatus === 'CLOSED'}
-              onGo={go}
-            />
+    <CaseLockContext.Provider value={locked}>
+      <Page
+        title={client ? `${c.reference} · ${client.party.displayName}` : c.reference}
+        back={back}
+        wide
+      >
+        <div className="case-sub">
+          <Badge kind={c.complianceStatus}>{t(`complianceStatuses.${c.complianceStatus}`)}</Badge>
+          {c.riskLevel && (
+            <Badge kind={`risk-${c.riskLevel}`}>
+              {t('risk.title')}: {t(`riskLevels.${c.riskLevel}`)}
+            </Badge>
           )}
-          {amlApplies && (
-            <ExportPanel
-              caseId={id}
-              reference={c.reference}
-              completed={c.complianceStatus === 'COMPLETED' || c.complianceStatus === 'CLOSED'}
-              run={run}
-            />
-          )}
-        </aside>
+          <span className="muted">
+            {t(`transactionTypes.${c.transactionType}`)} · {c.propertyAddress} ·{' '}
+            {t(`stages.${c.stage}`)}
+          </span>
+        </div>
 
-        <div className="case-main">
-          <div className="tabs" role="tablist" id="case-tabs">
-            {visibleTabs.map((x) => (
-              <button
-                key={x}
-                type="button"
-                role="tab"
-                aria-selected={tab === x}
-                className="tab"
-                onClick={() => go(x)}
-              >
-                {t(`casePage.tabs.${x}`)}
-                {x === 'parties' && <span className="tab-count">{topParties.length}</span>}
-              </button>
-            ))}
-          </div>
-          <div role="tabpanel" className="stack">
-            {tab === 'overview' && (
-              <>
-                {facts}
-                {activation}
-                {partiesSummary}
-              </>
-            )}
-            {tab === 'parties' && parties}
-            {tab === 'screening' && amlApplies && (
-              <ScreeningPanel
-                caseId={id}
+        {amlApplies && <Stepper steps={steps} onSelect={(s) => go(TAB_OF_STEP[s])} />}
+        <ReopenBanner caseId={id} locked={locked} open={openRevision} run={run} />
+
+        <div className="case-layout">
+          <aside className="case-side">
+            {amlApplies && checklist.data && (
+              <NextStepCard
+                checklist={list}
                 parties={c.parties}
-                canManual={abilities.canManualScreen}
+                approvals={decisions.data?.approvals ?? []}
+                escalations={decisions.data?.escalations ?? []}
+                abilities={abilities}
+                responsibleUserId={c.responsibleUserId}
+                closed={c.complianceStatus === 'CLOSED'}
+                onGo={go}
+              />
+            )}
+            {amlApplies && (
+              <ExportPanel
+                caseId={id}
+                reference={c.reference}
+                completed={c.complianceStatus === 'COMPLETED' || c.complianceStatus === 'CLOSED'}
                 run={run}
               />
             )}
-            {tab === 'documents' && <DocumentsPanel caseId={id} parties={c.parties} run={run} />}
-            {tab === 'risk' && amlApplies && <RiskPanel caseId={id} run={run} />}
-            {tab === 'decisions' && amlApplies && (
-              <DecisionsPanel caseId={id} abilities={abilities} run={run} />
-            )}
-            {tab === 'history' && (
-              <section className="card static">
-                <HistoryPanel caseId={id} />
-              </section>
-            )}
+          </aside>
+
+          <div className="case-main">
+            <div className="tabs" role="tablist" id="case-tabs">
+              {visibleTabs.map((x) => (
+                <button
+                  key={x}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === x}
+                  className="tab"
+                  onClick={() => go(x)}
+                >
+                  {t(`casePage.tabs.${x}`)}
+                  {x === 'parties' && <span className="tab-count">{topParties.length}</span>}
+                </button>
+              ))}
+            </div>
+            <div role="tabpanel" className="stack">
+              {tab === 'overview' && (
+                <>
+                  {facts}
+                  {activation}
+                  {partiesSummary}
+                </>
+              )}
+              {tab === 'parties' && parties}
+              {tab === 'screening' && amlApplies && (
+                <ScreeningPanel
+                  caseId={id}
+                  parties={c.parties}
+                  canManual={abilities.canManualScreen}
+                  run={run}
+                />
+              )}
+              {tab === 'documents' && <DocumentsPanel caseId={id} parties={c.parties} run={run} />}
+              {tab === 'risk' && amlApplies && <RiskPanel caseId={id} run={run} />}
+              {tab === 'decisions' && amlApplies && (
+                <DecisionsPanel caseId={id} abilities={abilities} run={run} />
+              )}
+              {tab === 'history' && (
+                <section className="card static">
+                  <HistoryPanel caseId={id} />
+                </section>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-    </Page>
+      </Page>
+    </CaseLockContext.Provider>
   );
 }

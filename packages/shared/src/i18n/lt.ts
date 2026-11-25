@@ -834,6 +834,7 @@ export const lt = {
     'screening.completed': 'Atlikta patikra',
     'screening.match_reviewed': 'Įvertintas sutapimas',
     'case.decided': 'Užregistruotas galutinis sprendimas',
+    'case.reopened': 'Byla atnaujinama',
     'organization.profile_updated': 'Atnaujinti organizacijos rekvizitai',
     'organization.logo_updated': 'Pakeistas organizacijos logotipas',
     'organization.logo_removed': 'Pašalintas organizacijos logotipas',
@@ -919,6 +920,22 @@ export const lt = {
     entry: '{{format}} · {{date}} · {{by}} · SHA-256 {{hash}}',
     hint: 'Kiekvieno eksporto SHA-256 maiša registruojama: pagal ją galima patikrinti, ar failas nepakeistas.',
     language: 'Ataskaitos kalba',
+  },
+  revisions: {
+    lockedTitle: 'Byla užbaigta ir užrakinta',
+    lockedHint:
+      'Pasikeitus sandoriui, šalims ar kitoms aplinkybėms, atnaujinkite bylą: ankstesnė būsena išliks istorijoje, o pakeitimus užbaigsite nauju galutiniu sprendimu.',
+    reopen: 'Atnaujinti bylą',
+    reason: 'Kas pasikeitė (bent 10 simbolių)',
+    confirm: 'Atnaujinti bylą?',
+    confirmBody: 'Byla taps „Vykdoma“, kol užregistruosite naują galutinį sprendimą.',
+    reopened: 'Byla atnaujinama',
+    openTitle: 'Byla atnaujinama nuo {{date}} ({{by}})',
+    openHint:
+      'Atlikite pakeitimus ir reikalingas patikras, tada užregistruokite naują galutinį sprendimą.',
+    history: 'Atnaujinimai',
+    entry: '{{date}} · {{by}}: {{reason}}',
+    closed: 'užbaigta {{date}}',
   },
   finalDecision: {
     title: 'Galutinis sprendimas',
@@ -1072,6 +1089,27 @@ export const lt = {
     riskMinimum: 'Rizikos lygio negalima nustatyti žemesnio už privalomą minimumą.',
     riskLowering: 'Apskaičiuotą riziką sumažinti gali tik tvirtintojas, ne atsakingas brokeris.',
     riskJustification: 'Kitokiam rizikos lygiui reikia pagrindimo.',
+    caseLocked: 'Byla užbaigta ir užrakinta. Norėdami ją keisti, pirmiausia atnaujinkite bylą.',
+    reopenOnly: 'Atnaujinti galima tik užbaigtą bylą, ir tik vieną kartą tuo pačiu metu.',
+    decisionNotReady: 'Patvirtinti dar negalima: įvykdykite kitus AML reikalavimus.',
+    decisionEnhanced:
+      'Taikytas sustiprintas tyrimas – tinka tik „Patvirtinti su papildomomis AML priemonėmis“.',
+    decisionTerminate:
+      'Byla jau patvirtinta – vietoje atsisakymo rinkitės „Nutraukti kliento aptarnavimą“.',
+    decisionDecline:
+      'Byla dar nepatvirtinta – vietoje nutraukimo rinkitės „Atsisakyti kliento / sandorio“.',
+    decisionReportFirst: 'Įtarimo požymius pirmiausia praneškite AML atsakingam asmeniui.',
+    caseClosed: 'Byla uždaryta galutiniu sprendimu.',
+    decisionAlready: 'Byla jau patvirtinta po paskutinio rizikos vertinimo.',
+    documentType: 'Priimami tik PDF, JPEG, PNG, WEBP ir HEIC failai.',
+    documentSize: 'Failas didesnis nei 20 MB.',
+    storageUnavailable: 'Failų saugykla nesukonfigūruota – dokumentų pridėti negalima.',
+    manualNotNeeded:
+      'Automatinė patikra galioja – rankinė patikra skirta tik tada, kai automatinė nepavyksta.',
+    manualFutureDate: 'Paieškos data negali būti ateityje.',
+    manualEvidence: 'Įrodymas turi būti šios bylos dokumentas.',
+    logoFile: 'Logotipas turi būti PNG arba JPEG iki 1 MB.',
+    profileAdminOnly: 'Rekvizitus keisti gali tik organizacijos administratorius.',
   },
   errors: {
     invalid_credentials:
@@ -1189,6 +1227,7 @@ export const lt = {
       escalation: 'Pranešimas: {{status}} · pranešė {{by}} ({{date}}): {{reason}}',
       decided: ' · sprendė {{by}} ({{date}}): {{text}}',
     },
+    reopened: 'Atnaujinta: {{date}} · {{by}} – {{reason}}',
     final: {
       none: 'Galutinis sprendimas neužregistruotas.',
       decision: 'Sprendimas',

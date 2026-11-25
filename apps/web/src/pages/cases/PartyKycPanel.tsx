@@ -6,6 +6,7 @@ import { useConfirm } from '../../feedback';
 import { formatDateTime } from '../../format';
 import { Check, DateField, Field, Select } from '../../ui';
 import type { CaseParty, IdentityVerification, Run } from './types';
+import { useCaseLocked } from './caseLock';
 
 /** Identity verification and KYC answers of one party in a case. */
 export function PartyKycPanel(props: {
@@ -16,6 +17,7 @@ export function PartyKycPanel(props: {
   run: Run;
 }) {
   const { t } = useTranslation();
+  const locked = useCaseLocked();
   const confirm = useConfirm();
   const { caseId, caseParty: cp, verifications, simulated, run } = props;
   const base = `/cases/${caseId}/identity-verifications`;
@@ -105,7 +107,7 @@ export function PartyKycPanel(props: {
               {v.documentNumberMasked && ` ${v.documentNumberMasked}`}
             </span>
           ))}
-          {pending ? (
+          {locked ? null : pending ? (
             <>
               <span className="muted">{t('identity.remotePending')}</span>
               {simulated && (
@@ -181,40 +183,44 @@ export function PartyKycPanel(props: {
       {/* Answers of a completed CDD stay available but out of the way. */}
       <details className="match disclosure" open={cp.cddStatus !== 'COMPLETED'}>
         <summary>{t('kyc.edit')}</summary>
-        <Field
-          label={t('parties.kycPurpose')}
-          name={`purpose-${cp.id}`}
-          value={kyc.purpose}
-          onChange={(purpose) => setKyc({ ...kyc, purpose })}
-          required={false}
-        />
-        <Field
-          label={t('parties.kycSourceOfFunds')}
-          name={`sourceOfFunds-${cp.id}`}
-          value={kyc.sourceOfFunds}
-          onChange={(sourceOfFunds) => setKyc({ ...kyc, sourceOfFunds })}
-          required={false}
-        />
-        <Check
-          label={t('parties.kycOwnBehalf')}
-          checked={kyc.ownBehalf}
-          onChange={(ownBehalf) => setKyc({ ...kyc, ownBehalf })}
-        />
-        <Check
-          label={t('parties.kycPep')}
-          checked={kyc.pep}
-          onChange={(pep) => setKyc({ ...kyc, pep })}
-        />
-        <div className="actions">
-          <button type="button" onClick={() => void saveKyc(false)}>
-            {t('kyc.save')}
-          </button>
-          {cp.cddStatus !== 'COMPLETED' && (
-            <button type="button" className="primary" onClick={() => void saveKyc(true)}>
-              {t('kyc.complete')}
+        <fieldset className="plain stack" disabled={locked}>
+          <Field
+            label={t('parties.kycPurpose')}
+            name={`purpose-${cp.id}`}
+            value={kyc.purpose}
+            onChange={(purpose) => setKyc({ ...kyc, purpose })}
+            required={false}
+          />
+          <Field
+            label={t('parties.kycSourceOfFunds')}
+            name={`sourceOfFunds-${cp.id}`}
+            value={kyc.sourceOfFunds}
+            onChange={(sourceOfFunds) => setKyc({ ...kyc, sourceOfFunds })}
+            required={false}
+          />
+          <Check
+            label={t('parties.kycOwnBehalf')}
+            checked={kyc.ownBehalf}
+            onChange={(ownBehalf) => setKyc({ ...kyc, ownBehalf })}
+          />
+          <Check
+            label={t('parties.kycPep')}
+            checked={kyc.pep}
+            onChange={(pep) => setKyc({ ...kyc, pep })}
+          />
+        </fieldset>
+        {!locked && (
+          <div className="actions">
+            <button type="button" onClick={() => void saveKyc(false)}>
+              {t('kyc.save')}
             </button>
-          )}
-        </div>
+            {cp.cddStatus !== 'COMPLETED' && (
+              <button type="button" className="primary" onClick={() => void saveKyc(true)}>
+                {t('kyc.complete')}
+              </button>
+            )}
+          </div>
+        )}
       </details>
     </div>
   );

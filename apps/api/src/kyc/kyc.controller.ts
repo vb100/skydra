@@ -22,6 +22,7 @@ import {
   requestApproval,
   resolveEscalation,
 } from './decisions';
+import { reopenCase } from './revisions';
 import {
   listIdentityVerifications,
   recordInPersonVerification,
@@ -130,6 +131,12 @@ export class KycController {
       (c) => decideApproval(c, id, approvalId, body as never),
       'case.approve',
     );
+  }
+
+  /** Reopens a completed case to change it (Q26); a new final decision closes it again. */
+  @Post('reopen')
+  reopen(@CurrentPrincipal() principal: Principal, @Param('id') id: string, @Body() body: unknown) {
+    return this.run(principal, (c) => reopenCase(c, this.deps.keys, id, body as never));
   }
 
   /** The final decision on the case: approve (with or without enhanced measures), decline, terminate. */

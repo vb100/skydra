@@ -131,3 +131,24 @@ export const ManualScreeningInput = z
     path: ['match'],
   });
 export type ManualScreeningInput = z.input<typeof ManualScreeningInput>;
+
+/** From the least to the most serious: what a person's several cases add up to. */
+const SEVERITY: readonly ScreeningStatus[] = [
+  'NOT_SCREENED',
+  'GREEN',
+  'FAILED',
+  'YELLOW',
+  'ORANGE',
+  'RED',
+];
+
+/**
+ * The most serious status among a person's case links (e.g. in the clients list): a PEP
+ * confirmed in one case is a PEP whatever another case shows.
+ */
+export function worstScreeningStatus(statuses: readonly ScreeningStatus[]): ScreeningStatus {
+  return statuses.reduce<ScreeningStatus>(
+    (worst, s) => (SEVERITY.indexOf(s) > SEVERITY.indexOf(worst) ? s : worst),
+    'NOT_SCREENED',
+  );
+}

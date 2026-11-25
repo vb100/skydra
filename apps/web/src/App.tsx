@@ -9,6 +9,8 @@ import { NewCasePage } from './pages/cases/NewCasePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
+import { ClientPage } from './pages/ClientPage';
+import { ClientsPage } from './pages/ClientsPage';
 import { MembersPage } from './pages/MembersPage';
 import { OrganizationPage } from './pages/OrganizationPage';
 import { PlatformPage } from './pages/PlatformPage';
@@ -80,6 +82,8 @@ function SignedIn() {
           element={canCreateCases ? <NewCasePage /> : <Navigate to="/cases" />}
         />
         <Route path="/cases/:id" element={cases(<CaseDetailPage abilities={abilities} />)} />
+        <Route path="/clients" element={cases(<ClientsPage />)} />
+        <Route path="/clients/:id" element={cases(<ClientPage />)} />
         <Route
           path="/dashboard"
           element={canSeeDashboard ? <DashboardPage /> : <Navigate to="/" />}

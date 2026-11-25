@@ -41,6 +41,9 @@ export type Party = {
   citizenships: string[];
   companyCode: string | null;
   registrationCountry: string | null;
+  residenceCountry?: string | null;
+  legalForm?: string | null;
+  registeredAddress?: string | null;
 };
 
 export type CaseParty = {

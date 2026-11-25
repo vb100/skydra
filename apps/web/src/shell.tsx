@@ -65,6 +65,11 @@ export function AppShell(props: {
                   {t('cases.link')}
                 </NavLink>
               )}
+              {props.canSeeCases && (
+                <NavLink to="/clients" onClick={close}>
+                  {t('clients.link')}
+                </NavLink>
+              )}
               {props.canSeeDashboard && (
                 <NavLink to="/dashboard" onClick={close}>
                   {t('dashboard.link')}

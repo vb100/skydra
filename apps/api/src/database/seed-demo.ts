@@ -18,6 +18,7 @@ import { MockRegistryProvider } from '../ownership/mock-registry';
 import { fetchOwnership, linkBeneficialOwners } from '../ownership/ownership';
 import { assessRisk } from '../risk/risk';
 import { MockScreeningProvider } from '../screening/mock-provider';
+import type { ProviderMatch, ScreeningProvider } from '../screening/provider';
 import { listScreenings, reviewMatch, runScreening } from '../screening/screening';
 import { type TenantContext, withTenant } from './tenant';
 
@@ -425,7 +426,42 @@ async function seedCases(
     await screen(id);
     await confirmFirstMatch(id, 'Sutampa vardas, gimimo data ir pilietybė su ES sąrašu');
   }
-  return 9;
+
+  // 10. Done, then ongoing monitoring found a new record: the person became a PEP.
+  {
+    const id = await newCase({
+      transactionType: 'SALE',
+      propertyType: 'APARTMENT',
+      propertyAddress: 'Liepų g. 8-3, Klaipėda',
+      transactionValue: 142000,
+      paymentMethod: 'BANK_TRANSFER',
+    });
+    const buyer = await person(id, 'BUYER', 'Marius', 'Stebimas', '38209090909', true);
+    await screen(id);
+    await complete(id, buyer, 'AB1000010', KYC('Gyventi', 'Santaupos'));
+    await assess(id);
+    const later: ScreeningProvider = {
+      mode: 'MOCK',
+      screen: async (subject) => {
+        const result = await screening.screen(subject);
+        const pep: ProviderMatch = {
+          externalId: 'mock-pep-monitoring',
+          name: subject.name,
+          score: 93,
+          strength: 'STRONG',
+          categories: ['PEP'],
+          details: {
+            position: 'Savivaldybės tarybos narys (imitacija, nuo 2026-11)',
+            country: 'LT',
+            simulated: true,
+          },
+        };
+        return { ...result, matches: [...result.matches, pep] };
+      },
+    };
+    await runScreening(app, broker, later, id, {}, { origin: 'MONITORING' });
+  }
+  return 10;
 }
 
 if (require.main === module)

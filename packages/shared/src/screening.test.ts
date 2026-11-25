@@ -58,9 +58,15 @@ describe('screeningStatus', () => {
     ).toBe('RED');
   });
 
+  it('keeps a confirmation in force when a later check no longer finds the record', () => {
+    const earlier = done(match({ reviewStatus: 'TRUE_POSITIVE', categories: ['SANCTIONS'] }));
+    expect(screeningStatus([done(), earlier]).status).toBe('RED');
+    // An open match of an earlier check is replaced by the later result.
+    expect(screeningStatus([done(), done(match())]).status).toBe('GREEN');
+  });
+
   it('keeps the latest completed result when a re-check fails, and says so', () => {
     const red = done(match({ reviewStatus: 'TRUE_POSITIVE', categories: ['SANCTIONS'] }));
     expect(screeningStatus([failed, red])).toEqual({ status: 'RED', lastAttemptFailed: true });
-    expect(screeningStatus([done(), red]).status).toBe('GREEN');
   });
 });

@@ -27,10 +27,15 @@ export function WorkPage({ me, abilities }: { me: Me; abilities: CaseAbilities }
     solo: abilities.solo,
   };
   const bucket = (b: WorkBucket) => all.filter((c) => workBucket(c, viewer) === b);
+  // New matches found by ongoing monitoring come first: the case was done and is open again.
+  const monitoring = all.filter(
+    (c) => c.monitoringAlert && c.responsibleUserId === abilities.userId,
+  );
   const groups = {
     decide: bucket('decide'),
     resolve: bucket('resolve'),
-    action: bucket('action'),
+    monitoring,
+    action: bucket('action').filter((c) => !c.monitoringAlert),
     waiting: bucket('waiting'),
     blocked: bucket('blocked'),
   };
@@ -48,7 +53,7 @@ export function WorkPage({ me, abilities }: { me: Me; abilities: CaseAbilities }
   const firstName = me.user.fullName.split(' ')[0];
 
   const tiles: [string, number, string][] = [
-    [t('work.tiles.action'), groups.action.length, 'action'],
+    [t('work.tiles.action'), groups.action.length + groups.monitoring.length, 'action'],
     ...(abilities.canApprove || abilities.isAmlOfficer
       ? ([[t('work.tiles.decide'), groups.decide.length + groups.resolve.length, 'decide']] as [
           string,
@@ -101,6 +106,13 @@ export function WorkPage({ me, abilities }: { me: Me; abilities: CaseAbilities }
           <WorkSection title={t('work.sections.resolve')} tone="blocked">
             {groups.resolve.map((c) => (
               <WorkRow key={c.id} c={c} text={t('work.resolveHint')} tab="decisions" />
+            ))}
+          </WorkSection>
+        )}
+        {groups.monitoring.length > 0 && (
+          <WorkSection title={t('work.sections.monitoring')} tone="decide">
+            {groups.monitoring.map((c) => (
+              <WorkRow key={c.id} c={c} text={t('work.monitoringHint')} tab="screening" />
             ))}
           </WorkSection>
         )}

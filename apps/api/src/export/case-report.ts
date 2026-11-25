@@ -70,6 +70,8 @@ export async function collectReport(
   };
 }
 
+/** A decision carried over from an earlier check of the same record (migration 0015). */
+const CARRIED = ' (sprendimas perkeltas iš ankstesnės patikros)';
 const label = (group: Record<string, unknown>, key: string | null | undefined) => {
   const text = key ? group[key] : undefined;
   return typeof text === 'string' ? text : (key ?? '–');
@@ -277,8 +279,9 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
     const sources = (s.sources.length ? s.sources : [s.provider])
       .map((x) => label(lt.screening.providers, x))
       .join(', ');
+    const origin = s.origin ? ` · ${label(lt.screening.origins, s.origin)}` : '';
     p(
-      `${who}: ${sources} · ${date(s.completedAt ?? s.requestedAt)} · ` +
+      `${who}: ${sources} · ${date(s.completedAt ?? s.requestedAt)}${origin} · ` +
         (s.status === 'COMPLETED' ? `sutapimų: ${s.matchCount}` : 'patikra nepavyko'),
       { indent: 10 },
     );
@@ -290,7 +293,8 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
           `${label(lt.matchCategories, 'ADVERSE_MEDIA')} · ${m.name}` +
             `${published ? ` · ${day(published)}` : ''}` +
             ` · ${label(lt.screening.articleStatuses, m.reviewStatus)}` +
-            `${m.reviewJustification ? ` – ${m.reviewJustification}` : ''}`,
+            `${m.reviewJustification ? ` – ${m.reviewJustification}` : ''}` +
+            `${m.carriedFrom ? CARRIED : ''}`,
           { indent: 18 },
         );
         if (typeof m.details.sourceUrl === 'string')
@@ -302,7 +306,8 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
           `${m.score ? ` · ${Number(m.score)} %` : ''}` +
           `${m.strength === 'WEAK' ? ' · silpnas (žemiau slenksčio)' : ''}` +
           ` · ${label(lt.screening.reviewStatuses, m.reviewStatus)}` +
-          `${m.reviewJustification ? ` – ${m.reviewJustification}` : ''}`,
+          `${m.reviewJustification ? ` – ${m.reviewJustification}` : ''}` +
+          `${m.carriedFrom ? CARRIED : ''}`,
         { indent: 18 },
       );
     }

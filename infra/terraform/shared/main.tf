@@ -35,6 +35,8 @@ locals {
     "iam.googleapis.com",
     "logging.googleapis.com",
     "monitoring.googleapis.com",
+    # Starts the daily screening monitoring job (env: monitoring.schedule).
+    "cloudscheduler.googleapis.com",
   ]
 }
 

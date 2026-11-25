@@ -18,6 +18,10 @@ export type MatchStrength = z.infer<typeof MatchStrength>;
 export const ReviewStatus = z.enum(['OPEN', 'FALSE_POSITIVE', 'TRUE_POSITIVE', 'NOT_RELEVANT']);
 export type ReviewStatus = z.infer<typeof ReviewStatus>;
 
+/** What started a check: the broker, a party joining the case, or ongoing monitoring. */
+export const ScreeningOrigin = z.enum(['MANUAL', 'AUTOMATIC', 'MONITORING']);
+export type ScreeningOrigin = z.infer<typeof ScreeningOrigin>;
+
 export const RunScreeningInput = z.object({
   /** One party of the case; all active parties when omitted. */
   casePartyId: z.uuid().optional(),
@@ -39,7 +43,9 @@ export type ReviewMatchInput = z.input<typeof ReviewMatchInput>;
  *   RED     confirmed sanctions: the transaction stops, report to the FIU;
  *   FAILED  the provider could not be reached and no earlier result exists;
  *   NOT_SCREENED.
- * Taken from the latest completed check, as the case checklist does. Weak matches do not count.
+ * Open matches are those of the latest completed check; confirmed ones count from every completed
+ * check, so a confirmation stays in force when a later check no longer finds the record (as in
+ * the case checklist, migration 0015). Weak matches do not count.
  */
 export const ScreeningStatus = z.enum([
   'NOT_SCREENED',
@@ -68,7 +74,10 @@ export function screeningStatus(checks: readonly CheckSummary[]): {
       status: checks.some((c) => c.status === 'FAILED') ? 'FAILED' : 'NOT_SCREENED',
       lastAttemptFailed,
     };
-  const confirmed = completed.matches.filter((m) => m.reviewStatus === 'TRUE_POSITIVE');
+  const confirmed = checks
+    .filter((c) => c.status === 'COMPLETED')
+    .flatMap((c) => c.matches)
+    .filter((m) => m.reviewStatus === 'TRUE_POSITIVE');
   const has = (...categories: string[]) =>
     confirmed.some((m) => m.categories.some((c) => categories.includes(c)));
   const status: ScreeningStatus = has('SANCTIONS')
@@ -81,3 +90,9 @@ export function screeningStatus(checks: readonly CheckSummary[]): {
         : 'GREEN';
   return { status, lastAttemptFailed };
 }
+
+/**
+ * Price per answered request in EUR, for the cost overview; null where it depends on the plan
+ * (Brave). OpenSanctions: €0.10 per credit, the first 2 000 free (docs/integrations).
+ */
+export const PROVIDER_PRICE_EUR = { OPENSANCTIONS: 0.1, BRAVE: null, GDELT: 0 } as const;

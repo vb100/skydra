@@ -12,7 +12,8 @@
     "db:migrate": "tsx src/database/migrate.ts",
     "db:migrate:dist": "node dist/database/migrate.js",
     "db:seed:platform-admin": "tsx src/database/seed-platform-admin.ts",
-    "db:seed:demo": "tsx src/database/seed-demo.ts"
+    "db:seed:demo": "tsx src/database/seed-demo.ts",
+    "monitor": "tsx src/screening/monitor.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.3",

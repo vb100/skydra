@@ -226,6 +226,8 @@ skydra/
 | Papildomos IAM teisės: Cloud SQL, Pub/Sub, Scheduler, Monitoring, Logging konfigūravimas, Compute (LB / Cloud Armor), KMS, Workload Identity Pools | klientas / vartotojas | Terraform paleidimą |
 | OpenSanctions licencija rodyti rezultatus brokeriams; API raktas | klientas | OpenSanctions naudojimą gamyboje |
 | Brave Search API raktas ir sąlygos rezultatams saugoti; DPIA Brave ir GDELT | klientas | žiniasklaidos paiešką gamyboje |
+| Patvirtinto atitikmens atšaukimo tvarka; stebėsenos dažnis ir apimtis (`docs/integrations/monitoring.md`) | klientas | stebėsenos taisyklių galutinį variantą |
+| Cloud Scheduler: API įjungimas ir `roles/cloudscheduler.admin` | vartotojas | kasdienį stebėsenos paleidimą |
 | Dokobit ir Registrų centro sutartys, duomenų formatas | klientas | tapatybės ir registrų adapterius |
 | LT-RISK-01 veiksnių lentelė | klientas (AML konsultantas) | rizikos taisyklių turinį (ne variklį) |
 | Užpildyti JADIS ir JANGIS išrašai, JANGIS išrašų struktūros | klientas | ištraukimo testus |

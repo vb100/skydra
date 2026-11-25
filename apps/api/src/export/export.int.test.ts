@@ -28,7 +28,7 @@ describe('demo agency and case export', () => {
     await migrate(db.owner, MIGRATIONS_DIR);
     app = db.appPool({ max: 3 });
     const result = await createDemoAgency(db.owner, app, keys, 'Demo NT agentūra');
-    expect(result).toMatchObject({ created: true, cases: 9 });
+    expect(result).toMatchObject({ created: true, cases: 10 });
     organizationId = result.organizationId;
 
     const { rows } = await db.superuser.query<{ id: string; email: string }>(
@@ -72,6 +72,7 @@ describe('demo agency and case export', () => {
       ['COMPLETED', 'MEDIUM'],
       ['BLOCKED', null],
       ['BLOCKED', null],
+      ['REVIEW_REQUIRED', 'LOW'],
     ]);
     const { rows: chain } = await withTenant(app, users.manager, (c) =>
       c.query('SELECT * FROM app.verify_audit_chain()'),
@@ -89,7 +90,7 @@ describe('demo agency and case export', () => {
       created: false,
       organizationId,
     });
-    expect((await db.superuser.query('SELECT 1 FROM cases')).rowCount).toBe(9);
+    expect((await db.superuser.query('SELECT 1 FROM cases')).rowCount).toBe(10);
   });
 
   it('lists each case with its client and the next step the case page would show', async () => {

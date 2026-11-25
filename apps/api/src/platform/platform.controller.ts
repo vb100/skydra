@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Param, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { z } from 'zod';
 import { AUTH_DEPS } from '../auth/auth.module-tokens';
 import { type AuthDeps, issueLink, type Session } from '../auth/auth.service';
@@ -26,6 +26,34 @@ export class PlatformController {
         `SELECT id, name, plan_code AS "planCode", status, country_code AS "countryCode",
                 created_at AS "createdAt"
            FROM organizations ORDER BY created_at DESC`,
+      );
+      return rows;
+    });
+  }
+
+  /**
+   * Screening volume per month and organization (cost overview): finished checks by origin and
+   * answered provider requests. Counters only; no tenant data leaves the organizations.
+   */
+  @Get('usage')
+  usage(@CurrentSession() session: Session, @Query('months') months?: string) {
+    const n = z.coerce
+      .number()
+      .int()
+      .min(1)
+      .max(24)
+      .catch(6)
+      .parse(months ?? 6);
+    const now = new Date();
+    const from = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - (n - 1), 1));
+    return withPlatform(this.deps.pool, session.userId, async (c) => {
+      const { rows } = await c.query(
+        `SELECT to_char(month, 'YYYY-MM') AS month, organization_id AS "organizationId",
+                organization, checks, monitoring_checks AS "monitoringChecks",
+                failed_checks AS "failedChecks", opensanctions_requests AS "openSanctions",
+                brave_requests AS "brave", gdelt_requests AS "gdelt"
+           FROM app.platform_provider_usage($1)`,
+        [from.toISOString().slice(0, 10)],
       );
       return rows;
     });

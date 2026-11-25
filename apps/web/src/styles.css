@@ -660,7 +660,8 @@ details.card.static {
   background: var(--danger-soft);
   color: var(--danger);
 }
-.badge-not_started {
+.badge-not_started,
+.badge-closed {
   background: var(--surface-2);
   color: var(--muted);
 }
@@ -1697,6 +1698,9 @@ dialog.confirm .actions {
 }
 .tone-in_progress {
   background: var(--accent);
+}
+.tone-closed {
+  background: var(--muted);
 }
 .tone-not_started {
   background: var(--muted);

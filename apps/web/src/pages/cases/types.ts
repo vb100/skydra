@@ -273,3 +273,16 @@ export type CaseDocument = {
   uploadedByName: string;
   uploadedAt: string;
 };
+
+/** The broker's final decision on a case (client answer Q25). */
+export type FinalDecision = {
+  id: string;
+  decision: 'APPROVE' | 'APPROVE_WITH_ENHANCED_MEASURES' | 'DECLINE' | 'TERMINATE';
+  justification: string;
+  suspiciousIndicators: boolean;
+  suspicionNotes: string | null;
+  riskLevel: RiskLevel | null;
+  nextReviewOn: string | null;
+  decidedByName: string;
+  decidedAt: string;
+};

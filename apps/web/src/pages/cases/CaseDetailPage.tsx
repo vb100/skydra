@@ -430,6 +430,7 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
               escalations={decisions.data?.escalations ?? []}
               abilities={abilities}
               responsibleUserId={c.responsibleUserId}
+              closed={c.complianceStatus === 'CLOSED'}
               onGo={go}
             />
           )}
@@ -437,7 +438,7 @@ export function CaseDetailPage({ abilities }: { abilities: CaseAbilities }) {
             <ExportPanel
               caseId={id}
               reference={c.reference}
-              completed={c.complianceStatus === 'COMPLETED'}
+              completed={c.complianceStatus === 'COMPLETED' || c.complianceStatus === 'CLOSED'}
               run={run}
             />
           )}

@@ -54,5 +54,35 @@ export const ChecklistItem = z.enum([
   'EDD_APPROVED',
   'APPROVAL_NOT_REJECTED',
   'NO_OPEN_ESCALATION',
+  'DECISION_RECORDED',
 ]);
 export type ChecklistItem = z.infer<typeof ChecklistItem>;
+
+/**
+ * The broker's final decision on a case (client answer Q25). Requesting information, waiting for
+ * an approval or escalating are steps on the way, not final decisions.
+ */
+export const CaseDecision = z.enum([
+  'APPROVE',
+  'APPROVE_WITH_ENHANCED_MEASURES',
+  'DECLINE',
+  'TERMINATE',
+]);
+export type CaseDecision = z.infer<typeof CaseDecision>;
+
+/** DECLINE and TERMINATE close the case. */
+export const CLOSING_DECISIONS: readonly CaseDecision[] = ['DECLINE', 'TERMINATE'];
+
+export const RecordDecisionInput = z
+  .object({
+    decision: CaseDecision,
+    justification: z.string().trim().min(10).max(4000),
+    /** The separate assessment of suspicious indicators (client MVP summary). */
+    suspiciousIndicators: z.boolean(),
+    suspicionNotes: z.string().trim().max(4000).optional(),
+  })
+  .refine((v) => !v.suspiciousIndicators || (v.suspicionNotes ?? '').length >= 10, {
+    message: 'describe the suspicious indicators',
+    path: ['suspicionNotes'],
+  });
+export type RecordDecisionInput = z.input<typeof RecordDecisionInput>;

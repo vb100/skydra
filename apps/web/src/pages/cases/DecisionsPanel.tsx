@@ -4,9 +4,20 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../../api';
 import { useConfirm } from '../../feedback';
 import { Field, Select } from '../../ui';
-import type { Approval, CaseAbilities, ChecklistEntry, Escalation, Run } from './types';
+import { FinalDecisionCard } from './FinalDecisionCard';
+import type {
+  Approval,
+  CaseAbilities,
+  ChecklistEntry,
+  Escalation,
+  FinalDecision,
+  Run,
+} from './types';
 
-/** Approval after a confirmed PEP / adverse-media match, and escalations to the AML officer. */
+/**
+ * The decisions of a case: the broker's final decision, the approval after a confirmed PEP /
+ * adverse-media match, and escalations to the AML officer.
+ */
 export function DecisionsPanel(props: { caseId: string; abilities: CaseAbilities; run: Run }) {
   const { t } = useTranslation();
   const confirm = useConfirm();
@@ -14,7 +25,7 @@ export function DecisionsPanel(props: { caseId: string; abilities: CaseAbilities
   const decisions = useQuery({
     queryKey: ['decisions', caseId],
     queryFn: () =>
-      api<{ approvals: Approval[]; escalations: Escalation[] }>(
+      api<{ approvals: Approval[]; escalations: Escalation[]; final: FinalDecision[] }>(
         'GET',
         `/cases/${caseId}/decisions`,
       ),
@@ -70,6 +81,15 @@ export function DecisionsPanel(props: { caseId: string; abilities: CaseAbilities
 
   return (
     <>
+      {decisions.isSuccess && checklist.isSuccess && (
+        <FinalDecisionCard
+          caseId={caseId}
+          decisions={decisions.data.final}
+          approvals={approvals}
+          checklist={checklist.data}
+          run={run}
+        />
+      )}
       {sanctioned && (
         <section className="card static stack">
           <h2>{t('approvals.title')}</h2>

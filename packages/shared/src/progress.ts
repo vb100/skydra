@@ -27,6 +27,7 @@ export const STEP_OF_ITEM: Record<ChecklistItem, CaseStep> = {
   EDD_APPROVED: 'RISK',
   APPROVAL_NOT_REJECTED: 'RISK',
   NO_OPEN_ESCALATION: 'COMPLETION',
+  DECISION_RECORDED: 'COMPLETION',
 };
 
 /** Items that stop the transaction rather than wait for the next step. */

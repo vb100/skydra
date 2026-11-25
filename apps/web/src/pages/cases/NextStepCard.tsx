@@ -17,6 +17,7 @@ export const TAB_OF_ITEM: Record<ChecklistResult['item'], CaseTab> = {
   NO_CONFIRMED_SANCTIONS: 'decisions',
   APPROVAL_NOT_REJECTED: 'decisions',
   NO_OPEN_ESCALATION: 'decisions',
+  DECISION_RECORDED: 'decisions',
 };
 
 type Next = { tone: 'todo' | 'blocked' | 'done' | 'waiting'; body: string; action?: string };
@@ -33,17 +34,20 @@ export function NextStepCard(props: {
   escalations: Escalation[];
   abilities: CaseAbilities;
   responsibleUserId: string;
+  /** Declined or terminated: nothing is left to do. */
+  closed?: boolean;
   onGo: (tab: CaseTab, casePartyId: string | null) => void;
 }) {
   const { t } = useTranslation();
   const { checklist, abilities } = props;
-  const next = nextStep(checklist);
-  const remaining = checklist.filter((e) => !e.ok && e !== next);
+  const next = props.closed ? null : nextStep(checklist);
+  const remaining = props.closed ? [] : checklist.filter((e) => !e.ok && e !== next);
   const name = (id: string | null) =>
     id ? props.parties.find((p) => p.id === id)?.party.displayName : undefined;
 
   let view: Next;
-  if (!next) view = { tone: 'done', body: t('nextStep.doneBody') };
+  if (props.closed) view = { tone: 'done', body: t('nextStep.closedBody') };
+  else if (!next) view = { tone: 'done', body: t('nextStep.doneBody') };
   else {
     const item = next.item;
     view = {
@@ -82,7 +86,9 @@ export function NextStepCard(props: {
 
   const title =
     view.tone === 'done'
-      ? t('nextStep.doneTitle')
+      ? props.closed
+        ? t('nextStep.closedTitle')
+        : t('nextStep.doneTitle')
       : view.tone === 'blocked'
         ? t('nextStep.blockedTitle')
         : t('nextStep.title');

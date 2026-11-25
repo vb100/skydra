@@ -103,7 +103,7 @@ Demo veiks adresu `https://skydra-demo-915954505621.europe-north1.run.app`. Kai 
 infra/scripts/seed-demo.sh
 ```
 
-Sukuria „Demo NT agentūrą“ su 10 bylų ir atspausdina tris vienkartines aktyvavimo nuorodas (galioja 72 val.). Pakartotinis paleidimas išduoda naujas nuorodas.
+Sukuria „Demo NT agentūrą“ su 11 bylų ir atspausdina tris vienkartines aktyvavimo nuorodas (galioja 72 val.). Pakartotinis paleidimas išduoda naujas nuorodas.
 
 **Saugumas.** Nuorodos matomos job'o žurnale, todėl jas reikia panaudoti iš karto.
 

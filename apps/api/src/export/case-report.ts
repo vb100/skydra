@@ -371,8 +371,30 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
           : ''),
     );
 
+  // The final decision (Q25) with the separate assessment of suspicious indicators; earlier
+  // decisions follow, newest first.
+  h2(`${n(7)}. Galutinis sprendimas`);
+  const [final, ...earlier] = d.decisions.final;
+  if (!final) p('Galutinis sprendimas neužregistruotas.', { muted: true });
+  else {
+    row('Sprendimas', label(lt.finalDecision.decisions, final.decision));
+    row('Priėmė', `${final.decidedByName}, ${date(final.decidedAt)}`);
+    row('Pagrindimas', final.justification);
+    row(
+      'Įtarimo požymiai',
+      final.suspiciousIndicators ? `nustatyti: ${final.suspicionNotes ?? ''}` : 'nenustatyta',
+    );
+    if (final.riskLevel) row('Rizika sprendimo metu', label(lt.riskLevels, final.riskLevel));
+    if (final.nextReviewOn) row('Kita peržiūra', day(final.nextReviewOn));
+    for (const e of earlier)
+      p(
+        `Ankstesnis: ${label(lt.finalDecision.decisions, e.decision)} · ${e.decidedByName}, ${date(e.decidedAt)} – ${e.justification}`,
+        { muted: true },
+      );
+  }
+
   // The documents are the annex of the report (Q44); the ZIP export carries the files.
-  h2(`${n(7)}. Priedai`);
+  h2(`${n(8)}. Priedai`);
   if (d.documents.length === 0) p('Dokumentų nepridėta.', { muted: true });
   for (const doc of d.documents) {
     const who = c.parties.find((x) => x.id === doc.casePartyId)?.party.displayName;
@@ -383,7 +405,7 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
     p(`SHA-256: ${doc.sha256}`, { indent: 10, muted: true });
   }
 
-  h2(`${n(8)}. AML reikalavimų įvykdymas`);
+  h2(`${n(9)}. AML reikalavimų įvykdymas`);
   for (const e of d.checklist) {
     const who = e.casePartyId
       ? `${c.parties.find((x) => x.id === e.casePartyId)?.party.displayName ?? ''}: `
@@ -391,7 +413,7 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
     p(`${e.ok ? '✓' : '✗'} ${who}${label(lt.checklist.items, e.item)}`);
   }
 
-  h2(`${n(9)}. Veiksmų istorija`);
+  h2(`${n(10)}. Veiksmų istorija`);
   for (const a of d.audit)
     p(
       `#${a.seq} · ${date(a.occurred_at)} · ${a.actor ?? 'sistema'} · ${label(lt.auditActions, a.action)}`,
@@ -441,7 +463,8 @@ export async function exportCase(
   caseId: string,
 ): Promise<{ pdf: Buffer; sha256: string; exportId: string; reference: string }> {
   const data = await collectReport(client, keys, caseId);
-  if (data.caseFile.complianceStatus !== 'COMPLETED')
+  // A completed case, or one closed by a decline or termination (its file is kept too).
+  if (!['COMPLETED', 'CLOSED'].includes(data.caseFile.complianceStatus))
     throw new RuleError('complete the AML checks before exporting the case');
 
   const { rows: ids } = await client.query<{ id: string }>('SELECT gen_random_uuid() AS id');
@@ -491,7 +514,8 @@ export async function exportCaseZip(
   caseId: string,
 ): Promise<{ zip: Buffer; sha256: string; exportId: string; reference: string }> {
   const data = await collectReport(client, keys, caseId);
-  if (data.caseFile.complianceStatus !== 'COMPLETED')
+  // A completed case, or one closed by a decline or termination (its file is kept too).
+  if (!['COMPLETED', 'CLOSED'].includes(data.caseFile.complianceStatus))
     throw new RuleError('complete the AML checks before exporting the case');
   const total = data.documents.reduce((n, doc) => n + doc.sizeBytes, 0);
   if (total > MAX_ZIP_BYTES) throw new RuleError('the documents are too large for one archive');

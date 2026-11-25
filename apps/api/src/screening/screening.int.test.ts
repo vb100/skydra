@@ -11,6 +11,7 @@ import {
   updateCaseParty,
 } from '../cases/cases';
 import { LOCAL_DEVELOPMENT_KEY } from '../config/env';
+import { recordDecision } from '../kyc/decisions';
 import { recordInPersonVerification } from '../kyc/identity';
 import { assessRisk } from '../risk/risk';
 import { migrate } from '../database/migrator';
@@ -91,6 +92,15 @@ describe('screening', () => {
     await as(ctx, (c) => assessRisk(c, caseId, {}));
   }
 
+  /** The broker's final approval: what completes a case once everything else is done. */
+  const decide = (caseId: string, ctx = broker) =>
+    as(ctx, (c) =>
+      recordDecision(c, caseId, {
+        decision: 'APPROVE',
+        justification: 'Visi AML reikalavimai įvykdyti',
+        suspiciousIndicators: false,
+      }),
+    );
   const status = async (caseId: string, ctx = broker) =>
     (await as(ctx, (c) => getCase(c, keys, caseId))).complianceStatus;
   const screen = (caseId: string, provider: ScreeningProvider = mock, ctx = broker) =>
@@ -149,7 +159,9 @@ describe('screening', () => {
     expect(JSON.stringify(check!.subject)).not.toMatch(/\d{11}/);
 
     await completeCdd(caseId, casePartyId);
-    expect(await status(caseId)).toBe('COMPLETED');
+    // Everything is done but the broker's final decision.
+    expect(await status(caseId)).toBe('IN_PROGRESS');
+    expect((await decide(caseId)).complianceStatus).toBe('COMPLETED');
   });
 
   it('a potential match needs a justified review; a false positive clears it', async () => {
@@ -175,7 +187,10 @@ describe('screening', () => {
     );
     // The review is new evidence, so the risk is assessed again before the case completes.
     expect(reviewed.complianceStatus).toBe('IN_PROGRESS');
-    expect((await as(broker, (c) => assessRisk(c, caseId, {}))).complianceStatus).toBe('COMPLETED');
+    expect((await as(broker, (c) => assessRisk(c, caseId, {}))).complianceStatus).toBe(
+      'IN_PROGRESS',
+    );
+    expect((await decide(caseId)).complianceStatus).toBe('COMPLETED');
 
     const [after] = await as(broker, (c) => listScreenings(c, caseId));
     expect(after!.matches[0]).toMatchObject({
@@ -534,7 +549,10 @@ describe('screening', () => {
     );
     const [after] = await as(broker, (c) => listScreenings(c, caseId));
     expect(screeningStatus([after!]).status).toBe('GREEN');
-    expect((await as(broker, (c) => assessRisk(c, caseId, {}))).complianceStatus).toBe('COMPLETED');
+    expect((await as(broker, (c) => assessRisk(c, caseId, {}))).complianceStatus).toBe(
+      'IN_PROGRESS',
+    );
+    expect((await decide(caseId)).complianceStatus).toBe('COMPLETED');
   });
 
   it('a check that fails in one source is FAILED, with every source attempt kept', async () => {

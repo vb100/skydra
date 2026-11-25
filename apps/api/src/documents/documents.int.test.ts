@@ -8,6 +8,7 @@ import { type TenantContext, withTenant } from '../database/tenant';
 import { createTestDatabase, MIGRATIONS_DIR, type TestDatabase } from '../database/test-database';
 import { NotFoundError, RuleError } from '../domain-errors';
 import { exportCaseZip, listExports } from '../export/case-report';
+import { recordDecision } from '../kyc/decisions';
 import { recordInPersonVerification } from '../kyc/identity';
 import { addMember } from '../organization/members';
 import { createOrganization, withPlatform } from '../platform/platform';
@@ -281,6 +282,17 @@ describe('case documents', () => {
     });
     await upload(caseId, PDF, { category: 'CLIENT', fileName: 'anketa.pdf' });
     await upload(caseId, PDF, { category: 'CLIENT', fileName: 'anketa.pdf' });
+    // Not exportable before the final decision.
+    await expect(as(broker, (c) => exportCaseZip(c, keys, store, caseId))).rejects.toBeInstanceOf(
+      RuleError,
+    );
+    await as(broker, (c) =>
+      recordDecision(c, caseId, {
+        decision: 'APPROVE',
+        justification: 'Visi AML reikalavimai įvykdyti',
+        suspiciousIndicators: false,
+      }),
+    );
     expect(await status(caseId)).toBe('COMPLETED');
 
     const result = await as(broker, (c) => exportCaseZip(c, keys, store, caseId));

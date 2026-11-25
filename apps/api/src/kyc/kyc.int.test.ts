@@ -21,11 +21,14 @@ import { fetchOwnership, linkBeneficialOwners } from '../ownership/ownership';
 import { assessRisk } from '../risk/risk';
 import { MockScreeningProvider } from '../screening/mock-provider';
 import { listScreenings, reviewMatch, runScreening } from '../screening/screening';
+import type { CaseDecision } from '@skydra/shared';
+import { exportCase } from '../export/case-report';
 import {
   decideApproval,
   escalate,
   getChecklist,
   listDecisions,
+  recordDecision,
   requestApproval,
   resolveEscalation,
 } from './decisions';
@@ -117,6 +120,22 @@ describe('KYC completion', () => {
     await assess(caseId, ctx);
   }
 
+  /** The broker's final decision (approve unless said otherwise). */
+  const finalDecision = (
+    caseId: string,
+    decision: CaseDecision = 'APPROVE',
+    ctx = broker,
+    more: { suspiciousIndicators?: boolean; suspicionNotes?: string } = {},
+  ) =>
+    as(ctx, (c) =>
+      recordDecision(c, caseId, {
+        decision,
+        justification: 'Sprendimas pagrįstas bylos duomenimis',
+        suspiciousIndicators: false,
+        ...more,
+      }),
+    );
+
   async function confirmFirstMatch(caseId: string, ctx = broker) {
     const [check] = await as(ctx, (c) => listScreenings(c, caseId));
     await as(ctx, (c) =>
@@ -157,6 +176,7 @@ describe('KYC completion', () => {
         'IDENTITY_VERIFIED',
         'CDD_COMPLETED',
         'RISK_ASSESSED',
+        'DECISION_RECORDED',
       ]);
       expect(await status(caseId)).toBe('IN_PROGRESS');
 
@@ -171,8 +191,11 @@ describe('KYC completion', () => {
       ).rejects.toThrow(/identity has not been verified/);
 
       await verifyAndComplete(caseId, casePartyId);
+      // Only the broker's final decision remains; it completes the case.
+      expect(await failing(caseId)).toEqual(['DECISION_RECORDED']);
+      expect(await status(caseId)).toBe('IN_PROGRESS');
+      expect((await finalDecision(caseId)).complianceStatus).toBe('COMPLETED');
       expect(await failing(caseId)).toEqual([]);
-      expect(await status(caseId)).toBe('COMPLETED');
 
       const [v] = await as(broker, (c) => listIdentityVerifications(c, keys, caseId));
       expect(v).toMatchObject({
@@ -201,6 +224,11 @@ describe('KYC completion', () => {
         as(broker, (c) => updateCase(c, actor(broker), caseId, { stage: 'CONTRACT' })),
       ).rejects.toThrow(/complete the AML checks/);
       await verifyAndComplete(caseId, casePartyId);
+      // Not before the final decision either.
+      await expect(
+        as(broker, (c) => updateCase(c, actor(broker), caseId, { stage: 'CONTRACT' })),
+      ).rejects.toThrow(/complete the AML checks/);
+      await finalDecision(caseId);
       await as(broker, (c) => updateCase(c, actor(broker), caseId, { stage: 'CONTRACT' }));
     });
 
@@ -259,7 +287,11 @@ describe('KYC completion', () => {
       await as(broker, (c) =>
         simulateRemoteVerification(c, idv, caseId, second.id, { outcome: 'VERIFIED' }),
       );
-      expect(await failing(caseId)).toEqual(['CDD_COMPLETED', 'RISK_ASSESSED']);
+      expect(await failing(caseId)).toEqual([
+        'CDD_COMPLETED',
+        'RISK_ASSESSED',
+        'DECISION_RECORDED',
+      ]);
 
       await expect(
         startRemoteVerification(app, broker, new UnavailableIdentityProvider('DOKOBIT'), caseId, {
@@ -302,7 +334,7 @@ describe('KYC completion', () => {
         updateCaseParty(c, id, casePartyId, { kyc: KYC, cddStatus: 'COMPLETED' }),
       );
       await assess(id);
-      expect(await status(id)).toBe('COMPLETED');
+      expect((await finalDecision(id)).complianceStatus).toBe('COMPLETED');
 
       await expect(as(colleague, (c) => getChecklist(c, id))).rejects.toBeInstanceOf(NotFoundError);
       await expect(
@@ -312,7 +344,7 @@ describe('KYC completion', () => {
   });
 
   describe('enhanced due diligence approval', () => {
-    it('a confirmed PEP needs another member to approve; the approval completes the case', async () => {
+    it('a confirmed PEP needs another member to approve, then an approval with enhanced measures', async () => {
       const { caseId, casePartyId } = await screenedCase('Politikienė');
       await verifyAndComplete(caseId, casePartyId);
       await expect(
@@ -321,7 +353,7 @@ describe('KYC completion', () => {
 
       await confirmFirstMatch(caseId);
       expect(await status(caseId)).toBe('REVIEW_REQUIRED');
-      expect(await failing(caseId)).toEqual(['EDD_APPROVED']);
+      expect(await failing(caseId)).toEqual(['EDD_APPROVED', 'DECISION_RECORDED']);
 
       const { id: approvalId } = await as(broker, (c) =>
         requestApproval(c, caseId, { reason: 'Lėšos iš darbo užmokesčio, pateikta pažyma' }),
@@ -341,8 +373,13 @@ describe('KYC completion', () => {
       await expect(decide(broker)).rejects.toThrow(/approver permission/);
       await expect(decide(colleague)).rejects.toBeInstanceOf(NotFoundError);
 
-      expect((await decide(approver)).complianceStatus).toBe('COMPLETED');
+      expect((await decide(approver)).complianceStatus).toBe('IN_PROGRESS');
       await expect(decide(approver)).rejects.toThrow(/already been decided/);
+      // Enhanced due diligence applied, so a plain approval does not fit.
+      await expect(finalDecision(caseId)).rejects.toThrow(/approve with enhanced measures/);
+      expect((await finalDecision(caseId, 'APPROVE_WITH_ENHANCED_MEASURES')).complianceStatus).toBe(
+        'COMPLETED',
+      );
 
       const { approvals } = await as(broker, (c) => listDecisions(c, caseId));
       expect(approvals[0]).toMatchObject({ status: 'APPROVED', decidedBy: approver.userId });
@@ -405,7 +442,10 @@ describe('KYC completion', () => {
           justification: 'Vienintelis organizacijos narys, deklaruoju',
         }),
       );
-      expect(result.complianceStatus).toBe('COMPLETED');
+      expect(result.complianceStatus).toBe('IN_PROGRESS');
+      expect(
+        (await finalDecision(caseId, 'APPROVE_WITH_ENHANCED_MEASURES', solo)).complianceStatus,
+      ).toBe('COMPLETED');
     });
   });
 
@@ -413,7 +453,7 @@ describe('KYC completion', () => {
     it('blocks the case until the AML officer clears it; a report keeps it blocked', async () => {
       const { caseId, casePartyId } = await screenedCase('Eskaluojama');
       await verifyAndComplete(caseId, casePartyId);
-      expect(await status(caseId)).toBe('COMPLETED');
+      expect((await finalDecision(caseId)).complianceStatus).toBe('COMPLETED');
 
       const first = await as(broker, (c) =>
         escalate(c, caseId, { reason: 'Klientas nori mokėti grynaisiais per trečiąjį asmenį' }),
@@ -438,6 +478,94 @@ describe('KYC completion', () => {
 
       const { escalations } = await as(officer, (c) => listDecisions(c, caseId));
       expect(escalations.map((e) => e.status)).toEqual(['REPORTED', 'CLEARED']);
+    });
+  });
+
+  describe('final decision', () => {
+    it('approves only when everything else is done; a decline closes the case for good', async () => {
+      const { caseId } = await screenedCase('Atsisakomoji');
+      await expect(finalDecision(caseId)).rejects.toThrow(
+        /cannot be approved yet: CDD_COMPLETED, IDENTITY_VERIFIED, RISK_ASSESSED/,
+      );
+      await expect(finalDecision(caseId, 'TERMINATE')).rejects.toThrow(/decline instead/);
+
+      const declined = await finalDecision(caseId, 'DECLINE');
+      expect(declined.complianceStatus).toBe('CLOSED');
+      const closed = await as(broker, (c) => getCase(c, keys, caseId));
+      expect(closed).toMatchObject({ stage: 'TERMINATED', complianceStatus: 'CLOSED' });
+
+      // Nothing more is decided, and the transaction cannot be taken up again.
+      await expect(finalDecision(caseId, 'DECLINE')).rejects.toThrow(/closed by an earlier/);
+      await expect(
+        as(broker, (c) => updateCase(c, actor(broker), caseId, { stage: 'RESERVATION' })),
+      ).rejects.toThrow(/closed by a decision/);
+      // Its AML file is still exported (and kept).
+      const exported = await as(broker, (c) => exportCase(c, keys, caseId));
+      expect(exported.pdf.subarray(0, 5).toString()).toBe('%PDF-');
+
+      const { final } = await as(broker, (c) => listDecisions(c, caseId));
+      expect(final).toMatchObject([
+        {
+          decision: 'DECLINE',
+          suspiciousIndicators: false,
+          decidedBy: broker.userId,
+          nextReviewOn: null,
+        },
+      ]);
+      await expect(
+        as(broker, (c) =>
+          c.query("UPDATE case_decisions SET decision = 'APPROVE' WHERE case_id = $1", [caseId]),
+        ),
+      ).rejects.toThrow(/permission denied/);
+      const { rows } = await db.superuser.query(
+        "SELECT after FROM audit_events WHERE action = 'case.decided' AND entity_id = $1",
+        [caseId],
+      );
+      expect(rows[0].after).toMatchObject({ decision: 'DECLINE' });
+    });
+
+    it('a new risk assessment needs a new decision; a terminated relationship closes the case', async () => {
+      const { caseId, casePartyId } = await screenedCase('Patvirtinamoji');
+      await verifyAndComplete(caseId, casePartyId);
+      const approved = await finalDecision(caseId);
+      expect(approved.complianceStatus).toBe('COMPLETED');
+      await expect(finalDecision(caseId)).rejects.toThrow(/already approved/);
+      await expect(finalDecision(caseId, 'DECLINE')).rejects.toThrow(/terminate instead/);
+      const { final } = await as(broker, (c) => listDecisions(c, caseId));
+      // The decision records the risk it was taken on and when the case is next reviewed.
+      expect(final[0]).toMatchObject({ decision: 'APPROVE', riskLevel: 'MEDIUM' });
+      expect(final[0]!.nextReviewOn).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+
+      // New information, a new assessment: the earlier approval no longer covers the case.
+      await as(broker, (c) => updateCase(c, actor(broker), caseId, { transactionValue: 160000 }));
+      await assess(caseId);
+      expect(await failing(caseId)).toEqual(['DECISION_RECORDED']);
+      expect(await status(caseId)).toBe('IN_PROGRESS');
+      expect((await finalDecision(caseId)).complianceStatus).toBe('COMPLETED');
+
+      expect((await finalDecision(caseId, 'TERMINATE')).complianceStatus).toBe('CLOSED');
+    });
+
+    it('suspicious indicators must have been reported to the AML officer first', async () => {
+      const { caseId } = await screenedCase('Įtartinoji');
+      const suspicion = {
+        suspiciousIndicators: true,
+        suspicionNotes: 'Mokėjimas per trečiąjį asmenį',
+      };
+      await expect(finalDecision(caseId, 'DECLINE', broker, suspicion)).rejects.toThrow(
+        /report the suspicious indicators/,
+      );
+      await expect(
+        finalDecision(caseId, 'DECLINE', broker, { suspiciousIndicators: true }),
+      ).rejects.toThrow(/describe the suspicious indicators/);
+      await as(broker, (c) => escalate(c, caseId, { reason: 'Mokėjimas per trečiąjį asmenį' }));
+      expect((await finalDecision(caseId, 'DECLINE', broker, suspicion)).complianceStatus).toBe(
+        'CLOSED',
+      );
+      // Another broker cannot decide on this case.
+      await expect(finalDecision(caseId, 'DECLINE', colleague)).rejects.toBeInstanceOf(
+        NotFoundError,
+      );
     });
   });
 });

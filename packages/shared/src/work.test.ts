@@ -13,6 +13,11 @@ const base: WorkCase = {
 };
 
 describe('work buckets', () => {
+  it('the final decision is the broker’s; a closed case is done', () => {
+    expect(workBucket({ ...base, next: { item: 'DECISION_RECORDED' } }, broker)).toBe('action');
+    expect(workBucket({ ...base, complianceStatus: 'CLOSED', next: null }, broker)).toBe('done');
+  });
+
   it('the responsible broker acts; others do not see it as theirs', () => {
     expect(workBucket(base, broker)).toBe('action');
     expect(workBucket(base, approver)).toBeNull();

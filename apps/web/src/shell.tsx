@@ -6,6 +6,7 @@ import { api, type Me, type Membership } from './api';
 import { Icon } from './icons';
 import { useHealth, useRefreshMe } from './session';
 import { ThemeToggle } from './theme';
+import { LanguageToggle } from './language';
 import { Avatar } from './pages/cases/PartyCard';
 
 /**
@@ -103,6 +104,7 @@ export function AppShell(props: {
                   )}
                 </span>
               </span>
+              <LanguageToggle />
               <ThemeToggle />
               <button type="button" className="small" onClick={() => void logout()}>
                 {t('common.logout')}

@@ -3,6 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../api';
+import { numberLocale } from '../i18n';
 import { useErrorMessage } from '../session';
 import { ErrorText, Field, Page } from '../ui';
 
@@ -117,7 +118,7 @@ export function PlatformPage() {
   );
 }
 
-const euro = new Intl.NumberFormat('lt-LT', { style: 'currency', currency: 'EUR' });
+const euro = () => new Intl.NumberFormat(numberLocale(), { style: 'currency', currency: 'EUR' });
 
 /** Screening volume and provider requests per month: what the providers will bill. */
 function UsageTable() {
@@ -127,7 +128,7 @@ function UsageTable() {
     queryFn: () => api<Usage[]>('GET', '/platform/usage?months=6'),
   });
   const rows = usage.data ?? [];
-  const cost = (requests: number) => euro.format(requests * PROVIDER_PRICE_EUR.OPENSANCTIONS);
+  const cost = (requests: number) => euro().format(requests * PROVIDER_PRICE_EUR.OPENSANCTIONS);
   const total = rows.reduce((n, r) => n + r.openSanctions, 0);
   return (
     <>

@@ -206,5 +206,15 @@ describe('organization profile', () => {
     expect(result.pdf.subarray(0, 5).toString()).toBe('%PDF-');
     // The logo is embedded as an image object.
     expect(result.pdf.toString('latin1')).toMatch(/\/Subtype \/Image/);
+
+    // The same report in English (client answer Q10), with the language on record.
+    const english = await as(broker, (c) => exportCase(c, keys, id, store, 'en'));
+    const info = english.pdf.toString('latin1');
+    expect(info).toContain('AML case');
+    expect(result.pdf.toString('latin1')).toContain('AML byla');
+    const { rows } = await db.superuser.query(
+      "SELECT after FROM audit_events WHERE action = 'case.exported' ORDER BY seq",
+    );
+    expect(rows.map((r) => r.after.language)).toEqual(['lt', 'en']);
   });
 });

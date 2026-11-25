@@ -1,6 +1,13 @@
 import { createHash } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { lt, type PartyRole, REGISTRY_ROLES, screeningStatus } from '@skydra/shared';
+import {
+  format as f,
+  type Locale,
+  MESSAGES,
+  type PartyRole,
+  REGISTRY_ROLES,
+  screeningStatus,
+} from '@skydra/shared';
 import PDFDocument from 'pdfkit';
 import type { PoolClient } from 'pg';
 import { z } from 'zod';
@@ -94,8 +101,6 @@ export async function collectReport(
   };
 }
 
-/** A decision carried over from an earlier check of the same record (migration 0015). */
-const CARRIED = ' (sprendimas perkeltas iš ankstesnės patikros)';
 const label = (group: Record<string, unknown>, key: string | null | undefined) => {
   const text = key ? group[key] : undefined;
   return typeof text === 'string' ? text : (key ?? '–');
@@ -104,17 +109,29 @@ const date = (v: Date | string | null | undefined) =>
   v ? new Date(v).toLocaleString('lt-LT', { timeZone: 'Europe/Vilnius' }) : '–';
 const day = (v: Date | string | null | undefined) =>
   v ? new Date(v).toLocaleDateString('lt-LT', { timeZone: 'Europe/Vilnius' }) : '–';
-const money = (v: string | null) =>
-  v === null ? '–' : `${Number(v).toLocaleString('lt-LT', { minimumFractionDigits: 2 })} EUR`;
+const NUMBER_LOCALE: Record<Locale, string> = { lt: 'lt-LT', en: 'en-GB' };
+const money = (v: string | null, locale: Locale) =>
+  v === null
+    ? '–'
+    : `${Number(v).toLocaleString(NUMBER_LOCALE[locale], { minimumFractionDigits: 2 })} EUR`;
 
-/** Renders the AML case file. Personal and document numbers appear only masked. */
-export function renderReport(d: CaseReportData, exportId: string): Promise<Buffer> {
+/**
+ * Renders the AML case file in Lithuanian or English (client answer Q10). Personal and document
+ * numbers appear only masked; what people entered (reasons, notes) stays as they wrote it.
+ */
+export function renderReport(
+  d: CaseReportData,
+  exportId: string,
+  locale: Locale = 'lt',
+): Promise<Buffer> {
   const c = d.caseFile;
+  const lt = MESSAGES[locale];
+  const r = lt.report;
   const doc = new PDFDocument({
     size: 'A4',
     margins: { top: 56, bottom: 64, left: 56, right: 56 },
     bufferPages: true,
-    info: { Title: `AML byla ${c.reference}`, Author: 'SkyDra', Creator: 'SkyDra' },
+    info: { Title: f(r.title, { reference: c.reference }), Author: 'SkyDra', Creator: 'SkyDra' },
   });
   doc.registerFont('Sans', FONT);
   doc.registerFont('Sans-Bold', FONT_BOLD);
@@ -173,7 +190,7 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
     .fillColor('#5b6673')
     .text(
       [
-        o.companyCode && `Įmonės kodas ${o.companyCode}`,
+        o.companyCode && f(r.companyCode, { code: o.companyCode }),
         o.address,
         [o.phone, o.email, o.website].filter(Boolean).join(' · '),
       ]
@@ -187,56 +204,64 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
   doc.moveDown(0.6);
 
   // Title
-  h1(`AML byla ${c.reference}`);
-  p(`${d.organizationName} · eksportavo ${d.exportedByName} · ${date(d.exportedAt)}`, {
-    muted: true,
-  });
-  p(`Eksporto ID: ${exportId}`, { muted: true });
+  h1(f(r.title, { reference: c.reference }));
+  p(
+    f(r.exported, {
+      organization: d.organizationName,
+      by: d.exportedByName,
+      date: date(d.exportedAt),
+    }),
+    { muted: true },
+  );
+  p(f(r.exportId, { id: exportId }), { muted: true });
   // Who decided and when, and on which methodology (Q43), before the details.
   const decided = d.decisions.final[0];
   if (decided)
     p(
-      `Galutinis sprendimas: ${label(lt.finalDecision.decisions, decided.decision)} · ${decided.decidedByName}, ${date(decided.decidedAt)}`,
+      f(r.finalDecision, {
+        decision: label(lt.finalDecision.decisions, decided.decision),
+        by: decided.decidedByName,
+        date: date(decided.decidedAt),
+      }),
     );
   if (d.risk.current)
-    p(`Rizikos metodika: ${d.risk.current.ruleSetCode} / ${d.risk.current.ruleSetVersion}`, {
-      muted: true,
-    });
+    p(
+      f(r.methodology, {
+        code: d.risk.current.ruleSetCode,
+        version: d.risk.current.ruleSetVersion,
+      }),
+      { muted: true },
+    );
   if (simulated || d.risk.ruleSet.isDemo) {
     doc.moveDown(0.4);
-    doc
-      .font('Sans-Bold')
-      .fontSize(9.5)
-      .fillColor('#b42318')
-      .text(
-        'DEMONSTRACINĖ BYLA: patikros, registrų duomenys ir rizikos metodika yra imitaciniai, ne tikri.',
-      )
-      .fillColor('#000000');
+    doc.font('Sans-Bold').fontSize(9.5).fillColor('#b42318').text(r.demo).fillColor('#000000');
   }
 
-  h2('1. Sandoris');
-  row('Sandorio tipas', label(lt.transactionTypes, c.transactionType));
-  row('Turtas', `${label(lt.propertyTypes, c.propertyType)}, ${c.propertyAddress}`);
+  const F = r.fields;
+  h2(`1. ${r.sections.transaction}`);
+  row(F.transactionType, label(lt.transactionTypes, c.transactionType));
+  row(F.property, `${label(lt.propertyTypes, c.propertyType)}, ${c.propertyAddress}`);
   row(
-    c.transactionType === 'SALE' ? 'Sandorio vertė' : 'Mėnesio nuomos kaina',
-    money(c.transactionType === 'SALE' ? c.transactionValue : c.monthlyRent),
+    c.transactionType === 'SALE' ? F.value : F.rent,
+    money(c.transactionType === 'SALE' ? c.transactionValue : c.monthlyRent, locale),
   );
   row(
-    'Atsiskaitymo būdas',
+    F.payment,
     c.paymentMethod
       ? `${label(lt.paymentMethods, c.paymentMethod)}${c.paymentMethodOther ? ` (${c.paymentMethodOther})` : ''}`
-      : 'nenurodyta',
+      : F.notStated,
   );
-  row('Sandorio etapas', label(lt.stages, c.stage));
-  if (c.offerAcceptedAt) row('Pasiūlymas priimtas', date(c.offerAcceptedAt));
-  row('AML procedūros', label(lt.amlApplicability, c.amlApplicability));
-  if (c.amlActivationReason) row('Taikymo priežastis', c.amlActivationReason);
-  row('Atitikties būsena', label(lt.complianceStatuses, c.complianceStatus));
-  row('Teisinis režimas', label(lt.legalRegimes, c.legalRegime));
-  row('Atsakingas', c.responsibleName);
-  row('Byla sukurta', date(c.createdAt));
+  row(F.stage, label(lt.stages, c.stage));
+  if (c.offerAcceptedAt) row(F.offerAccepted, date(c.offerAcceptedAt));
+  row(F.aml, label(lt.amlApplicability, c.amlApplicability));
+  if (c.amlActivationReason) row(F.activationReason, c.amlActivationReason);
+  row(F.compliance, label(lt.complianceStatuses, c.complianceStatus));
+  row(F.regime, label(lt.legalRegimes, c.legalRegime));
+  row(F.responsible, c.responsibleName);
+  row(F.created, date(c.createdAt));
 
-  h2('2. Sandorio šalys');
+  const P = r.party;
+  h2(`2. ${r.sections.parties}`);
   for (const cp of c.parties) {
     const owner = cp.beneficialOwnerOf
       ? c.parties.find((x) => x.id === cp.beneficialOwnerOf)?.party.displayName
@@ -248,11 +273,12 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
     p(
       [
         label(lt.parties, cp.party.partyType),
-        cp.party.personalCodeMasked && `asmens kodas ${cp.party.personalCodeMasked}`,
-        cp.party.companyCode && `įmonės kodas ${cp.party.companyCode}`,
-        cp.party.birthDate && `gimė ${cp.party.birthDate}`,
-        cp.party.citizenships.length > 0 && `pilietybė ${cp.party.citizenships.join(', ')}`,
-        owner && `naudos gavėjas: ${owner}`,
+        cp.party.personalCodeMasked && f(P.personalCode, { code: cp.party.personalCodeMasked }),
+        cp.party.companyCode && f(P.companyCode, { code: cp.party.companyCode }),
+        cp.party.birthDate && f(P.born, { date: cp.party.birthDate }),
+        cp.party.citizenships.length > 0 &&
+          f(P.citizenship, { list: cp.party.citizenships.join(', ') }),
+        owner && f(P.uboOf, { name: owner }),
       ]
         .filter(Boolean)
         .join(' · '),
@@ -262,24 +288,24 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
       const kyc = cp.kyc as Record<string, unknown>;
       p(
         `CDD: ${label(lt.parties.cddScopes, cp.cddScope)} · ${label(lt.parties.cddStatuses, cp.cddStatus)}` +
-          (cp.isOurClient ? ' · mūsų klientas' : '') +
-          (cp.representedByOtherBroker ? ' · atstovauja kitas brokeris' : ''),
+          (cp.isOurClient ? ` · ${P.ourClient}` : '') +
+          (cp.representedByOtherBroker ? ` · ${P.otherBroker}` : ''),
         { indent: 10 },
       );
       const answers = [
-        kyc.purpose && `tikslas: ${String(kyc.purpose)}`,
-        kyc.sourceOfFunds && `lėšų kilmė: ${String(kyc.sourceOfFunds)}`,
+        kyc.purpose && f(P.purpose, { value: String(kyc.purpose) }),
+        kyc.sourceOfFunds && f(P.funds, { value: String(kyc.sourceOfFunds) }),
         typeof kyc.actsOnOwnBehalf === 'boolean' &&
-          (kyc.actsOnOwnBehalf ? 'veikia savo vardu' : 'veikia NE savo vardu'),
+          (kyc.actsOnOwnBehalf ? P.ownBehalf : P.notOwnBehalf),
         typeof kyc.pepSelfDeclared === 'boolean' &&
-          (kyc.pepSelfDeclared ? 'deklaravo PEP statusą' : 'nedeklaravo PEP statuso'),
+          (kyc.pepSelfDeclared ? P.pepDeclared : P.pepNotDeclared),
       ].filter(Boolean);
       if (answers.length) p(`KYC: ${answers.join(' · ')}`, { indent: 10 });
     }
   }
 
-  h2('3. Tapatybės nustatymas');
-  if (d.identity.length === 0) p('Įrašų nėra.', { muted: true });
+  h2(`3. ${r.sections.identity}`);
+  if (d.identity.length === 0) p(r.none, { muted: true });
   for (const v of d.identity) {
     const who = c.parties.find((x) => x.id === v.casePartyId)?.party.displayName ?? '';
     p(
@@ -290,14 +316,18 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
   }
 
   if (d.ownership.length > 0) {
-    h2('4. Registrų duomenys ir naudos gavėjai');
+    const O = r.ownership;
+    h2(`4. ${r.sections.ownership}`);
     for (const o of d.ownership) {
       doc.font('Sans-Bold').fontSize(10).text(`${o.company.name} (${o.company.code})`);
       p(
-        `Šaltinis: ${o.provider} · gauta ${date(o.fetchedAt)} · ` +
-          Object.entries(o.company.references)
+        f(O.source, {
+          provider: o.provider,
+          date: date(o.fetchedAt),
+          references: Object.entries(o.company.references)
             .map(([k, v]) => `${k} ${v}`)
             .join(', '),
+        }),
         { muted: true, indent: 10 },
       );
       const tree = (nodes: OwnershipNode[], level: number) => {
@@ -305,36 +335,42 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
           p(
             `${n.name}${n.code ? ` (${n.code}, ${n.country ?? ''})` : ''} – ${n.sharePercent} %` +
               (n.effectivePercent !== n.sharePercent
-                ? ` (netiesiogiai ${n.effectivePercent} %)`
+                ? ` ${f(O.indirect, { percent: n.effectivePercent })}`
                 : '') +
-              (n.unresolved ? ' – duomenų nėra' : ''),
+              (n.unresolved ? ` – ${O.unresolved}` : ''),
             { indent: 10 + level * 14 },
           );
           tree(n.children, level + 1);
         }
       };
       tree(o.analysis.tree, 0);
-      p(`Naudos gavėjai (riba ${o.analysis.thresholdPercent} %):`, { indent: 10 });
+      p(f(O.ubos, { percent: o.analysis.thresholdPercent }), { indent: 10 });
       for (const u of o.ubos)
         p(
           `${u.person.firstName} ${u.person.lastName} ${u.person.personalCodeMasked ?? ''} · ` +
             `${label(lt.ownership.bases, u.basis)}${u.effectivePercent !== null ? ` ${u.effectivePercent} %` : ''} · ` +
-            `${u.computed ? 'pagal akcijas' : 'nėra tarp akcininkų'}, ${u.declared ? 'deklaruotas JANGIS' : 'nedeklaruotas JANGIS'}`,
+            `${u.computed ? O.byShares : O.notShareholder}, ${u.declared ? O.declared : O.notDeclared}`,
           { indent: 24 },
         );
-      if (o.discrepancy) p('Nustatytas naudos gavėjų neatitikimas.', { indent: 10 });
-      if (o.incomplete) p('Nuosavybės grandinė neatsekta iki fizinių asmenų.', { indent: 10 });
+      if (o.discrepancy) p(O.discrepancy, { indent: 10 });
+      if (o.incomplete) p(O.incomplete, { indent: 10 });
       if (o.resolution)
         p(
-          `Sprendimas: ${label(lt.ownership.resolutions, o.resolution.resolution)} – ${o.resolution.notes} ` +
-            `(įrodymas: ${o.resolution.evidence}; ${o.resolution.resolvedByName}, ${date(o.resolution.resolvedAt)})`,
+          f(O.resolution, {
+            resolution: label(lt.ownership.resolutions, o.resolution.resolution),
+            notes: o.resolution.notes,
+            evidence: o.resolution.evidence,
+            by: o.resolution.resolvedByName,
+            date: date(o.resolution.resolvedAt),
+          }),
           { indent: 10 },
         );
     }
   }
 
-  h2(`${d.ownership.length > 0 ? 5 : 4}. Sankcijų, PEP ir neigiamos informacijos patikros`);
-  if (d.screenings.length === 0) p('Patikrų nėra.', { muted: true });
+  const S = r.screening;
+  h2(`${d.ownership.length > 0 ? 5 : 4}. ${r.sections.screening}`);
+  if (d.screenings.length === 0) p(S.none, { muted: true });
   for (const cp of c.parties) {
     const own = d.screenings.filter((s) => s.casePartyId === cp.id);
     if (own.length === 0) continue;
@@ -351,17 +387,21 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
     const origin = s.origin ? ` · ${label(lt.screening.origins, s.origin)}` : '';
     p(
       `${who}: ${sources} · ${date(s.completedAt ?? s.requestedAt)}${origin} · ` +
-        (s.status === 'COMPLETED' ? `sutapimų: ${s.matchCount}` : 'patikra nepavyko'),
+        (s.status === 'COMPLETED' ? f(S.matches, { count: s.matchCount ?? 0 }) : S.failed),
       { indent: 10 },
     );
     if (s.manual) {
       // A check made by hand: what was searched where, when, and why the result holds.
       const evidence = d.documents.find((x) => x.id === s.evidenceDocumentId);
       p(
-        `Rankinė patikra: ${s.manual.source} · ieškota ${s.manual.searchedOn} · ` +
-          `${label(lt.screening.manualResults, s.manual.result)} – ${s.manual.justification}` +
+        f(S.manual, {
+          source: s.manual.source,
+          date: s.manual.searchedOn,
+          result: label(lt.screening.manualResults, s.manual.result),
+          justification: s.manual.justification,
+        }) +
           (s.manual.sourceUrl ? ` · ${s.manual.sourceUrl}` : '') +
-          (evidence ? ` · įrodymas: ${evidence.fileName}` : ''),
+          (evidence ? ` · ${f(S.evidence, { name: evidence.fileName })}` : ''),
         { indent: 18 },
       );
     }
@@ -374,7 +414,7 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
             `${published ? ` · ${day(published)}` : ''}` +
             ` · ${label(lt.screening.articleStatuses, m.reviewStatus)}` +
             `${m.reviewJustification ? ` – ${m.reviewJustification}` : ''}` +
-            `${m.carriedFrom ? CARRIED : ''}`,
+            `${m.carriedFrom ? S.carried : ''}`,
           { indent: 18 },
         );
         if (typeof m.details.sourceUrl === 'string')
@@ -384,82 +424,113 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
       p(
         `${m.categories.map((x) => label(lt.matchCategories, x)).join(', ')} · ${m.name}` +
           `${m.score ? ` · ${Number(m.score)} %` : ''}` +
-          `${m.strength === 'WEAK' ? ' · silpnas (žemiau slenksčio)' : ''}` +
+          `${m.strength === 'WEAK' ? ` · ${S.weak}` : ''}` +
           ` · ${label(lt.screening.reviewStatuses, m.reviewStatus)}` +
           `${m.reviewJustification ? ` – ${m.reviewJustification}` : ''}` +
-          `${m.carriedFrom ? CARRIED : ''}`,
+          `${m.carriedFrom ? S.carried : ''}`,
         { indent: 18 },
       );
     }
   }
 
   const n = (k: number) => (d.ownership.length > 0 ? k + 1 : k);
-  h2(`${n(5)}. Rizikos vertinimas`);
+  const K = r.risk;
+  h2(`${n(5)}. ${r.sections.risk}`);
   const current = d.risk.current;
-  if (!current) p('Rizika neįvertinta.', { muted: true });
+  if (!current) p(K.none, { muted: true });
   else {
-    row('Galutinė rizika', label(lt.riskLevels, current.finalLevel));
-    row('Apskaičiuota', label(lt.riskLevels, current.calculatedLevel));
-    if (current.mandatoryLevel)
-      row('Privalomas minimumas', label(lt.riskLevels, current.mandatoryLevel));
+    row(K.final, label(lt.riskLevels, current.finalLevel));
+    row(K.calculated, label(lt.riskLevels, current.calculatedLevel));
+    if (current.mandatoryLevel) row(K.mandatory, label(lt.riskLevels, current.mandatoryLevel));
     row(
-      'Metodika',
-      `${current.ruleSetCode} / ${current.ruleSetVersion}${current.isDemo ? ' (demonstracinė)' : ''}`,
+      K.methodology,
+      `${current.ruleSetCode} / ${current.ruleSetVersion}${current.isDemo ? K.demo : ''}`,
     );
-    row('Įvertino', `${current.assessedByName}, ${date(current.assessedAt)}`);
-    row('Kita peržiūra', day(current.nextReviewOn));
-    if (current.justification) row('Pagrindimas', current.justification);
-    const matched = current.factors.filter((f) => f.matched);
+    row(K.assessedBy, `${current.assessedByName}, ${date(current.assessedAt)}`);
+    row(K.nextReview, day(current.nextReviewOn));
+    if (current.justification) row(K.justification, current.justification);
+    const matched = current.factors.filter((x) => x.matched);
     p(
       matched.length
-        ? `Veiksniai: ${matched.map((f) => `${label(lt.riskFactors, f.code)} (${label(lt.riskLevels, f.level)})`).join('; ')}`
-        : 'Rizikos veiksnių nenustatyta.',
+        ? f(K.factors, {
+            list: matched
+              .map((x) => `${label(lt.riskFactors, x.code)} (${label(lt.riskLevels, x.level)})`)
+              .join('; '),
+          })
+        : K.noFactors,
     );
   }
 
-  h2(`${n(6)}. Patvirtinimai ir pranešimai AML atsakingam asmeniui`);
+  const D = r.decisions;
+  h2(`${n(6)}. ${r.sections.decisions}`);
   const { approvals, escalations } = d.decisions;
-  if (approvals.length + escalations.length === 0) p('Nėra.', { muted: true });
+  if (approvals.length + escalations.length === 0) p(D.none, { muted: true });
   for (const a of approvals)
     p(
-      `Patvirtinimas: ${label(lt.approvals.statuses, a.status)} · prašė ${a.requestedByName} (${date(a.requestedAt)}): ${a.reason}` +
+      f(D.approval, {
+        status: label(lt.approvals.statuses, a.status),
+        by: a.requestedByName,
+        date: date(a.requestedAt),
+        reason: a.reason,
+      }) +
         (a.decidedByName
-          ? ` · sprendė ${a.decidedByName} (${date(a.decidedAt)}): ${a.decisionJustification}`
+          ? f(D.decided, {
+              by: a.decidedByName,
+              date: date(a.decidedAt),
+              text: a.decisionJustification ?? '',
+            })
           : ''),
     );
   for (const e of escalations)
     p(
-      `Pranešimas: ${label(lt.escalations.statuses, e.status)} · pranešė ${e.requestedByName} (${date(e.requestedAt)}): ${e.reason}` +
+      f(D.escalation, {
+        status: label(lt.escalations.statuses, e.status),
+        by: e.requestedByName,
+        date: date(e.requestedAt),
+        reason: e.reason,
+      }) +
         (e.resolvedByName
-          ? ` · sprendė ${e.resolvedByName} (${date(e.resolvedAt)}): ${e.resolutionNotes}`
+          ? f(D.decided, {
+              by: e.resolvedByName,
+              date: date(e.resolvedAt),
+              text: e.resolutionNotes ?? '',
+            })
           : ''),
     );
 
   // The final decision (Q25) with the separate assessment of suspicious indicators; earlier
   // decisions follow, newest first.
-  h2(`${n(7)}. Galutinis sprendimas`);
+  const Z = r.final;
+  h2(`${n(7)}. ${r.sections.finalDecision}`);
   const [final, ...earlier] = d.decisions.final;
-  if (!final) p('Galutinis sprendimas neužregistruotas.', { muted: true });
+  if (!final) p(Z.none, { muted: true });
   else {
-    row('Sprendimas', label(lt.finalDecision.decisions, final.decision));
-    row('Priėmė', `${final.decidedByName}, ${date(final.decidedAt)}`);
-    row('Pagrindimas', final.justification);
+    row(Z.decision, label(lt.finalDecision.decisions, final.decision));
+    row(Z.decidedBy, `${final.decidedByName}, ${date(final.decidedAt)}`);
+    row(Z.justification, final.justification);
     row(
-      'Įtarimo požymiai',
-      final.suspiciousIndicators ? `nustatyti: ${final.suspicionNotes ?? ''}` : 'nenustatyta',
+      Z.suspicion,
+      final.suspiciousIndicators
+        ? f(Z.suspicionFound, { notes: final.suspicionNotes ?? '' })
+        : Z.suspicionNone,
     );
-    if (final.riskLevel) row('Rizika sprendimo metu', label(lt.riskLevels, final.riskLevel));
-    if (final.nextReviewOn) row('Kita peržiūra', day(final.nextReviewOn));
+    if (final.riskLevel) row(Z.risk, label(lt.riskLevels, final.riskLevel));
+    if (final.nextReviewOn) row(Z.nextReview, day(final.nextReviewOn));
     for (const e of earlier)
       p(
-        `Ankstesnis: ${label(lt.finalDecision.decisions, e.decision)} · ${e.decidedByName}, ${date(e.decidedAt)} – ${e.justification}`,
+        f(Z.earlier, {
+          decision: label(lt.finalDecision.decisions, e.decision),
+          by: e.decidedByName,
+          date: date(e.decidedAt),
+          justification: e.justification,
+        }),
         { muted: true },
       );
   }
 
   // The documents are the annex of the report (Q44); the ZIP export carries the files.
-  h2(`${n(8)}. Priedai`);
-  if (d.documents.length === 0) p('Dokumentų nepridėta.', { muted: true });
+  h2(`${n(8)}. ${r.sections.annex}`);
+  if (d.documents.length === 0) p(r.annex.none, { muted: true });
   for (const doc of d.documents) {
     const who = c.parties.find((x) => x.id === doc.casePartyId)?.party.displayName;
     p(
@@ -469,7 +540,7 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
     p(`SHA-256: ${doc.sha256}`, { indent: 10, muted: true });
   }
 
-  h2(`${n(9)}. AML reikalavimų įvykdymas`);
+  h2(`${n(9)}. ${r.sections.checklist}`);
   for (const e of d.checklist) {
     const who = e.casePartyId
       ? `${c.parties.find((x) => x.id === e.casePartyId)?.party.displayName ?? ''}: `
@@ -477,10 +548,10 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
     p(`${e.ok ? '✓' : '✗'} ${who}${label(lt.checklist.items, e.item)}`);
   }
 
-  h2(`${n(10)}. Veiksmų istorija`);
+  h2(`${n(10)}. ${r.sections.history}`);
   for (const a of d.audit)
     p(
-      `#${a.seq} · ${date(a.occurred_at)} · ${a.actor ?? 'sistema'} · ${label(lt.auditActions, a.action)}`,
+      `#${a.seq} · ${date(a.occurred_at)} · ${a.actor ?? r.system} · ${label(lt.auditActions, a.action)}`,
       {
         muted: true,
       },
@@ -497,7 +568,7 @@ export function renderReport(d: CaseReportData, exportId: string): Promise<Buffe
       .fontSize(8)
       .fillColor('#5b6673')
       .text(
-        `SkyDra · ${c.reference} · eksportas ${exportId} · ${i + 1} / ${range.count} psl.`,
+        f(r.footer, { reference: c.reference, id: exportId, page: i + 1, pages: range.count }),
         doc.page.margins.left,
         doc.page.height - 40,
         { width: doc.page.width - doc.page.margins.left - doc.page.margins.right, align: 'center' },
@@ -526,6 +597,7 @@ export async function exportCase(
   keys: SecretKeys,
   caseId: string,
   store?: FileStore,
+  locale: Locale = 'lt',
 ): Promise<{ pdf: Buffer; sha256: string; exportId: string; reference: string }> {
   const data = await collectReport(client, keys, caseId, store);
   // A completed case, or one closed by a decline or termination (its file is kept too).
@@ -534,7 +606,7 @@ export async function exportCase(
 
   const { rows: ids } = await client.query<{ id: string }>('SELECT gen_random_uuid() AS id');
   const exportId = ids[0]!.id;
-  const pdf = await renderReport(data, exportId);
+  const pdf = await renderReport(data, exportId, locale);
   const sha256 = createHash('sha256').update(pdf).digest('hex');
   try {
     await client.query(
@@ -549,7 +621,7 @@ export async function exportCase(
     action: 'case.exported',
     entityType: 'case',
     entityId: data.caseFile.id,
-    after: { exportId, format: 'PDF', sha256, sizeBytes: pdf.length },
+    after: { exportId, format: 'PDF', language: locale, sha256, sizeBytes: pdf.length },
   });
   return { pdf, sha256, exportId, reference: data.caseFile.reference };
 }
@@ -577,6 +649,7 @@ export async function exportCaseZip(
   keys: SecretKeys,
   store: FileStore,
   caseId: string,
+  locale: Locale = 'lt',
 ): Promise<{ zip: Buffer; sha256: string; exportId: string; reference: string }> {
   const data = await collectReport(client, keys, caseId, store);
   // A completed case, or one closed by a decline or termination (its file is kept too).
@@ -587,7 +660,7 @@ export async function exportCaseZip(
 
   const { rows: ids } = await client.query<{ id: string }>('SELECT gen_random_uuid() AS id');
   const exportId = ids[0]!.id;
-  const pdf = await renderReport(data, exportId);
+  const pdf = await renderReport(data, exportId, locale);
   const used = new Set<string>();
   const entries = [{ name: 'Case_Report.pdf', data: pdf, modified: data.exportedAt }];
   for (const doc of data.documents) {
@@ -620,6 +693,7 @@ export async function exportCaseZip(
     after: {
       exportId,
       format: 'ZIP',
+      language: locale,
       sha256,
       sizeBytes: archive.length,
       documents: data.documents.map((doc) => ({ id: doc.id, sha256: doc.sha256 })),

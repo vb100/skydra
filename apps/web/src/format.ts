@@ -1,4 +1,9 @@
-/** Dates and times as shown everywhere: YYYY-MM-DD and HH:mm in Lithuanian time. */
+import { numberLocale } from './i18n';
+
+/**
+ * Dates and times as shown everywhere, in both languages: YYYY-MM-DD and HH:mm in Lithuanian
+ * time (unambiguous for every reader).
+ */
 const DATE = new Intl.DateTimeFormat('lt-LT', {
   timeZone: 'Europe/Vilnius',
   year: 'numeric',
@@ -24,5 +29,5 @@ export function formatDateTime(value: string | Date | null | undefined): string 
 /** Amounts with thousands separators and two decimals only when needed: 168 000 EUR. */
 export function formatMoney(value: string | number | null | undefined): string {
   if (value === null || value === undefined || value === '') return '–';
-  return `${Number(value).toLocaleString('lt-LT', { maximumFractionDigits: 2 })} EUR`;
+  return `${Number(value).toLocaleString(numberLocale(), { maximumFractionDigits: 2 })} EUR`;
 }

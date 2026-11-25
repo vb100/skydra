@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Icon, type IconName } from '../icons';
 import { useHealth } from '../session';
 import { ThemeToggle } from '../theme';
+import { LanguageToggle } from '../language';
 
 const POINTS: [IconName, string][] = [
   ['file', 'auth.point1'],
@@ -48,6 +49,7 @@ export function AuthLayout(props: {
       <main className="auth-main">
         <div className="auth-top">
           <p className="auth-logo small">{t('app.name')}</p>
+          <LanguageToggle />
           <ThemeToggle />
         </div>
         <div className={`auth-card ${props.wide ? 'wide' : ''}`}>

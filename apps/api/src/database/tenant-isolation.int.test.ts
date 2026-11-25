@@ -95,17 +95,16 @@ describe('tenant isolation (row-level security)', () => {
   });
 
   it('rolls back the whole transaction when the work fails', async () => {
+    const notes = async () =>
+      (await db.superuser.query('SELECT 1 FROM notes WHERE organization_id = $1', [orgA])).rowCount;
+    const before = await notes();
     await expect(
       withTenant(app, { organizationId: orgA, userId: user }, async (c) => {
-        await c.query("UPDATE organizations SET name = 'Pakeista' WHERE id = $1", [orgA]);
+        await c.query("INSERT INTO notes (body) VALUES ('turi dingti')");
         throw new Error('boom');
       }),
     ).rejects.toThrow('boom');
-    const { rows } = await db.superuser.query<{ name: string }>(
-      'SELECT name FROM organizations WHERE id = $1',
-      [orgA],
-    );
-    expect(rows[0]?.name).toBe('Agentūra A');
+    expect(await notes()).toBe(before);
   });
 
   it('cannot disable row-level security or change the schema', async () => {

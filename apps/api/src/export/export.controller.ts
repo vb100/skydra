@@ -47,7 +47,7 @@ export class ExportController {
     @Res({ passthrough: true }) reply: FastifyReply,
   ) {
     const result = await withTenant(this.deps.pool, this.context(principal), (c) =>
-      exportCase(c, this.deps.keys, id),
+      exportCase(c, this.deps.keys, id, this.store),
     );
     void reply
       .status(201)

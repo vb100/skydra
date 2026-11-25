@@ -10,6 +10,7 @@ import { DashboardPage } from './pages/DashboardPage';
 import { HomePage } from './pages/HomePage';
 import { LoginPage } from './pages/LoginPage';
 import { MembersPage } from './pages/MembersPage';
+import { OrganizationPage } from './pages/OrganizationPage';
 import { PlatformPage } from './pages/PlatformPage';
 import { SecondFactorPage } from './pages/SecondFactorPage';
 import { SelectOrganizationPage } from './pages/SelectOrganizationPage';
@@ -82,6 +83,16 @@ function SignedIn() {
         <Route
           path="/dashboard"
           element={canSeeDashboard ? <DashboardPage /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/organization"
+          element={
+            active && (active.roles.includes('ORG_ADMIN') || active.roles.includes('MANAGER')) ? (
+              <OrganizationPage canManage={active.roles.includes('ORG_ADMIN')} />
+            ) : (
+              <Navigate to="/" />
+            )
+          }
         />
         <Route
           path="/members"
